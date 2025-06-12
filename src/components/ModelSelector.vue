@@ -9,7 +9,7 @@ const model = defineModel("model", { type: Object });
     v-model="model"
     color="primary"
     variant="soft"
-    trailing-icon="i-lucide-arrow-down"
+    trailing-icon="i-lucide-chevrons-up-down"
     :items="modelList"
     class="w-36"
   />

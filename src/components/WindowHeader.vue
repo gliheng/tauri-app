@@ -5,11 +5,13 @@ import Tabs from "@/components/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
 
 const { toggleExpanded } = useTabsStore();
+const tauri = isTauri();
+const platform = navigator.platform;
 </script>
 
 <template>
   <header class="flex flex-row items-center bg-elevated shadow select-none">
-    <WindowControls v-if="isTauri()" />
+    <WindowControls v-if="tauri && platform === 'macos'" />
     <Tabs>
       <template #extra>
         <slot name="extra">
@@ -35,6 +37,7 @@ const { toggleExpanded } = useTabsStore();
         </slot>
       </template>
     </Tabs>
+    <WindowControls v-if="tauri && platform === 'Win32'" />
   </header>
 </template>
 
