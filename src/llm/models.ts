@@ -19,4 +19,8 @@ export const modelList = [
     label: "Qwen3",
     value: "silliconflow::Qwen/Qwen3-32B"
   },
+  {
+    label: "QwQ",
+    value: "silliconflow::Qwen/QwQ-32B"
+  },
 ];

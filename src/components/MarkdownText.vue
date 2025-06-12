@@ -46,6 +46,10 @@ watch(
   <div v-html="html"></div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss">
+.shiki {
+  overflow-x: auto;
+}
+</style>
 
 <style src="@/assets/markdown.css"></style>
