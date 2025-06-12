@@ -15,4 +15,8 @@ export const modelList = [
     label: "Gemini",
     value: "openrouter::google/gemini-2.5-pro-preview",
   },
+  {
+    label: "Qwen3",
+    value: "silliconflow::Qwen/Qwen3-32B"
+  },
 ];
