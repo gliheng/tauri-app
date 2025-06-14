@@ -10,7 +10,7 @@ const { tabs, activeTab } = storeToRefs(store);
 <template>
   <div class="flex items-center gap-2 flex-col w-full relative">
     <div
-      class="relative flex p-1 items-center w-full gap-1"
+      class="relative flex p-1 items-center w-full gap-1 whitespace-nowrap"
       data-tauri-drag-region
     >
       <UButton

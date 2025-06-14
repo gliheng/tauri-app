@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick } from "vue";
+import { provide, computed, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { AnimatePresence } from "motion-v";
@@ -8,6 +8,7 @@ import ChatBox from "@/components/ChatBox.vue";
 import MessageList from "@/components/MessageList.vue";
 import { useChat } from "@/hooks/useChat";
 import { getChat } from "@/db";
+import { CHAT_ACTIONS } from "@/constants";
 
 const route = useRoute();
 const id = route.params.id as string;
@@ -19,7 +20,9 @@ const viewWidth = computed(() =>
   expanded.value ? undefined : Math.min(screen.width / 3, 600),
 );
 
-const { status, messages, setMessages } = useChat({ id });
+const { status, messages, setMessages, reload } = useChat({ id });
+
+provide(CHAT_ACTIONS, { reload });
 
 // initialMessages not useful for multiple calls to useChat
 nextTick(() => {
@@ -46,7 +49,6 @@ const showMessageList = computed(() => {
         key="message-list"
         :initial="initialData ? false : 'hidden'"
         animate="visible"
-        exit="hidden"
         :variants="{
           visible: { maxHeight: '100%' },
           hidden: { maxHeight: '0' },

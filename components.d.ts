@@ -35,6 +35,7 @@ declare module 'vue' {
     USwitch: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Switch.vue')['default']
     UTabs: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Tabs.vue')['default']
     UTextarea: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Textarea.vue')['default']
+    UTooltip: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Tooltip.vue')['default']
     WindowControls: typeof import('./src/components/WindowControls.vue')['default']
     WindowHeader: typeof import('./src/components/WindowHeader.vue')['default']
   }

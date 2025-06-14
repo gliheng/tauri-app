@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, PropType } from "vue";
+import { computed, PropType, inject } from "vue";
 import { tv } from "tailwind-variants";
 import { Message } from "ai";
 import MarkdownText from "./MarkdownText.vue";
+import { CHAT_ACTIONS } from "@/constants";
 
 const props = defineProps({
   role: {
@@ -18,20 +19,26 @@ const props = defineProps({
 });
 
 const bubbleStyle = tv({
-  base: "w-fit p-2 max-w-full",
+  base: "w-fit max-w-full",
   variants: {
     role: {
-      user: "self-end rounded-md bg-gray-100 dark:bg-gray-800",
+      user: "self-end",
       assistant: "self-start",
     },
   },
 });
 
 const displayParts = computed(() => props.parts ?? []);
+
+function copyText(text: string) {
+  navigator.clipboard.writeText(text);
+}
+
+const { reload } = inject(CHAT_ACTIONS);
 </script>
 
 <template>
-  <div :class="bubbleStyle({ role })">
+  <section :class="bubbleStyle({ role })">
     <div v-if="role == 'assistant'">
       <h1 class="flex items-center gap-2 mb-2">
         <UAvatar icon="i-mdi-robot" size="md" />
@@ -43,7 +50,27 @@ const displayParts = computed(() => props.parts ?? []);
           :key="i"
           class="mb-2 empty:hidden"
         >
-          <MarkdownText v-if="part.type == 'text'" :markdown="part.text" />
+          <div v-if="part.type == 'text'">
+            <MarkdownText :markdown="part.text" />
+            <div class="flex flex-row gap-1 mt-2">
+              <UTooltip text="Copy text">
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  trailing-icon="i-lucide-copy"
+                  @click="copyText(part.text)"
+                />
+              </UTooltip>
+              <UTooltip text="Reload">
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  trailing-icon="i-lucide-refresh-cw"
+                  @click="reload"
+                />
+              </UTooltip>
+            </div>
+          </div>
           <UCollapsible
             v-else-if="part.type == 'reasoning'"
             class="flex flex-col gap-2"
@@ -75,8 +102,12 @@ const displayParts = computed(() => props.parts ?? []);
         </div>
       </div>
     </div>
-    <div v-else>{{ content }}</div>
-  </div>
+    <div v-else>
+      <p class="p-2 rounded-md bg-gray-100 dark:bg-gray-800">
+        {{ content }}
+      </p>
+    </div>
+  </section>
 </template>
 
 <style lang="scss" scoped></style>
