@@ -20,21 +20,19 @@ const viewWidth = computed(() =>
   expanded.value ? undefined : Math.min(screen.width / 3, 600),
 );
 
-const { status, messages, setMessages, reload } = useChat({ id });
+const { status, messages, setMessages, reload, append } = useChat({
+  id,
+});
 
-provide(CHAT_ACTIONS, { reload });
+provide(CHAT_ACTIONS, { reload, stop, append });
 
 // initialMessages not useful for multiple calls to useChat
 nextTick(() => {
   setMessages(initialData?.messages.map((e) => e.data) ?? []);
 });
 
-if (initialData) {
-  setMessages(initialData.messages.map((e) => e.data));
-}
-
 const showMessageList = computed(() => {
-  return initialData?.messages.length || status.value != "ready";
+  return messages.value.length || status.value != "ready";
 });
 </script>
 
