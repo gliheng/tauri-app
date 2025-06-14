@@ -35,6 +35,7 @@ const displayMessages = computed(() => {
         v-for="message in displayMessages"
         :key="message.id"
         v-bind="message"
+        :last="message.id === displayMessages[displayMessages.length - 1].id"
       />
     </div>
   </motion.div>

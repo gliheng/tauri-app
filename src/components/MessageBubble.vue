@@ -16,6 +16,10 @@ const props = defineProps({
   },
   parts: Array as PropType<Message["parts"][]>,
   // createdAt: Date,
+  last: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const bubbleStyle = tv({
@@ -61,7 +65,7 @@ const { reload } = inject(CHAT_ACTIONS);
                   @click="copyText(part.text)"
                 />
               </UTooltip>
-              <UTooltip text="Reload">
+              <UTooltip v-if="last" text="Reload">
                 <UButton
                   color="neutral"
                   variant="soft"

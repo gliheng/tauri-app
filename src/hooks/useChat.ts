@@ -27,9 +27,6 @@ export function useChat(opts: { id: string; initialMessages?: Message[] }) {
       const ret = streamText({
         model: getModel(data?.model),
         messages: convertToCoreMessages(messages),
-        onChunk: (chunk) => {
-          console.info(chunk);
-        },
         onFinish: async ({ response }) => {
           const messages = appendResponseMessages({
             messages: [userMessage],

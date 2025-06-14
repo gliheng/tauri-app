@@ -1,4 +1,4 @@
-import { JSONValue, Message, UIMessage } from "ai";
+import { Message } from "ai";
 
 let db: IDBDatabase;
 
@@ -30,6 +30,9 @@ export async function init() {
         autoIncrement: true,
       });
       messageStore.createIndex("chatId", "chatId", { unique: false });
+      messageStore.createIndex("chatIdAndMessageId", ["chatId", "id"], {
+        unique: true,
+      });
     };
   });
 }
@@ -61,13 +64,16 @@ export async function writeMessages(chatId: string, messages: Message[]) {
   const store = tr.objectStore("message");
   const writeMessage = (data: Message) => {
     return new Promise((resolve, reject) => {
-      const request = store.add({
+      const record = {
         chatId,
+        id: data.id,
         data,
-      });
+      };
+      console.log("Writing message:", record);
+      const request = store.add(record);
 
       request.onsuccess = () => {
-        resolve(undefined);
+        resolve(null);
       };
 
       request.onerror = (event: Event) => {
@@ -76,6 +82,7 @@ export async function writeMessages(chatId: string, messages: Message[]) {
       };
     });
   };
+
   for (const msg of messages) {
     await writeMessage(msg);
   }
@@ -232,6 +239,28 @@ export function searchChats(query: string): Promise<Chat[]> {
   });
 }
 
+async function getMessageForChat(chatId: string, id: string) {
+  const tr = db.transaction(["message"], "readonly");
+  const store = tr.objectStore("message");
+  const request = store.index("chatIdAndMessageId").get([chatId, id]);
+
+  return new Promise<Message | null>((resolve, reject) => {
+    request.onsuccess = () => {
+      const message = request.result;
+      if (message && message.chatId === chatId) {
+        resolve(message);
+      } else {
+        resolve(null);
+      }
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting message for chat:", event);
+      reject(event);
+    };
+  });
+}
+
 // Export/Import functionality
 
 interface ExportData {
@@ -363,100 +392,6 @@ export function clearDatabase(): Promise<void> {
 
     clearMessagesRequest.onerror = (event: Event) => {
       console.error("Error clearing messages:", event);
-      reject(event);
-    };
-  });
-}
-
-/**
- * Get messages for a chat with pagination
- */
-export function getMessagesForChat(
-  chatId: string,
-  options: {
-    limit?: number;
-    offset?: number;
-    sortDirection?: "asc" | "desc";
-  } = {},
-): Promise<Message[]> {
-  const { limit = 50, offset = 0, sortDirection = "asc" } = options;
-
-  return new Promise((resolve, reject) => {
-    const tr = db.transaction(["message"], "readonly");
-    const store = tr.objectStore("message");
-
-    // Create a range for this chat's messages
-    const range = IDBKeyRange.bound([chatId, 0], [chatId, Infinity]);
-
-    const messages: Message[] = [];
-    let skipped = 0;
-    let count = 0;
-
-    // Use a cursor to iterate through the messages
-    const cursorDirection: IDBCursorDirection =
-      sortDirection === "desc" ? "prev" : "next";
-    const request = store.openCursor(range, cursorDirection);
-
-    request.onsuccess = (event: Event) => {
-      const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-
-      if (cursor) {
-        // Skip messages based on offset
-        if (skipped < offset) {
-          skipped++;
-          cursor.continue();
-          return;
-        }
-
-        // Add message to result if within limit
-        if (count < limit) {
-          messages.push(cursor.value);
-          count++;
-          cursor.continue();
-        } else {
-          // We've reached the limit
-          resolve(messages);
-        }
-      } else {
-        // No more messages
-        resolve(messages);
-      }
-    };
-
-    request.onerror = (event: Event) => {
-      console.error("Error getting paginated messages:", event);
-      reject(event);
-    };
-  });
-}
-
-/**
- * Count the number of messages in a chat
- */
-export function countMessagesInChat(chatId: string): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const tr = db.transaction(["message"], "readonly");
-    const store = tr.objectStore("message");
-
-    // Create a range for this chat's messages
-    const range = IDBKeyRange.bound([chatId, 0], [chatId, Infinity]);
-
-    let count = 0;
-    const request = store.openCursor(range);
-
-    request.onsuccess = (event: Event) => {
-      const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-      if (cursor) {
-        count++;
-        cursor.continue();
-      } else {
-        // No more messages
-        resolve(count);
-      }
-    };
-
-    request.onerror = (event: Event) => {
-      console.error("Error counting messages:", event);
       reject(event);
     };
   });
