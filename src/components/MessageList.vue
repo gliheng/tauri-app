@@ -15,10 +15,7 @@ const props = defineProps({
 });
 
 const displayMessages = computed(() => {
-  const list = [...props.messages];
-  if (props.status === "submitted") {
-    list.push({ id: "thinking", role: "assistant", content: "Thinking ..." });
-  }
+  const list: Message[] = [...props.messages];
   return list;
 });
 </script>
@@ -36,6 +33,14 @@ const displayMessages = computed(() => {
         :key="message.id"
         v-bind="message"
         :last="message.id === displayMessages[displayMessages.length - 1].id"
+      />
+      <MessageBubble
+        v-if="props.status == 'submitted'"
+        key="thinking"
+        id="thinking"
+        role="assistant"
+        content="Thinking ..."
+        loading
       />
     </div>
   </motion.div>

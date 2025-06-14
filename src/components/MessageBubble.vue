@@ -20,6 +20,7 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  loading: Boolean,
 });
 
 const bubbleStyle = tv({
@@ -48,7 +49,7 @@ const { reload } = inject(CHAT_ACTIONS);
         <UAvatar icon="i-mdi-robot" size="md" />
         Assistant
       </h1>
-      <div>
+      <div :class="{ 'animate-bounce': loading }">
         <div
           v-for="(part, i) in displayParts"
           :key="i"
