@@ -1,28 +1,37 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick } from "vue";
 import { useRoute } from "vue-router";
-import { nanoid } from "nanoid";
 import { storeToRefs } from "pinia";
 import { AnimatePresence } from "motion-v";
 import { useTabsStore } from "@/stores/tabs";
 import ChatBox from "@/components/ChatBox.vue";
 import MessageList from "@/components/MessageList.vue";
 import { useChat } from "@/hooks/useChat";
+import { getChat } from "@/db";
 
 const route = useRoute();
-const id = (route.params.id as string) ?? nanoid();
+const id = route.params.id as string;
+const initialData = await getChat(id);
 
 const { expanded } = storeToRefs(useTabsStore());
 
 const viewWidth = computed(() =>
   expanded.value ? undefined : Math.min(screen.width / 3, 600),
 );
-const { status, messages } = useChat({
-  id,
+
+const { status, messages, setMessages } = useChat({ id });
+
+// initialMessages not useful for multiple calls to useChat
+nextTick(() => {
+  setMessages(initialData?.messages.map((e) => e.data) ?? []);
 });
 
+if (initialData) {
+  setMessages(initialData.messages.map((e) => e.data));
+}
+
 const showMessageList = computed(() => {
-  return !(status.value == "ready" && messages.value.length == 0);
+  return initialData?.messages.length || status.value != "ready";
 });
 </script>
 
@@ -35,7 +44,7 @@ const showMessageList = computed(() => {
         :messages="messages"
         :status="status"
         key="message-list"
-        initial="hidden"
+        :initial="initialData ? false : 'hidden'"
         animate="visible"
         exit="hidden"
         :variants="{

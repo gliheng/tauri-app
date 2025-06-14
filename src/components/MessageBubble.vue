@@ -3,7 +3,6 @@ import { computed, PropType } from "vue";
 import { tv } from "tailwind-variants";
 import { Message } from "ai";
 import MarkdownText from "./MarkdownText.vue";
-import Spinner from "./Spinner.vue";
 
 const props = defineProps({
   role: {
@@ -15,7 +14,7 @@ const props = defineProps({
     required: true,
   },
   parts: Array as PropType<Message["parts"][]>,
-  createdAt: Date,
+  // createdAt: Date,
 });
 
 const bubbleStyle = tv({
@@ -57,11 +56,11 @@ const displayParts = computed(() => props.parts ?? []);
               variant="subtle"
               trailing-icon="i-lucide-chevron-down"
               :ui="{
+                base: i === displayParts.length - 1 ? 'animate-pulse' : '',
                 trailingIcon:
                   'group-data-[state=open]:rotate-180 transition-transform duration-200',
               }"
             >
-              <Spinner slot="leading" />
             </UButton>
             <template #content>
               <MarkdownText class="text-zinc-400" :markdown="part.reasoning" />

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 import DefaultLayout from "./layouts/DefaultLayout.vue";
+import Spinner from "./components/Spinner.vue";
 </script>
 
 <template>
@@ -8,7 +9,14 @@ import DefaultLayout from "./layouts/DefaultLayout.vue";
     <DefaultLayout>
       <RouterView v-slot="{ Component, route }">
         <KeepAlive>
-          <component :is="Component" :key="route.path" />
+          <Suspense>
+            <component v-if="Component" :is="Component" :key="route.path" />
+            <template #fallback>
+              <div class="size-full flex items-center justify-center">
+                <Spinner />
+              </div>
+            </template>
+          </Suspense>
         </KeepAlive>
       </RouterView>
     </DefaultLayout>

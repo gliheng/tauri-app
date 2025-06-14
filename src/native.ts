@@ -2,7 +2,7 @@ import { TrayIcon, TrayIconOptions } from "@tauri-apps/api/tray";
 import { defaultWindowIcon } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-export async function setup() {
+export async function init() {
   const options: TrayIconOptions = {
     icon: (await defaultWindowIcon()) as any,
     action: async (evt) => {

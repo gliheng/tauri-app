@@ -1,43 +1,65 @@
 <template>
   <div class="loader"></div>
+  <slot />
 </template>
 
-<script lang="ts" setup>
-
-</script>
+<script lang="ts" setup></script>
 
 <style lang="scss" scoped>
-.loader, .loader:before, .loader:after {
-  border-radius: 50%;
-  width: 2.5em;
-  height: 2.5em;
-  animation-fill-mode: both;
-  animation: bblFadInOut 1.8s infinite ease-in-out;
-}
 .loader {
-  color: blue;
-  font-size: 7px;
+  width: 108px;
+  height: 16px;
+  background:
+    radial-gradient(
+      circle 8px at 8px center,
+      var(--ui-color-primary-500) 100%,
+      transparent 0
+    ),
+    radial-gradient(
+      circle 8px at 8px center,
+      var(--ui-color-primary-500) 100%,
+      transparent 0
+    );
+  background-size: 16px 16px;
+  background-repeat: no-repeat;
   position: relative;
-  text-indent: -9999em;
-  transform: translateZ(0);
-  animation-delay: -0.16s;
-}
-.loader:before,
-.loader:after {
-  content: '';
-  position: absolute;
-  top: 0;
+  animation: ballX 1s linear infinite;
 }
 .loader:before {
-  left: -3.5em;
-  animation-delay: -0.32s;
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ui-color-primary-500);
+  inset: 0;
+  margin: auto;
+  animation: moveX 1s cubic-bezier(0.5, 300, 0.5, -300) infinite;
 }
-.loader:after {
-  left: 3.5em;
+@keyframes ballX {
+  0%,
+  25%,
+  50%,
+  75%,
+  100% {
+    background-position:
+      25% 0,
+      75% 0;
+  }
+  40% {
+    background-position:
+      25% 0,
+      85% 0;
+  }
+  90% {
+    background-position:
+      15% 0,
+      75% 0;
+  }
 }
-
-@keyframes bblFadInOut {
-  0%, 80%, 100% { box-shadow: 0 2.5em 0 -1.3em }
-  40% { box-shadow: 0 2.5em 0 0 }
+@keyframes moveX {
+  100% {
+    transform: translate(0.15px);
+  }
 }
 </style>
