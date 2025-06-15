@@ -49,6 +49,13 @@ export const useTabsStore = defineStore("tabs", () => {
       }
       saveTabs(tabs.value);
     },
+    setTitle(id: string, topic: string) {
+      const tab = tabs.value.find((tab) => tab.id === id);
+      if (tab) {
+        tab.label = topic;
+        saveTabs(tabs.value);
+      }
+    },
   };
 });
 

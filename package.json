@@ -19,6 +19,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@vueuse/core": "^13.3.0",
     "ai": "^4.3.16",
+    "dedent": "^1.6.0",
     "lodash-es": "^4.17.21",
     "marked": "^15.0.12",
     "marked-highlight": "^2.2.1",

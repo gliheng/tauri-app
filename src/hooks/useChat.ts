@@ -7,6 +7,8 @@ import {
 import { getModel } from "@/llm";
 import { useChat as aiUseChat } from "@ai-sdk/vue";
 import { writeChat, writeMessages } from "@/db";
+import { generateTopic } from "@/llm/prompt";
+import { useTabsStore } from "@/stores/tabs";
 
 export function useChat(opts: { id: string; initialMessages?: Message[] }) {
   return aiUseChat({
@@ -15,14 +17,15 @@ export function useChat(opts: { id: string; initialMessages?: Message[] }) {
     sendExtraMessageFields: true,
     fetch: async (_url, req) => {
       const { messages, data } = JSON.parse(req!.body as unknown as string);
+      const userMessage = messages[messages.length - 1];
       if (messages.length === 1) {
-        // TODO: Gnerate topic
+        const { text: topic } = await generateTopic(messages[0].content);
         await writeChat({
           id: opts.id,
-          topic: "just some chat",
+          topic,
         });
+        useTabsStore().setTitle(opts.id, topic);
       }
-      const userMessage = messages[messages.length - 1];
       // await writeMessages(opts.id, [userMessage]);
       const ret = streamText({
         model: getModel(data?.model),

@@ -2282,6 +2282,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dedent@npm:^1.6.0":
+  version: 1.6.0
+  resolution: "dedent@npm:1.6.0"
+  peerDependencies:
+    babel-plugin-macros: ^3.1.0
+  peerDependenciesMeta:
+    babel-plugin-macros:
+      optional: true
+  checksum: 10c0/671b8f5e390dd2a560862c4511dd6d2638e71911486f78cb32116551f8f2aa6fcaf50579ffffb2f866d46b5b80fd72470659ca5760ede8f967619ef7df79e8a5
+  languageName: node
+  linkType: hard
+
 "defu@npm:^6.1.4":
   version: 6.1.4
   resolution: "defu@npm:6.1.4"
@@ -4639,6 +4651,7 @@ __metadata:
     "@vueuse/core": "npm:^13.3.0"
     ai: "npm:^4.3.16"
     clsx: "npm:^2.1.1"
+    dedent: "npm:^1.6.0"
     lodash-es: "npm:^4.17.21"
     marked: "npm:^15.0.12"
     marked-highlight: "npm:^2.2.1"
