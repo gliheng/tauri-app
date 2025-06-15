@@ -32,6 +32,13 @@ export const useTabsStore = defineStore("tabs", () => {
       saveTabs(tabs.value);
       return id;
     },
+    openTab(id: string, title: string) {
+      if (tabs.value.some((tab) => tab.id === id)) {
+        return;
+      }
+      tabs.value.push({ id, label: title });
+      saveTabs(tabs.value);
+    },
     removeTab(id: string) {
       const activeRemoved = activeTab.value === id;
       tabs.value = tabs.value.filter((tab) => tab.id !== id);

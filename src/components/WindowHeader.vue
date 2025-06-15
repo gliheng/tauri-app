@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { isTauri } from "@tauri-apps/api/core";
 import Settings from "@/components/Settings.vue";
 import Tabs from "@/components/Tabs.vue";
@@ -7,6 +8,13 @@ import { useTabsStore } from "@/stores/tabs";
 const { toggleExpanded } = useTabsStore();
 const tauri = isTauri();
 const platform = navigator.platform;
+
+const commandPaletteOpen = ref(false);
+defineShortcuts({
+  meta_p: () => {
+    commandPaletteOpen.value = !commandPaletteOpen.value;
+  },
+});
 </script>
 
 <template>
@@ -15,10 +23,10 @@ const platform = navigator.platform;
     <Tabs>
       <template #extra>
         <slot name="extra">
-          <UModal>
+          <UModal v-model:open="commandPaletteOpen">
             <UButton icon="i-mdi-history" color="neutral" variant="ghost" />
             <template #content>
-              <CommandPalette />
+              <CommandPalette @close="commandPaletteOpen = false" />
             </template>
           </UModal>
           <ThemeSwitcher />

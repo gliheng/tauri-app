@@ -1,77 +1,36 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { getChatList, Chat } from "@/db";
+import { useTabsStore } from "@/stores/tabs";
 
 const toast = useToast();
+const chatList = ref<Chat[]>([]);
+const loading = ref(true);
+const { openTab } = useTabsStore();
+const router = useRouter();
 
-const groups = ref([
+const emit = defineEmits<{
+  close: void;
+}>();
+
+onMounted(async () => {
+  const list = await getChatList();
+  chatList.value = list;
+  loading.value = false;
+});
+
+const groups = computed(() => [
   {
-    id: "sessions",
-    label: "Sessions",
-    items: [
-      {
-        label: "Benjamin Canac",
-        suffix: "benjamincanac",
-        to: "https://github.com/benjamincanac",
-        target: "_blank",
-        avatar: {
-          src: "https://github.com/benjamincanac.png",
-        },
-      },
-      {
-        label: "Sylvain Marroufin",
-        suffix: "smarroufin",
-        to: "https://github.com/smarroufin",
-        target: "_blank",
-        avatar: {
-          src: "https://github.com/smarroufin.png",
-        },
-      },
-      {
-        label: "Sébastien Chopin",
-        suffix: "atinux",
-        to: "https://github.com/atinux",
-        target: "_blank",
-        avatar: {
-          src: "https://github.com/atinux.png",
-        },
-      },
-      {
-        label: "Romain Hamel",
-        suffix: "romhml",
-        to: "https://github.com/romhml",
-        target: "_blank",
-        avatar: {
-          src: "https://github.com/romhml.png",
-        },
-      },
-      {
-        label: "Haytham A. Salama",
-        suffix: "Haythamasalama",
-        to: "https://github.com/Haythamasalama",
-        target: "_blank",
-        avatar: {
-          src: "https://github.com/Haythamasalama.png",
-        },
-      },
-      {
-        label: "Daniel Roe",
-        suffix: "danielroe",
-        to: "https://github.com/danielroe",
-        target: "_blank",
-        avatar: {
-          src: "https://github.com/danielroe.png",
-        },
-      },
-      {
-        label: "Neil Richter",
-        suffix: "noook",
-        to: "https://github.com/noook",
-        target: "_blank",
-        avatar: {
-          src: "https://github.com/noook.png",
-        },
-      },
-    ],
+    id: "chat-sessions",
+    label: "Chat Sessions",
+    items: chatList.value.map((e) => ({
+      id: e.id,
+      label: e.topic,
+      icon: "i-lucide-message-circle",
+      // suffix: "benjamincanac",
+      // to: "https://github.com/benjamincanac",
+    })),
   },
   {
     id: "actions",
@@ -117,14 +76,17 @@ const groups = ref([
 ]);
 
 function onSelect(item: any) {
-  console.log(item);
+  openTab(item.id, item.label);
+  router.push({ name: "chat", params: { id: item.id } });
+  emit("close");
 }
 </script>
 
 <template>
   <UCommandPalette
-    :groups="groups"
     class="flex-1 h-80"
+    :groups="groups"
+    :loading="loading"
     @update:model-value="onSelect"
   />
 </template>

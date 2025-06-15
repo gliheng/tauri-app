@@ -37,7 +37,7 @@ export async function init() {
   });
 }
 
-interface Chat {
+export interface Chat {
   id: string;
   topic: string;
 }
@@ -105,7 +105,7 @@ export function getChatList(): Promise<Chat[]> {
   });
 }
 
-interface ChatMessage {
+export interface ChatMessage {
   chatId: string;
   id: string;
   data: Message;
