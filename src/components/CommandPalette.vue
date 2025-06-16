@@ -4,11 +4,12 @@ import { useRouter } from "vue-router";
 import moment from "moment";
 import { getAllChats, deleteChat, Chat } from "@/db";
 import { useTabsStore } from "@/stores/tabs";
+import { confirm } from '@tauri-apps/plugin-dialog';
 
 const toast = useToast();
 const list = await getAllChats();
 const chatList = ref<Chat[]>(list);
-const { openTab, closeTab } = useTabsStore();
+const { openTab, closeTab, addTab } = useTabsStore();
 const router = useRouter();
 
 const emit = defineEmits<{
@@ -20,7 +21,7 @@ const groups = computed(() => [
     id: "chat-sessions",
     label: "Chat Sessions",
     items: chatList.value.map((e) => ({
-      id: e.id,
+      chatId: e.id,
       label: e.topic,
       icon: "i-lucide-message-circle",
       suffix: moment(e.updatedAt).fromNow(),
@@ -31,39 +32,13 @@ const groups = computed(() => [
     id: "actions",
     items: [
       {
-        label: "Add new file",
-        suffix: "Create a new file in the current directory or workspace.",
+        label: "Add new chat",
+        suffix: "Add new chat",
         icon: "i-lucide-file-plus",
         kbds: ["meta", "N"],
         onSelect() {
           toast.add({ title: "Add new file" });
-        },
-      },
-      {
-        label: "Add new folder",
-        suffix: "Create a new folder in the current directory or workspace.",
-        icon: "i-lucide-folder-plus",
-        kbds: ["meta", "F"],
-        onSelect() {
-          toast.add({ title: "Add new folder" });
-        },
-      },
-      {
-        label: "Add hashtag",
-        suffix: "Add a hashtag to the current item.",
-        icon: "i-lucide-hash",
-        kbds: ["meta", "H"],
-        onSelect() {
-          toast.add({ title: "Add hashtag" });
-        },
-      },
-      {
-        label: "Add label",
-        suffix: "Add a label to the current item.",
-        icon: "i-lucide-tag",
-        kbds: ["meta", "L"],
-        onSelect() {
-          toast.add({ title: "Add label" });
+          addTab();
         },
       },
     ],
@@ -71,14 +46,24 @@ const groups = computed(() => [
 ]);
 
 function onSelect(item: any) {
-  openTab(item.id, item.label);
-  router.push({ name: "chat", params: { id: item.id } });
-  emit("close");
+  const { chatId } = item;
+  if (chatId) {
+    openTab(chatId, item.label);
+    router.push({ name: "chat", params: { id: chatId } });
+    emit("close");
+  }
 }
 
-function removeChat(item: any) {
-  closeTab(item.id);
-  deleteChat(item.id);
+async function removeChat(item: any) {
+  const ok = await confirm(
+    'This action cannot be reverted. Are you sure?',
+    { title: 'Delete chat', kind: 'warning' }
+  );
+
+  if (ok) {
+    closeTab(item.id);
+    deleteChat(item.id);
+  }
 }
 </script>
 
