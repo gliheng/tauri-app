@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { getChatList, Chat } from "@/db";
+import moment from "moment";
+import { getAllChats, Chat } from "@/db";
 import { useTabsStore } from "@/stores/tabs";
 
 const toast = useToast();
-const list = await getChatList();
+const list = await getAllChats();
 const chatList = ref<Chat[]>(list);
 const { openTab } = useTabsStore();
 const router = useRouter();
@@ -22,8 +23,7 @@ const groups = computed(() => [
       id: e.id,
       label: e.topic,
       icon: "i-lucide-message-circle",
-      // suffix: "benjamincanac",
-      // to: "https://github.com/benjamincanac",
+      suffix: moment(e.updatedAt).fromNow(),
     })),
   },
   {

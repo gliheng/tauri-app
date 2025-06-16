@@ -6,7 +6,7 @@ import {
 } from "ai";
 import { getModel } from "@/llm";
 import { useChat as aiUseChat } from "@ai-sdk/vue";
-import { writeChat, writeMessages } from "@/db";
+import { updateChat, writeChat, writeMessages } from "@/db";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 
@@ -18,14 +18,23 @@ export function useChat(opts: { id: string; initialMessages?: Message[] }) {
     fetch: async (_url, req) => {
       const { messages, data } = JSON.parse(req!.body as unknown as string);
       const userMessage = messages[messages.length - 1];
-      if (messages.length === 1) {
-        const { text: topic } = await generateTopic(messages[0].content);
-        await writeChat({
-          id: opts.id,
-          topic,
-        });
-        useTabsStore().setTitle(opts.id, topic);
-      }
+      // Async update chat meta data
+      (async () => {
+        if (messages.length === 1) {
+          const { text: topic } = await generateTopic(messages[0].content);
+          await writeChat({
+            id: opts.id,
+            topic,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          useTabsStore().setTitle(opts.id, topic);
+        } else {
+          await updateChat(opts.id, {
+            updatedAt: new Date(),
+          });
+        }
+      })();
       // await writeMessages(opts.id, [userMessage]);
       const ret = streamText({
         model: getModel(data?.model),

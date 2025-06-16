@@ -34,7 +34,7 @@ defineShortcuts({
               <Suspense>
                 <CommandPalette @close="commandPaletteOpen = false" />
                 <template #fallback>
-                  <div class="size-full flex items-center justify-center">
+                  <div class="h-30 flex items-center justify-center">
                     <Spinner />
                   </div>
                 </template>

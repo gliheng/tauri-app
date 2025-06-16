@@ -24,13 +24,13 @@ export async function init() {
 
       // Create an objectStore for this database
       const chatStore = db.createObjectStore("chat", { keyPath: "id" });
-      // chatStore.createIndex("topic", "topic", { unique: false });
+      chatStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
 
       const messageStore = db.createObjectStore("message", {
         autoIncrement: true,
       });
       messageStore.createIndex("chatId", "chatId", { unique: false });
-      messageStore.createIndex("chatIdAndMessageId", ["chatId", "id"], {
+      messageStore.createIndex("byChatIdAndMessageId", ["chatId", "id"], {
         unique: true,
       });
     };
@@ -40,6 +40,8 @@ export async function init() {
 export interface Chat {
   id: string;
   topic: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export function writeChat(data: Chat): Promise<void> {
@@ -88,14 +90,15 @@ export async function writeMessages(chatId: string, messages: Message[]) {
   }
 }
 
-export function getChatList(): Promise<Chat[]> {
+export function getAllChats(): Promise<Chat[]> {
   return new Promise((resolve, reject) => {
     const tr = db.transaction(["chat"], "readonly");
     const store = tr.objectStore("chat");
-    const request = store.getAll();
+    const chatIndex = store.index('byUpdateTime');
+    const request = chatIndex.getAll();
 
     request.onsuccess = () => {
-      resolve(request.result);
+      resolve(request.result.reverse());
     };
 
     request.onerror = (event: Event) => {
@@ -242,7 +245,7 @@ export function searchChats(query: string): Promise<Chat[]> {
 async function getMessageForChat(chatId: string, id: string) {
   const tr = db.transaction(["message"], "readonly");
   const store = tr.objectStore("message");
-  const request = store.index("chatIdAndMessageId").get([chatId, id]);
+  const request = store.index("byChatIdAndMessageId").get([chatId, id]);
 
   return new Promise<Message | null>((resolve, reject) => {
     request.onsuccess = () => {
@@ -276,7 +279,7 @@ interface ExportData {
 export async function exportData(): Promise<ExportData> {
   try {
     // Get all chats
-    const chats = await getChatList();
+    const chats = await getAllChats();
 
     // Get all messages
     const messages: Message[] = [];
