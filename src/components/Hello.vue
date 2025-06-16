@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-greetMsg.value = await invoke("greet", { name: name.value });
 
+const name = ref("");
+const greetMsg = ref("");
+
+async function greet() {
+  greetMsg.value = await invoke("greet", { name: name.value });
+}
 </script>
 
 <template>
@@ -16,6 +20,4 @@ greetMsg.value = await invoke("greet", { name: name.value });
   </main>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

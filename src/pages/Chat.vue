@@ -24,16 +24,14 @@ const { status, messages, setMessages, reload, append } = useChat({
   id,
 });
 
-provide(CHAT_ACTIONS, { reload, stop, append });
-
 // initialMessages not useful for multiple calls to useChat
-nextTick(() => {
-  setMessages(initialData?.messages.map((e) => e.data) ?? []);
-});
+setMessages(initialData?.messages.map((e) => e.data) ?? []);
 
 const showMessageList = computed(() => {
   return messages.value.length || status.value != "ready";
 });
+
+provide(CHAT_ACTIONS, { reload, stop, append });
 </script>
 
 <template>

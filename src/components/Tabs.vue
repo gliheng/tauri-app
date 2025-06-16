@@ -3,7 +3,7 @@ import { useTabsStore } from "@/stores/tabs";
 import { storeToRefs } from "pinia";
 
 const store = useTabsStore();
-const { removeTab, addTab } = store;
+const { closeTab, addTab } = store;
 const { tabs, activeTab } = storeToRefs(store);
 </script>
 
@@ -29,7 +29,7 @@ const { tabs, activeTab } = storeToRefs(store);
           size="xs"
           color="neutral"
           variant="ghost"
-          @click.stop.prevent="removeTab(tab.id)"
+          @click.stop.prevent="closeTab(tab.id)"
         />
       </UButton>
       <UButton

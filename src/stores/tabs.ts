@@ -39,7 +39,12 @@ export const useTabsStore = defineStore("tabs", () => {
       tabs.value.push({ id, label: title });
       saveTabs(tabs.value);
     },
-    removeTab(id: string) {
+    closeActiveTab() {
+      const id = activeTab.value;
+      if (!id) return;
+      this.closeTab(id);
+    },
+    closeTab(id: string) {
       const activeRemoved = activeTab.value === id;
       tabs.value = tabs.value.filter((tab) => tab.id !== id);
       if (tabs.value.length === 0) {

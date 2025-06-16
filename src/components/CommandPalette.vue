@@ -5,20 +5,14 @@ import { getChatList, Chat } from "@/db";
 import { useTabsStore } from "@/stores/tabs";
 
 const toast = useToast();
-const chatList = ref<Chat[]>([]);
-const loading = ref(true);
+const list = await getChatList();
+const chatList = ref<Chat[]>(list);
 const { openTab } = useTabsStore();
 const router = useRouter();
 
 const emit = defineEmits<{
   close: void;
 }>();
-
-onMounted(async () => {
-  const list = await getChatList();
-  chatList.value = list;
-  loading.value = false;
-});
 
 const groups = computed(() => [
   {
@@ -86,7 +80,6 @@ function onSelect(item: any) {
   <UCommandPalette
     class="flex-1 h-80"
     :groups="groups"
-    :loading="loading"
     @update:model-value="onSelect"
   />
 </template>
