@@ -2,13 +2,13 @@
 import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import moment from "moment";
-import { getAllChats, Chat } from "@/db";
+import { getAllChats, deleteChat, Chat } from "@/db";
 import { useTabsStore } from "@/stores/tabs";
 
 const toast = useToast();
 const list = await getAllChats();
 const chatList = ref<Chat[]>(list);
-const { openTab } = useTabsStore();
+const { openTab, closeTab } = useTabsStore();
 const router = useRouter();
 
 const emit = defineEmits<{
@@ -24,6 +24,7 @@ const groups = computed(() => [
       label: e.topic,
       icon: "i-lucide-message-circle",
       suffix: moment(e.updatedAt).fromNow(),
+      slot: 'remove',
     })),
   },
   {
@@ -74,6 +75,11 @@ function onSelect(item: any) {
   router.push({ name: "chat", params: { id: item.id } });
   emit("close");
 }
+
+function removeChat(item: any) {
+  closeTab(item.id);
+  deleteChat(item.id);
+}
 </script>
 
 <template>
@@ -81,5 +87,9 @@ function onSelect(item: any) {
     class="flex-1 h-80"
     :groups="groups"
     @update:model-value="onSelect"
-  />
+  >
+    <template #remove-trailing="{ item }">
+      <UButton color="error" size="sm" icon="i-lucide-trash" @click.stop="removeChat(item)" />
+    </template>
+  </UCommandPalette>
 </template>
