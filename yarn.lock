@@ -4014,6 +4014,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"reka-ui@npm:^2.3.1":
+  version: 2.3.1
+  resolution: "reka-ui@npm:2.3.1"
+  dependencies:
+    "@floating-ui/dom": "npm:^1.6.13"
+    "@floating-ui/vue": "npm:^1.1.6"
+    "@internationalized/date": "npm:^3.5.0"
+    "@internationalized/number": "npm:^3.5.0"
+    "@tanstack/vue-virtual": "npm:^3.12.0"
+    "@vueuse/core": "npm:^12.5.0"
+    "@vueuse/shared": "npm:^12.5.0"
+    aria-hidden: "npm:^1.2.4"
+    defu: "npm:^6.1.4"
+    ohash: "npm:^2.0.11"
+  peerDependencies:
+    vue: ">= 3.2.0"
+  checksum: 10c0/2f7ec2deb76dab7329fdacd67d8b7031539ba34a5bec60097747ea44bd1b631e992eea481a8cb1bdd317fb266f17dd33d1c9b900cb1c17cc1037348a3eed1651
+  languageName: node
+  linkType: hard
+
 "restructure@npm:^3.0.0":
   version: 3.0.2
   resolution: "restructure@npm:3.0.2"
@@ -4660,6 +4680,7 @@ __metadata:
     motion-v: "npm:^1.1.1"
     nanoid: "npm:^5.1.5"
     pinia: "npm:^3.0.3"
+    reka-ui: "npm:^2.3.1"
     sass-embedded: "npm:^1.89.2"
     shiki: "npm:^3.6.0"
     tailwind-merge: "npm:^3.3.0"
