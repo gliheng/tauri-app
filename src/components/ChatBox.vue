@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { useChat } from "@/hooks/useChat";
 import { modelList } from "@/llm/models";
+import { experimental_createMCPClient } from "ai";
 
 const props = defineProps({
   id: {
@@ -26,7 +27,13 @@ function send(evt: KeyboardEvent) {
     data: {
       model: model.value.value,
     },
+    // experimental_attachments: new FileList(files.value),
   });
+}
+
+const files = ref<File[]>([]);
+function appendFiles(newFiles: FileList) {
+  files.value = [...files.value, ...newFiles];
 }
 </script>
 
@@ -36,6 +43,21 @@ function send(evt: KeyboardEvent) {
       class="rounded-md focus-within:outline-none transition-colors bg-default ring ring-inset ring-accented focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary"
       @submit="send"
     >
+      <section v-if="files.length" class="flex flex-wrap gap-2 p-2">
+        <div v-for="(file, i) in files"
+          :key="file.name"
+          class="w-30 h-20 bg-elevated rounded relative px-2 flex items-center"
+        >
+          <UButton
+            class="absolute right-1 top-1 cursor-pointer rounded-full"
+            size="sm"
+            variant="subtle"
+            icon="i-lucide-trash"
+            @click="files.splice(i, 1)"
+          />
+          <p class="line-clamp">{{ file.name }}</p>
+        </div>
+      </section>
       <UTextarea
         class="w-full"
         v-model.trim="input"
@@ -53,7 +75,7 @@ function send(evt: KeyboardEvent) {
         class="w-full p-2 flex items-center gap-1 pointer-none"
         @mousedown.prevent
       >
-        <UploadButton />
+        <UploadButton @select-file="appendFiles" />
         <ModelSelector v-model="model" />
         <div class="flex-1"></div>
         <UButton
@@ -74,4 +96,11 @@ function send(evt: KeyboardEvent) {
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.line-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;  
+  overflow: hidden;
+}
+</style>
