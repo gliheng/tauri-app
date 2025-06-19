@@ -2,7 +2,7 @@
 import { ref, computed } from "vue";
 import { useChat } from "@/hooks/useChat";
 import { modelList } from "@/llm/models";
-import { experimental_createMCPClient } from "ai";
+import { Attachment, experimental_createMCPClient } from "ai";
 
 const props = defineProps({
   id: {
@@ -20,14 +20,31 @@ const streaming = computed(
   () => status.value == "submitted" || status.value == "streaming",
 );
 
-function send(evt: KeyboardEvent) {
+async function send(evt: KeyboardEvent) {
   if (evt.key == "Enter" && evt.shiftKey) return;
   evt.preventDefault();
+  let attachments: Attachment[] = [];
+  if (files.value.length) {
+    attachments = await Promise.all(files.value.map(file2DataUrl)),
+  }
   handleSubmit(evt, {
     data: {
       model: model.value.value,
     },
-    // experimental_attachments: new FileList(files.value),
+    experimental_attachments: attachments,
+  });
+}
+
+function file2DataUrl(file: File): Promise<Attachment> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({
+      name: file.name,
+      contentType: file.type,
+      url: reader.result as string,
+    });
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 
