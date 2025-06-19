@@ -24,7 +24,8 @@ const { tabs, activeTab } = storeToRefs(store);
         :to="{ name: 'chat', params: { id: tab.id } }"
         >{{ tab.label }}
         <UButton
-          class="-mr-1"
+          slot="trailing"
+          class="-mr-1 -my-1"
           icon="i-mdi-close"
           size="xs"
           color="neutral"

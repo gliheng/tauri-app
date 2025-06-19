@@ -18,6 +18,7 @@ export function useChat(opts: { id: string; initialMessages?: Message[] }) {
     fetch: async (_url, req) => {
       const { messages, data } = JSON.parse(req!.body as unknown as string);
       const userMessage = messages[messages.length - 1];
+      const prevAssistantMessage = messages[messages.length - 2];
       // Async update chat meta data
       (async () => {
         if (messages.length === 1) {
@@ -44,7 +45,7 @@ export function useChat(opts: { id: string; initialMessages?: Message[] }) {
             messages: [userMessage],
             responseMessages: response.messages,
           });
-          await writeMessages(opts.id, messages);
+          await writeMessages(opts.id, messages, prevAssistantMessage?.id);
         },
       });
       return ret.toDataStreamResponse({

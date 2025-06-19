@@ -13,6 +13,7 @@ import { CHAT_ACTIONS } from "@/constants";
 const route = useRoute();
 const id = route.params.id as string;
 const initialData = await getChat(id);
+console.info("initialData", initialData);
 
 const { expanded } = storeToRefs(useTabsStore());
 
@@ -22,6 +23,7 @@ const viewWidth = computed(() =>
 
 const { status, messages, setMessages, reload, append } = useChat({
   id,
+  initialMessages: initialData?.messages.map((e) => e.data) ?? [],
 });
 
 // initialMessages not useful for multiple calls to useChat

@@ -61,32 +61,51 @@ export function writeChat(data: Chat): Promise<void> {
   });
 }
 
-export async function writeMessages(chatId: string, messages: Message[]) {
+export async function writeMessages(
+  chatId: string,
+  messages: Message[],
+  parent: string | undefined,
+) {
   const tr = db.transaction(["message"], "readwrite");
   const store = tr.objectStore("message");
-  const writeMessage = (data: Message) => {
+  const writeMessage = (data: Message, parent: string | undefined) => {
     return new Promise((resolve, reject) => {
       const record = {
         chatId,
         id: data.id,
+        parent,
         data,
       };
-      console.log("Writing message:", record);
-      const request = store.add(record);
 
-      request.onsuccess = () => {
-        resolve(null);
+      const add = () => {
+        const request = store.add(record);
+
+        request.onsuccess = () => {
+          resolve(null);
+        };
+
+        request.onerror = (event: Event) => {
+          console.error("Error writing message:", event);
+          reject(event);
+        };
       };
 
-      request.onerror = (event: Event) => {
-        console.error("Error writing message:", event);
-        reject(event);
+      const msgIndex = store.index("byChatIdAndMessageId");
+      msgIndex.get([record.chatId, record.id]).onsuccess = (evt) => {
+        const existingRecord = (evt.target as IDBRequest).result;
+        if (!existingRecord) {
+          add();
+        } else {
+          resolve(null);
+        }
       };
     });
   };
 
+  let prev: Message | undefined;
   for (const msg of messages) {
-    await writeMessage(msg);
+    await writeMessage(msg, prev?.id ?? parent);
+    prev = msg;
   }
 }
 
@@ -94,7 +113,7 @@ export function getAllChats(): Promise<Chat[]> {
   return new Promise((resolve, reject) => {
     const tr = db.transaction(["chat"], "readonly");
     const store = tr.objectStore("chat");
-    const chatIndex = store.index('byUpdateTime');
+    const chatIndex = store.index("byUpdateTime");
     const request = chatIndex.getAll();
 
     request.onsuccess = () => {
