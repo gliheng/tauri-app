@@ -2,7 +2,9 @@
 import { ref, computed } from "vue";
 import { useChat } from "@/hooks/useChat";
 import { modelList } from "@/llm/models";
-import { Attachment, experimental_createMCPClient } from "ai";
+import { Attachment } from "ai";
+import { file2DataUrl } from "@/utils/file";
+import FileImage from "./FileImage.vue";
 
 const props = defineProps({
   id: {
@@ -25,26 +27,14 @@ async function send(evt: KeyboardEvent) {
   evt.preventDefault();
   let attachments: Attachment[] = [];
   if (files.value.length) {
-    attachments = await Promise.all(files.value.map(file2DataUrl)),
+    attachments = await Promise.all(files.value.map(file2DataUrl));
   }
+  files.value = [];
   handleSubmit(evt, {
     data: {
       model: model.value.value,
     },
     experimental_attachments: attachments,
-  });
-}
-
-function file2DataUrl(file: File): Promise<Attachment> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve({
-      name: file.name,
-      contentType: file.type,
-      url: reader.result as string,
-    });
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
   });
 }
 
@@ -61,10 +51,22 @@ function appendFiles(newFiles: FileList) {
       @submit="send"
     >
       <section v-if="files.length" class="flex flex-wrap gap-2 p-2">
-        <div v-for="(file, i) in files"
+        <div
+          v-for="(file, i) in files"
+          class="w-30 h-20 bg-elevated rounded relative flex items-center"
           :key="file.name"
-          class="w-30 h-20 bg-elevated rounded relative px-2 flex items-center"
+          :data-type="file.type"
         >
+          <div v-if="file.type.startsWith('image/')" class="flex items-center">
+            <FileImage :file="file" class="absolute size-full object-cover" />
+            <span
+              class="absolute bottom-0 px-2 whitespace-nowrap text-ellipsis overflow-hidden w-full pointer-events-none"
+              >{{ file.name }}</span
+            >
+          </div>
+          <p v-else class="px-2 line-clamp">
+            {{ file.name }}
+          </p>
           <UButton
             class="absolute right-1 top-1 cursor-pointer rounded-full"
             size="sm"
@@ -72,7 +74,6 @@ function appendFiles(newFiles: FileList) {
             icon="i-lucide-trash"
             @click="files.splice(i, 1)"
           />
-          <p class="line-clamp">{{ file.name }}</p>
         </div>
       </section>
       <UTextarea
@@ -117,7 +118,7 @@ function appendFiles(newFiles: FileList) {
 .line-clamp {
   display: -webkit-box;
   -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;  
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 </style>

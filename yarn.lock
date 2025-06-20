@@ -4690,6 +4690,7 @@ __metadata:
     typescript: "npm:~5.6.2"
     vite: "npm:^6.0.3"
     vue: "npm:^3.5.13"
+    vue-easy-lightbox: "npm:^1.19.0"
     vue-router: "npm:^4.5.1"
     vue-tsc: "npm:^2.1.10"
     zod: "npm:^3.25.51"
@@ -5260,6 +5261,15 @@ __metadata:
     vue-demi-fix: bin/vue-demi-fix.js
     vue-demi-switch: bin/vue-demi-switch.js
   checksum: 10c0/a9ed8712fa36d01bc13c39757f95f30cebf42d557b99e94bff86d8660c81f2911b41220f7affc023d1ffcc19e13999e4a83019991e264787cca2c616e83aea48
+  languageName: node
+  linkType: hard
+
+"vue-easy-lightbox@npm:^1.19.0":
+  version: 1.19.0
+  resolution: "vue-easy-lightbox@npm:1.19.0"
+  peerDependencies:
+    vue: ^3.0.0
+  checksum: 10c0/1b33a952580618d691ccefc88b254a9999804fbcbaad537dcb8e11d793950e1362cfc28837ab12210901ee20db073467d5ce93663514c3a047adc5e17cdf673e
   languageName: node
   linkType: hard
 

@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ChatBox: typeof import('./src/components/ChatBox.vue')['default']
     CommandPalette: typeof import('./src/components/CommandPalette.vue')['default']
+    FileImage: typeof import('./src/components/FileImage.vue')['default']
     Hello: typeof import('./src/components/Hello.vue')['default']
     MarkdownText: typeof import('./src/components/MarkdownText.vue')['default']
     MessageBubble: typeof import('./src/components/MessageBubble.vue')['default']

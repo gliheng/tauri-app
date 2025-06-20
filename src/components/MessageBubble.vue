@@ -2,8 +2,9 @@
 import { computed, PropType, inject } from "vue";
 import { tv } from "tailwind-variants";
 import { Message } from "ai";
-import MarkdownText from "./MarkdownText.vue";
 import { CHAT_ACTIONS } from "@/constants";
+import MarkdownText from "./MarkdownText.vue";
+import FileImage from "./FileImage.vue";
 
 const props = defineProps({
   role: {
@@ -15,6 +16,9 @@ const props = defineProps({
     required: true,
   },
   parts: Array as PropType<Message["parts"][]>,
+  experimental_attachments: Array as PropType<
+    Message["experimental_attachments"]
+  >,
   // createdAt: Date,
   last: {
     type: Boolean,
@@ -112,6 +116,12 @@ const { reload } = inject(CHAT_ACTIONS);
         {{ content }}
       </p>
     </div>
+    <FileImage
+      v-for="(attachment, index) of experimental_attachments"
+      class="max-w-full mt-2"
+      :key="index"
+      :url="attachment.url"
+    />
   </section>
 </template>
 

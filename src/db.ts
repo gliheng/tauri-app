@@ -140,17 +140,25 @@ export function getChat(chatId: string) {
       const chatStore = tr.objectStore("chat");
       const messageStore = tr.objectStore("message");
 
-      const chatRequest = chatStore.get(chatId);
-      let chat: Chat;
-      const messages: ChatMessage[] = [];
+      const chatTask = new Promise<Chat | null>(async (resolve, reject) => {
+        const chatRequest = chatStore.get(chatId);
+        chatRequest.onsuccess = () => {
+          const chat = chatRequest.result;
+          if (!chat) {
+            resolve(null);
+            return;
+          }
 
-      chatRequest.onsuccess = () => {
-        chat = chatRequest.result;
-        if (!chat) {
-          resolve(null);
-          return;
-        }
+          resolve(chat as Chat);
+        };
 
+        chatRequest.onerror = (event: Event) => {
+          console.error("Error getting chat:", event);
+          reject(event);
+        };
+      });
+
+      const messagesTask = new Promise<ChatMessage[]>((resolve, reject) => {
         const messageIndex = messageStore.index("chatId");
         const messageRequest = messageIndex.getAll(chatId);
         messageRequest.onerror = (event: Event) => {
@@ -158,15 +166,26 @@ export function getChat(chatId: string) {
           reject(event);
         };
         messageRequest.onsuccess = () => {
-          messages.push(...messageRequest.result);
-          resolve({ chat, messages });
+          resolve(messageRequest.result as ChatMessage[]);
         };
-      };
+      });
 
-      chatRequest.onerror = (event: Event) => {
-        console.error("Error getting chat:", event);
-        reject(event);
-      };
+      Promise.all([chatTask, messagesTask]).then(
+        ([chat, messages]) => {
+          if (!chat) {
+            resolve(null);
+            return;
+          }
+          resolve({
+            chat,
+            messages,
+          });
+        },
+        (error) => {
+          console.error("Error getting chat and messages:", error);
+          reject(new Error("Error getting chat and messages"));
+        },
+      );
     },
   );
 }
@@ -256,28 +275,6 @@ export function searchChats(query: string): Promise<Chat[]> {
 
     request.onerror = (event: Event) => {
       console.error("Error searching chats:", event);
-      reject(event);
-    };
-  });
-}
-
-async function getMessageForChat(chatId: string, id: string) {
-  const tr = db.transaction(["message"], "readonly");
-  const store = tr.objectStore("message");
-  const request = store.index("byChatIdAndMessageId").get([chatId, id]);
-
-  return new Promise<Message | null>((resolve, reject) => {
-    request.onsuccess = () => {
-      const message = request.result;
-      if (message && message.chatId === chatId) {
-        resolve(message);
-      } else {
-        resolve(null);
-      }
-    };
-
-    request.onerror = (event: Event) => {
-      console.error("Error getting message for chat:", event);
       reject(event);
     };
   });
