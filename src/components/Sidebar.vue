@@ -6,11 +6,33 @@ import { nanoid } from "nanoid";
 const tabsStore = useTabsStore();
 const router = useRouter();
 
-function addTab() {
-  const id = tabsStore.addTab();
+function addChat() {
+  const id = nanoid();
+  tabsStore.openTab(`/chat/${id}`, "New chat");
   router.push({
     name: "chat",
     params: { id },
+  });
+}
+
+function addAgent() {
+  const id = nanoid();
+  tabsStore.openTab(`/agent/${id}`, "New agent");
+  router.push({
+    name: "agent",
+    params: {
+      id,
+    },
+  });
+}
+function addLibrary() {
+  const id = nanoid();
+  tabsStore.openTab(`/library/${id}`, "New library");
+  router.push({
+    name: "library",
+    params: {
+      id,
+    },
   });
 }
 </script>
@@ -27,7 +49,7 @@ function addTab() {
       icon="i-lucide-message-circle"
       variant="subtle"
       color="neutral"
-      @click="addTab"
+      @click="addChat"
       >New Chat</UButton
     >
     <UCollapsible class="flex flex-col gap-2" default-open>
@@ -46,7 +68,7 @@ function addTab() {
       >
       <template #content>
         <section class="ps-4">
-          <div class="flex flex-row items-center gap-1">
+          <div class="flex flex-row items-center gap-1" @click="addAgent">
             <UIcon class="bg-elevated" name="i-lucide-plus" />
             Add
           </div>
@@ -71,21 +93,7 @@ function addTab() {
       </UButton>
       <template #content>
         <section class="ps-4">
-          <div
-            class="flex flex-row items-center gap-1"
-            @click="
-              () => {
-                const id = nanoid();
-                tabsStore.openTab('library', id, 'New Library');
-                $router.push({
-                  name: 'library',
-                  params: {
-                    id,
-                  },
-                });
-              }
-            "
-          >
+          <div class="flex flex-row items-center gap-1" @click="addLibrary">
             <UIcon class="bg-elevated" name="i-lucide-plus" />
             Add
           </div>

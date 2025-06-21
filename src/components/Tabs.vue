@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useTabsStore } from "@/stores/tabs";
+import { nanoid } from "nanoid";
 import { storeToRefs } from "pinia";
 
 const store = useTabsStore();
-const { closeTab, addTab } = store;
-const { tabs, activeTab } = storeToRefs(store);
+const { closeTab, openTab } = store;
+const { tabs } = storeToRefs(store);
 </script>
 
 <template>
@@ -15,14 +16,14 @@ const { tabs, activeTab } = storeToRefs(store);
     >
       <UButton
         v-for="tab in tabs"
-        :key="tab.id"
+        :key="tab.path"
         variant="soft"
         color="neutral"
         active-color="primary"
         active-variant="solid"
-        :active="activeTab === tab.id"
-        :to="{ name: tab.name, params: { id: tab.id } }"
-        >{{ tab.label }}
+        :active="$route.path === tab.path"
+        :to="{ path: tab.path }"
+        >{{ tab.title }}
         <UButton
           slot="trailing"
           class="-mr-1 -my-1"
@@ -30,7 +31,7 @@ const { tabs, activeTab } = storeToRefs(store);
           size="xs"
           color="neutral"
           variant="ghost"
-          @click.stop.prevent="closeTab(tab.id)"
+          @click.stop.prevent="closeTab(tab.path)"
         />
       </UButton>
       <UButton
@@ -40,7 +41,8 @@ const { tabs, activeTab } = storeToRefs(store);
         variant="subtle"
         @click="
           () => {
-            const id = addTab();
+            const id = nanoid();
+            openTab(`/chat/${id}`, 'New chat');
             $router.push({ name: 'chat', params: { id } });
           }
         "
