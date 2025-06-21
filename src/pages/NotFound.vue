@@ -1,7 +1,5 @@
 <template>
-  <main
-    class="min-h-[calc(100vh-var(--ui-header-height))] flex flex-col items-center justify-center text-center !min-h-96"
-  >
+  <main class="h-screen flex flex-col items-center justify-center text-center">
     <p class="text-base font-semibold text-primary">404</p>
     <h1
       class="mt-2 text-4xl sm:text-5xl font-bold text-highlighted text-balance"

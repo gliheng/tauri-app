@@ -2,8 +2,6 @@
 import { ref } from "vue";
 import { RouterView } from "vue-router";
 import VueEasyLightbox from "vue-easy-lightbox";
-import DefaultLayout from "./layouts/DefaultLayout.vue";
-import Spinner from "./components/Spinner.vue";
 import { eventBus } from "@/utils/eventBus";
 
 const visibleRef = ref(false);
@@ -19,20 +17,7 @@ const onHide = () => (visibleRef.value = false);
 
 <template>
   <UApp>
-    <DefaultLayout>
-      <RouterView v-slot="{ Component, route }">
-        <KeepAlive>
-          <Suspense>
-            <component v-if="Component" :is="Component" :key="route.path" />
-            <template #fallback>
-              <div class="size-full flex items-center justify-center">
-                <Spinner />
-              </div>
-            </template>
-          </Suspense>
-        </KeepAlive>
-      </RouterView>
-    </DefaultLayout>
+    <RouterView />
   </UApp>
   <vue-easy-lightbox
     :visible="visibleRef"

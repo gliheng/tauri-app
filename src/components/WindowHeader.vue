@@ -4,7 +4,6 @@ import { isTauri } from "@tauri-apps/api/core";
 import Settings from "@/components/Settings.vue";
 import Tabs from "@/components/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
-import { Suspense } from "vue";
 
 const { toggleExpanded } = useTabsStore();
 const tauri = isTauri();

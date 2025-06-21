@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, Suspense, KeepAlive } from "vue";
 import { useElementSize } from "@vueuse/core";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
 import WindowHeader from "@/components/WindowHeader.vue";
 import Sidebar from "@/components/Sidebar.vue";
+import Spinner from "@/components/Spinner.vue";
 
 const root = ref(null);
 
@@ -30,7 +31,22 @@ const minSidebarSize = computed(() => (200 / width.value) * 100);
         <div class="h-full flex flex-col">
           <WindowHeader />
           <main class="size-full flex-1 flex flex-col min-h-0">
-            <slot></slot>
+            <RouterView v-slot="{ Component, route }">
+              <KeepAlive>
+                <Suspense>
+                  <component
+                    v-if="Component"
+                    :is="Component"
+                    :key="route.path"
+                  />
+                  <template #fallback>
+                    <div class="size-full flex items-center justify-center">
+                      <Spinner />
+                    </div>
+                  </template>
+                </Suspense>
+              </KeepAlive>
+            </RouterView>
           </main>
         </div>
       </SplitterPanel>

@@ -42,7 +42,7 @@ function addLibrary() {
     class="flex-1 size-full bg-elevated flex flex-col p-2 gap-2 items-stretch"
   >
     <h1 class="text-xl font-bold mb-2 flex flex-row gap-2 items-center">
-      <img class="w-10 h-10" src="/Untitled6.jpg" alt="Logo" />
+      <img class="w-10 h-10" src="/logo2.png" alt="Logo" />
       Raven
     </h1>
     <UButton
