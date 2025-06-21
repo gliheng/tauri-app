@@ -28,11 +28,11 @@ const props = defineProps({
 });
 
 const bubbleStyle = tv({
-  base: "w-fit max-w-full",
+  base: "w-fit max-w-full flex flex-col",
   variants: {
     role: {
-      user: "self-end",
-      assistant: "self-start",
+      user: "self-end items-end",
+      assistant: "self-start items-start",
     },
   },
 });

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, computed, nextTick } from "vue";
+import { provide, computed } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { AnimatePresence } from "motion-v";
