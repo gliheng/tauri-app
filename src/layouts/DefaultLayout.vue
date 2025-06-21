@@ -1,30 +1,33 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useElementSize } from "@vueuse/core";
+import { useRouter } from "vue-router";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
 import WindowHeader from "@/components/WindowHeader.vue";
-import { computed } from "vue";
+import Sidebar from "@/components/Sidebar.vue";
 
 const root = ref(null);
 
 const { width } = useElementSize(root);
 const collapsed = computed(() => (56 / width.value) * 100);
-const minSize = computed(() => (200 / width.value) * 100);
+const defaultSize = computed(() => (140 / width.value) * 100);
+const minSidebarSize = computed(() => (200 / width.value) * 100);
 </script>
 
 <template>
   <div class="h-screen" ref="root">
-    <SplitterGroup direction="horizontal">
+    <SplitterGroup v-if="width > 0" direction="horizontal">
       <SplitterPanel
         collapsible
-        :default-size="collapsed"
+        :default-size="defaultSize"
         :collapsed-size="collapsed"
-        :min-size="minSize"
+        :min-size="minSidebarSize"
+        :max-size="50"
       >
-        <aside class="flex-1 size-full bg-elevated"></aside>
+        <Sidebar />
       </SplitterPanel>
       <SplitterResizeHandle class="w-0.5 splitter-handle" />
-      <SplitterPanel :min-size="50">
+      <SplitterPanel>
         <div class="h-full flex flex-col">
           <WindowHeader />
           <main class="size-full flex-1 flex flex-col min-h-0">
