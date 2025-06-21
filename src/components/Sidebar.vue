@@ -42,7 +42,7 @@ function addLibrary() {
     class="flex-1 size-full bg-elevated flex flex-col p-2 gap-2 items-stretch"
   >
     <h1 class="text-xl font-bold mb-2 flex flex-row gap-2 items-center">
-      <img class="w-10 h-10" src="/logo.png" alt="Logo" />
+      <img class="w-10 h-10" src="/Untitled6.jpg" alt="Logo" />
       Raven
     </h1>
     <UButton
@@ -68,10 +68,14 @@ function addLibrary() {
       >
       <template #content>
         <section class="ps-4">
-          <div class="flex flex-row items-center gap-1" @click="addAgent">
-            <UIcon class="bg-elevated" name="i-lucide-plus" />
-            Add
-          </div>
+          <UButton
+            class="items-start p-0"
+            icon="i-lucide-plus"
+            color="neutral"
+            variant="ghost"
+            @click="addAgent"
+            >Add</UButton
+          >
         </section>
       </template>
     </UCollapsible>
@@ -93,10 +97,14 @@ function addLibrary() {
       </UButton>
       <template #content>
         <section class="ps-4">
-          <div class="flex flex-row items-center gap-1" @click="addLibrary">
-            <UIcon class="bg-elevated" name="i-lucide-plus" />
-            Add
-          </div>
+          <UButton
+            class="items-start p-0"
+            icon="i-lucide-plus"
+            color="neutral"
+            variant="ghost"
+            @click="addLibrary"
+            >Add</UButton
+          >
         </section>
       </template>
     </UCollapsible>
