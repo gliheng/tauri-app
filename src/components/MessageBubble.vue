@@ -5,6 +5,7 @@ import { Message } from "ai";
 import { CHAT_ACTIONS } from "@/constants";
 import MarkdownText from "./MarkdownText.vue";
 import FileImage from "./FileImage.vue";
+import MessageSwitcher from "./MessageSwitcher.vue";
 
 const props = defineProps({
   role: {
@@ -61,7 +62,8 @@ const { reload } = inject(CHAT_ACTIONS);
         >
           <div v-if="part.type == 'text'">
             <MarkdownText :markdown="part.text" />
-            <div class="flex flex-row gap-1 mt-2">
+            <div class="flex flex-row items-center gap-1 mt-2">
+              <MessageSwitcher />
               <UTooltip text="Copy text">
                 <UButton
                   color="neutral"
