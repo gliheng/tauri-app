@@ -21,7 +21,7 @@ const { tabs, activeTab } = storeToRefs(store);
         active-color="primary"
         active-variant="solid"
         :active="activeTab === tab.id"
-        :to="{ name: 'chat', params: { id: tab.id } }"
+        :to="{ name: tab.name, params: { id: tab.id } }"
         >{{ tab.label }}
         <UButton
           slot="trailing"

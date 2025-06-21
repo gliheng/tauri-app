@@ -7,16 +7,14 @@ export const useTabsStore = defineStore("tabs", () => {
   const router = useRouter();
   const tabs = ref<
     {
+      name: string;
       id: string;
       label: string;
     }[]
   >(loadTabs());
   const activeTab = computed(() => {
     const currentRoute = router.currentRoute.value;
-    if (currentRoute.name === "chat") {
-      return currentRoute.params.id as string;
-    }
-    return "";
+    return (currentRoute.params.id as string) ?? "";
   });
   const expanded = ref(false);
   return {
@@ -28,15 +26,15 @@ export const useTabsStore = defineStore("tabs", () => {
     activeTab,
     addTab() {
       const id = nanoid();
-      tabs.value.push({ id, label: "New chat" });
+      tabs.value.push({ name: "chat", id, label: "New chat" });
       saveTabs(tabs.value);
       return id;
     },
-    openTab(id: string, title: string) {
+    openTab(name: string, id: string, title: string) {
       if (tabs.value.some((tab) => tab.id === id)) {
         return;
       }
-      tabs.value.push({ id, label: title });
+      tabs.value.push({ name, id, label: title });
       saveTabs(tabs.value);
     },
     closeActiveTab() {
@@ -50,14 +48,18 @@ export const useTabsStore = defineStore("tabs", () => {
       if (tabs.value.length === 0) {
         tabs.value = [
           {
+            name: "chat",
             id: nanoid(),
             label: "New chat",
           },
         ];
       }
       if (activeRemoved) {
-        console.log("goto", tabs.value[0]?.id);
-        router.push({ name: "chat", params: { id: tabs.value[0]?.id } });
+        const firstTab = tabs.value[0];
+        if (firstTab) {
+          debugger;
+          router.push({ name: firstTab.name, params: { id: firstTab.id } });
+        }
       }
       saveTabs(tabs.value);
     },
@@ -80,6 +82,7 @@ function loadTabs() {
   return lastChatId
     ? [
         {
+          name: "chat",
           id: lastChatId,
           label: "New chat",
         },

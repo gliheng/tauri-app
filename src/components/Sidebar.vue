@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import { useTabsStore } from "@/stores/tabs";
+import { nanoid } from "nanoid";
 
 const tabsStore = useTabsStore();
 const router = useRouter();
@@ -70,7 +71,21 @@ function addTab() {
       </UButton>
       <template #content>
         <section class="ps-4">
-          <div class="flex flex-row items-center gap-1">
+          <div
+            class="flex flex-row items-center gap-1"
+            @click="
+              () => {
+                const id = nanoid();
+                tabsStore.openTab('library', id, 'New Library');
+                $router.push({
+                  name: 'library',
+                  params: {
+                    id,
+                  },
+                });
+              }
+            "
+          >
             <UIcon class="bg-elevated" name="i-lucide-plus" />
             Add
           </div>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useElementSize } from "@vueuse/core";
-import { useRouter } from "vue-router";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
 import WindowHeader from "@/components/WindowHeader.vue";
 import Sidebar from "@/components/Sidebar.vue";

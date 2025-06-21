@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import Chat from "./pages/Chat.vue";
 import { nanoid } from "nanoid";
+import Library from "./pages/Library.vue";
 
 export const router = createRouter({
   routes: [
@@ -14,6 +15,7 @@ export const router = createRouter({
       },
     },
     { name: "chat", path: "/chat/:id", component: Chat },
+    { name: "library", path: "/library/:id", component: Library },
   ],
   history: createWebHashHistory(),
 });
