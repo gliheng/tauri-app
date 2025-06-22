@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { useChat } from "@/hooks/useChat";
+import { ref, computed, inject } from "vue";
 import { modelList } from "@/llm/models";
 import { Attachment } from "ai";
 import { file2DataUrl } from "@/utils/file";
 import FileImage from "./FileImage.vue";
+import { CHAT_ACTIONS } from "@/constants";
 
 const props = defineProps({
   id: {
@@ -14,9 +14,8 @@ const props = defineProps({
 });
 
 const model = ref(modelList[0]);
-const { input, status, stop, handleSubmit } = useChat({
-  id: props.id,
-});
+
+const { input, status, stop, handleSubmit } = inject(CHAT_ACTIONS);
 
 const streaming = computed(
   () => status.value == "submitted" || status.value == "streaming",

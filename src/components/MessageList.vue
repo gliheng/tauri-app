@@ -10,6 +10,10 @@ const props = defineProps({
     type: Array as PropType<Message[]>,
     default: () => [],
   },
+  messageGraph: {
+    type: Object as PropType<Record<string, any>>,
+    default: () => ({}),
+  },
   status: String,
 });
 

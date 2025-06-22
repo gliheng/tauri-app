@@ -8,6 +8,10 @@ import FileImage from "./FileImage.vue";
 import MessageSwitcher from "./MessageSwitcher.vue";
 
 const props = defineProps({
+  id: {
+    type: String,
+    required: true,
+  },
   role: {
     type: String,
     required: true,
@@ -40,8 +44,8 @@ const bubbleStyle = tv({
 
 const displayParts = computed(() => props.parts ?? []);
 
-function copyText(text: string) {
-  navigator.clipboard.writeText(text);
+function copyText() {
+  navigator.clipboard.writeText(props.content);
 }
 
 const { reload } = inject(CHAT_ACTIONS);
@@ -62,25 +66,6 @@ const { reload } = inject(CHAT_ACTIONS);
         >
           <div v-if="part.type == 'text'">
             <MarkdownText :markdown="part.text" />
-            <div class="flex flex-row items-center gap-1 mt-2">
-              <MessageSwitcher />
-              <UTooltip text="Copy text">
-                <UButton
-                  color="neutral"
-                  variant="soft"
-                  trailing-icon="i-lucide-copy"
-                  @click="copyText(part.text)"
-                />
-              </UTooltip>
-              <UTooltip v-if="last" text="Reload">
-                <UButton
-                  color="neutral"
-                  variant="soft"
-                  trailing-icon="i-lucide-refresh-cw"
-                  @click="reload"
-                />
-              </UTooltip>
-            </div>
           </div>
           <UCollapsible
             v-else-if="part.type == 'reasoning'"
@@ -124,6 +109,25 @@ const { reload } = inject(CHAT_ACTIONS);
       :key="index"
       :url="attachment.url"
     />
+    <div class="flex flex-row items-center gap-1 mt-2">
+      <MessageSwitcher :id="id" />
+      <UTooltip text="Copy text">
+        <UButton
+          color="neutral"
+          variant="soft"
+          trailing-icon="i-lucide-copy"
+          @click="copyText"
+        />
+      </UTooltip>
+      <UTooltip v-if="last && role == 'assistant'" text="Reload">
+        <UButton
+          color="neutral"
+          variant="soft"
+          trailing-icon="i-lucide-refresh-cw"
+          @click="reload"
+        />
+      </UTooltip>
+    </div>
   </section>
 </template>
 

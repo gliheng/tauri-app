@@ -44,6 +44,16 @@ export interface Chat {
   updatedAt: Date;
 }
 
+export interface ChatMessage {
+  chatId: string;
+  id: string;
+  data: Message;
+  parent?: string;
+  children?: string[];
+  siblingCount?: number;
+  siblingIndex?: number;
+}
+
 export function writeChat(data: Chat): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const transaction = db.transaction(["chat"], "readwrite");
@@ -127,12 +137,6 @@ export function getAllChats(): Promise<Chat[]> {
   });
 }
 
-export interface ChatMessage {
-  chatId: string;
-  id: string;
-  data: Message;
-}
-
 export function getChat(chatId: string) {
   return new Promise<{ chat: Chat; messages: ChatMessage[] } | null>(
     (resolve, reject) => {
@@ -166,7 +170,9 @@ export function getChat(chatId: string) {
           reject(event);
         };
         messageRequest.onsuccess = () => {
-          resolve(messageRequest.result as ChatMessage[]);
+          const messages = messageRequest.result as ChatMessage[];
+          const latest = selectMessagesFromTree(messages);
+          resolve(latest);
         };
       });
 
@@ -275,6 +281,27 @@ export function searchChats(query: string): Promise<Chat[]> {
 
     request.onerror = (event: Event) => {
       console.error("Error searching chats:", event);
+      reject(event);
+    };
+  });
+}
+
+export function getMessages(
+  chatId: string,
+  pathSelection?: Record<string, number>,
+) {
+  return new Promise<ChatMessage[]>((resolve, reject) => {
+    const tr = db.transaction(["message"], "readonly");
+    const messageStore = tr.objectStore("message");
+    const request = messageStore.index("chatId").getAll(chatId);
+
+    request.onsuccess = () => {
+      const messages = request.result as ChatMessage[];
+      resolve(selectMessagesFromTree(messages, pathSelection));
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting messages:", event);
       reject(event);
     };
   });
@@ -414,4 +441,40 @@ export function clearDatabase(): Promise<void> {
       reject(event);
     };
   });
+}
+
+function selectMessagesFromTree(
+  messages: ChatMessage[],
+  pathSelection?: Record<string, number>,
+): ChatMessage[] {
+  const msgMap: Record<string, ChatMessage> = {};
+  const tree: Record<string, string[]> = {};
+  for (const msg of messages) {
+    msgMap[msg.id] = msg;
+    const parent = msg.parent ?? "__root";
+    if (!tree[parent]) {
+      tree[parent] = [];
+    }
+    tree[parent].push(msg.id);
+  }
+  for (const msg of messages) {
+    const children = tree[msg.id];
+    if (children) {
+      msg.children = children;
+    }
+  }
+
+  const list: ChatMessage[] = [];
+  let nodeId = "__root";
+  let children;
+  while ((children = tree[nodeId])) {
+    const i = pathSelection?.[nodeId] ?? children.length - 1;
+    nodeId = children[i];
+    const node = msgMap[nodeId];
+    node.siblingIndex = i;
+    node.siblingCount = children.length;
+    list.push(node);
+  }
+
+  return list;
 }

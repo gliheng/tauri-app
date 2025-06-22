@@ -5,16 +5,21 @@ import {
   appendResponseMessages,
 } from "ai";
 import { getModel } from "@/llm";
-import { useChat as aiUseChat } from "@ai-sdk/vue";
+import { useChat as aiUseChat, UseChatOptions } from "@ai-sdk/vue";
 import { updateChat, writeChat, writeMessages } from "@/db";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 
-export function useChat(opts: { id: string; initialMessages?: Message[] }) {
+export function useChat(opts: {
+  id: string;
+  initialMessages?: Message[];
+  onFinish?: UseChatOptions["onFinish"];
+}) {
   return aiUseChat({
     id: opts.id,
     initialMessages: opts.initialMessages,
     sendExtraMessageFields: true,
+    onFinish: opts.onFinish,
     fetch: async (_url, req) => {
       const { messages, data } = JSON.parse(req!.body as unknown as string);
       const userMessage = messages[messages.length - 1];
