@@ -15,6 +15,7 @@ declare module 'vue' {
     Library: typeof import('./src/components/Library.vue')['default']
     MarkdownText: typeof import('./src/components/MarkdownText.vue')['default']
     MessageBubble: typeof import('./src/components/MessageBubble.vue')['default']
+    MessageEdit: typeof import('./src/components/MessageEdit.vue')['default']
     MessageList: typeof import('./src/components/MessageList.vue')['default']
     MessageSwitcher: typeof import('./src/components/MessageSwitcher.vue')['default']
     ModelSelector: typeof import('./src/components/ModelSelector.vue')['default']

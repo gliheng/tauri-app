@@ -32,6 +32,8 @@ const props = defineProps({
   loading: Boolean,
 });
 
+const emit = defineEmits(["start-edit"]);
+
 const bubbleStyle = tv({
   base: "w-fit max-w-full flex flex-col",
   variants: {
@@ -49,16 +51,20 @@ function copyText() {
 }
 
 const { reload } = inject(CHAT_ACTIONS);
+
+function startEdit() {
+  emit("start-edit");
+}
 </script>
 
 <template>
   <section :class="bubbleStyle({ role })">
-    <div v-if="role == 'assistant'">
+    <template v-if="role == 'assistant'">
       <h1 class="flex items-center gap-2 mb-2">
-        <UAvatar icon="i-mdi-robot" size="md" />
+        <UAvatar icon="i-lucide-bot" size="md" />
         Assistant
       </h1>
-      <div :class="{ 'animate-bounce': loading }">
+      <div :class="{ 'animate-bounce': loading, 'w-full': true }">
         <div
           v-for="(part, i) in displayParts"
           :key="i"
@@ -97,12 +103,12 @@ const { reload } = inject(CHAT_ACTIONS);
           <MarkdownText :markdown="content" />
         </div>
       </div>
-    </div>
-    <div v-else>
+    </template>
+    <template v-else>
       <p class="p-2 rounded-md bg-gray-100 dark:bg-gray-800">
         {{ content }}
       </p>
-    </div>
+    </template>
     <FileImage
       v-for="(attachment, index) of experimental_attachments"
       class="max-w-full mt-2"
@@ -117,6 +123,14 @@ const { reload } = inject(CHAT_ACTIONS);
           variant="soft"
           trailing-icon="i-lucide-copy"
           @click="copyText"
+        />
+      </UTooltip>
+      <UTooltip v-if="role === 'user'" text="Edit">
+        <UButton
+          color="neutral"
+          variant="soft"
+          trailing-icon="i-lucide-pen-line"
+          @click="startEdit"
         />
       </UTooltip>
       <UTooltip v-if="last && role == 'assistant'" text="Reload">

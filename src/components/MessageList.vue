@@ -3,6 +3,7 @@ import { computed, watch, ref, PropType } from "vue";
 import { motion } from "motion-v";
 import { Message } from "ai";
 import MessageBubble from "./MessageBubble.vue";
+import MessageEdit from "./MessageEdit.vue";
 
 const props = defineProps({
   width: Number,
@@ -23,11 +24,13 @@ const displayMessages = computed(() => {
 });
 
 const listRef = ref<HTMLElement | null>(null);
+const editingId = ref<string>();
 
+// Scroll to bottom when new message is added
 watch(
   () => props.messages,
   () => {
-    listRef.value?.scrollIntoView(false, {
+    listRef.value?.lastElementChild?.scrollIntoView(false, {
       behavior: "smooth",
     });
   },
@@ -43,11 +46,14 @@ watch(
       }"
       ref="listRef"
     >
-      <MessageBubble
+      <Component
         v-for="message in displayMessages"
-        :key="message.id"
         v-bind="message"
+        :is="editingId === message.id ? MessageEdit : MessageBubble"
+        :key="message.id"
         :last="message.id === displayMessages[displayMessages.length - 1].id"
+        @start-edit="() => (editingId = message.id)"
+        @cancel-edit="() => (editingId = '')"
       />
       <MessageBubble
         v-if="props.status == 'submitted'"
