@@ -34,7 +34,7 @@ export function useChat(opts: {
             createdAt: new Date(),
             updatedAt: new Date(),
           });
-          useTabsStore().setTitle(opts.id, topic);
+          useTabsStore().setTitle(`/chat/${opts.id}`, topic);
         } else {
           await updateChat(opts.id, {
             updatedAt: new Date(),

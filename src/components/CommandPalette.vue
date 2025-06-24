@@ -4,16 +4,16 @@ import { useRouter } from "vue-router";
 import moment from "moment";
 import { getAllChats, deleteChat, Chat } from "@/db";
 import { useTabsStore } from "@/stores/tabs";
-import { confirm } from '@tauri-apps/plugin-dialog';
+import { confirm } from "@tauri-apps/plugin-dialog";
 
 const toast = useToast();
 const list = await getAllChats();
 const chatList = ref<Chat[]>(list);
-const { openTab, closeTab, addTab } = useTabsStore();
+const { openTab, closeTab } = useTabsStore();
 const router = useRouter();
 
 const emit = defineEmits<{
-  close: void;
+  (e: "close"): void;
 }>();
 
 const groups = computed(() => [
@@ -25,7 +25,7 @@ const groups = computed(() => [
       label: e.topic,
       icon: "i-lucide-message-circle",
       suffix: moment(e.updatedAt).fromNow(),
-      slot: 'remove',
+      slot: "remove",
     })),
   },
   {
@@ -38,7 +38,6 @@ const groups = computed(() => [
         kbds: ["meta", "N"],
         onSelect() {
           toast.add({ title: "Add new file" });
-          addTab();
         },
       },
     ],
@@ -48,17 +47,17 @@ const groups = computed(() => [
 function onSelect(item: any) {
   const { chatId } = item;
   if (chatId) {
-    openTab(chatId, item.label);
+    openTab(`/chat/${chatId}`, item.label);
     router.push({ name: "chat", params: { id: chatId } });
     emit("close");
   }
 }
 
 async function removeChat(item: any) {
-  const ok = await confirm(
-    'This action cannot be reverted. Are you sure?',
-    { title: 'Delete chat', kind: 'warning' }
-  );
+  const ok = await confirm("This action cannot be reverted. Are you sure?", {
+    title: "Delete chat",
+    kind: "warning",
+  });
 
   if (ok) {
     closeTab(item.id);
@@ -74,7 +73,12 @@ async function removeChat(item: any) {
     @update:model-value="onSelect"
   >
     <template #remove-trailing="{ item }">
-      <UButton color="error" size="sm" icon="i-lucide-trash" @click.stop="removeChat(item)" />
+      <UButton
+        color="error"
+        size="sm"
+        icon="i-lucide-trash"
+        @click.stop="removeChat(item)"
+      />
     </template>
   </UCommandPalette>
 </template>
