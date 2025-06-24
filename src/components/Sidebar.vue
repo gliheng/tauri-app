@@ -17,9 +17,9 @@ function addChat() {
 
 function addAgent() {
   const id = nanoid();
-  tabsStore.openTab(`/agent/create`, "New agent");
+  tabsStore.openTab(`/agent/${id}`, "New agent");
   router.push({
-    name: "create-agent",
+    name: "agent",
     params: {
       id,
     },
