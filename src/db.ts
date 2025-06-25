@@ -4,9 +4,12 @@ let db: IDBDatabase;
 
 export async function init() {
   return new Promise<void>((resolve, reject) => {
-    const request = indexedDB.open("ai-studio");
+    const request = indexedDB.open("ai-studio", 2);
     request.onerror = (event: Event) => {
-      console.error("Why didn't you allow my web app to use IndexedDB?!");
+      console.error(
+        "Why didn't you allow my web app to use IndexedDB?!",
+        event,
+      );
       reject();
     };
     request.onsuccess = (event: Event) => {
@@ -19,20 +22,32 @@ export async function init() {
       resolve();
     };
     request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
-      // Save the IDBDatabase interface
       const db = (event.target as IDBOpenDBRequest).result;
 
-      // Create an objectStore for this database
-      const chatStore = db.createObjectStore("chat", { keyPath: "id" });
-      chatStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
+      if (!db.objectStoreNames.contains("chat")) {
+        const chatStore = db.createObjectStore("chat", { keyPath: "id" });
+        chatStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
+      }
 
-      const messageStore = db.createObjectStore("message", {
-        autoIncrement: true,
-      });
-      messageStore.createIndex("chatId", "chatId", { unique: false });
-      messageStore.createIndex("byChatIdAndMessageId", ["chatId", "id"], {
-        unique: true,
-      });
+      if (!db.objectStoreNames.contains("message")) {
+        const messageStore = db.createObjectStore("message", {
+          autoIncrement: true,
+        });
+        messageStore.createIndex("chatId", "chatId", { unique: false });
+        messageStore.createIndex("byChatIdAndMessageId", ["chatId", "id"], {
+          unique: true,
+        });
+      }
+
+      if (!db.objectStoreNames.contains("agent")) {
+        const agentStore = db.createObjectStore("agent", { keyPath: "id" });
+        agentStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains("library")) {
+        const userStore = db.createObjectStore("library", { keyPath: "id" });
+        userStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
+      }
     };
   });
 }
@@ -52,6 +67,22 @@ export interface ChatMessage {
   children?: string[];
   siblingCount?: number;
   siblingIndex?: number;
+}
+
+export interface Agent {
+  id: string;
+  name: string;
+  icon: string;
+  instructions: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Library {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export function writeChat(data: Chat): Promise<void> {
@@ -307,8 +338,70 @@ export function getMessages(
   });
 }
 
-// Export/Import functionality
+/**
+ * Write an agent to the database
+ * @param agent
+ */
+export function writeAgent(data: Agent) {
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(["agent"], "readwrite");
+    const store = transaction.objectStore("agent");
+    const request = store.put(data);
 
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error writing agent:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
+ * Get all agents
+ */
+export function getAgents() {
+  return new Promise<Agent[]>((resolve, reject) => {
+    const transaction = db.transaction(["agent"], "readonly");
+    const store = transaction.objectStore("agent");
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const agents = request.result as Agent[];
+      resolve(agents);
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting agents:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
+ * Get a single agent by ID
+ */
+export function getAgent(id: string) {
+  return new Promise<Agent | undefined>((resolve, reject) => {
+    const transaction = db.transaction(["agent"], "readonly");
+    const store = transaction.objectStore("agent");
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      const agent = request.result as Agent | undefined;
+      resolve(agent);
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting agent:", event);
+      reject(event);
+    };
+  });
+}
+
+// Export/Import functionality
 interface ExportData {
   chats: Chat[];
   messages: Message[];

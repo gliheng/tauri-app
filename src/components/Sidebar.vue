@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { useTabsStore } from "@/stores/tabs";
 import { nanoid } from "nanoid";
+import { useTabsStore } from "@/stores/tabs";
+import { useSidebarStore } from "@/stores/sidebar";
+import { Agent, Library } from "@/db";
+import { tv } from "tailwind-variants";
 
-const tabsStore = useTabsStore();
+const buttonStyle = tv({
+  base: "items-center w-full h-10",
+});
+
 const router = useRouter();
+const tabsStore = useTabsStore();
+const sidebarStore = useSidebarStore();
+
+sidebarStore.load();
 
 function addChat() {
   const id = nanoid();
@@ -25,6 +35,17 @@ function addAgent() {
     },
   });
 }
+
+function openAgent(agent: Agent) {
+  tabsStore.openTab(`/agent/${agent.id}`, agent.name);
+  router.push({
+    name: "agent",
+    params: {
+      id: agent.id,
+    },
+  });
+}
+
 function addLibrary() {
   const id = nanoid();
   tabsStore.openTab(`/library/${id}`, "New library");
@@ -32,6 +53,16 @@ function addLibrary() {
     name: "library",
     params: {
       id,
+    },
+  });
+}
+
+function openLibrary(library: Library) {
+  tabsStore.openTab(`/library/${library.id}`, library.name);
+  router.push({
+    name: "library",
+    params: {
+      id: library.id,
     },
   });
 }
@@ -67,12 +98,22 @@ function addLibrary() {
         >Agent</UButton
       >
       <template #content>
-        <section class="ps-4">
+        <section>
           <UButton
-            class="items-start p-0"
+            v-for="agent in sidebarStore.agents"
+            :key="agent.id"
+            :class="buttonStyle({})"
+            :icon="agent.icon"
+            color="neutral"
+            variant="soft"
+            @click="openAgent(agent)"
+            >{{ agent.name }}</UButton
+          >
+          <UButton
+            :class="buttonStyle({})"
             icon="i-lucide-plus"
             color="neutral"
-            variant="ghost"
+            variant="soft"
             @click="addAgent"
             >Add</UButton
           >
@@ -96,12 +137,12 @@ function addLibrary() {
         Library
       </UButton>
       <template #content>
-        <section class="ps-4">
+        <section>
           <UButton
-            class="items-start p-0"
+            :class="buttonStyle({})"
             icon="i-lucide-plus"
             color="neutral"
-            variant="ghost"
+            variant="soft"
             @click="addLibrary"
             >Add</UButton
           >
