@@ -96,7 +96,20 @@ provide(MESSAGE_GRAPH, {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col min-h-0 justify-center">
+  <div class="flex-1 flex flex-col min-h-0 justify-center relative">
+    <header class="absolute top-2 right-2">
+      <UPopover>
+        <UButton icon="i-lucide-sliders-horizontal" color="neutral" variant="subtle" />
+        <template #content>
+          <div class="p-4 w-60 bg-elevated">
+            <label>
+              <span class="block mb-2">Temperature</span>
+              <USlider :step="0.01" :min="0" :max="1" :default-value="0.5" block />
+            </label>
+          </div>
+        </template>
+      </UPopover>
+    </header>
     <AnimatePresence>
       <MessageList
         v-if="showMessageList"
