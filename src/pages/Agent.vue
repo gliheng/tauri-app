@@ -23,6 +23,7 @@ const agent = ref<{
 const { setTitle } = useTabsStore();
 const sidebarStore = useSidebarStore();
 const toast = useToast();
+const open = ref(false);
 const editingName = ref(false);
 const agentName = ref("");
 const input = useTemplateRef("input");
@@ -64,12 +65,54 @@ const throttledWatcher = throttle(async (newValue) => {
 watch(agent, throttledWatcher, {
   deep: true,
 });
+
+const iconList = [
+  "i-lucide-user",
+  "i-lucide-pyramid",
+  "i-lucide-snail",
+  "i-lucide-heart",
+  "i-lucide-star",
+  "i-lucide-cannabis",
+  "i-lucide-leaf",
+  "i-lucide-circle-dollar-sign",
+  "i-lucide-rocket",
+  "i-lucide-traffic-cone",
+  "i-lucide-life-buoy",
+  "i-lucide-target",
+  "i-lucide-sailboat",
+  "i-lucide-snowflake",
+  "i-lucide-school",
+  "i-lucide-palette",
+];
+function selectIcon(event: MouseEvent) {
+  const icon = (event.target as HTMLElement).closest(
+    "[data-icon]",
+  ) as HTMLElement;
+  if (icon) {
+    agent.value.icon = icon.dataset.icon!;
+  }
+}
 </script>
 
 <template>
   <div class="size-full p-6 space-y-4">
     <hgroup class="flex flex-row gap-2 items-center">
-      <UButton :icon="agent.icon" variant="outline" />
+      <UPopover v-model:open="open">
+        <UButton :icon="agent.icon" variant="outline" />
+        <template #content>
+          <div
+            class="size-48 p-4 flex flex-wrap justify-center items-center gap-2"
+            @click="selectIcon"
+          >
+            <UButton
+              v-for="icon in iconList"
+              :icon="icon"
+              variant="outline"
+              :data-icon="icon"
+            />
+          </div>
+        </template>
+      </UPopover>
       <h1 v-if="!editingName" class="flex-1 text-lg" @click="startEdit">
         {{ agent.name }}
       </h1>
