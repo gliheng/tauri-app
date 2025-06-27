@@ -17,13 +17,16 @@ const { tabs } = storeToRefs(store);
       <UButton
         v-for="tab in tabs"
         :key="tab.path"
+        class="max-w-40"
         variant="soft"
         color="neutral"
         active-color="primary"
         active-variant="solid"
         :active="$route.path === tab.path"
         :to="{ path: tab.path }"
-        >{{ tab.title }}
+        ><span class="block overflow-hidden text-ellipsis">{{
+          tab.title
+        }}</span>
         <UButton
           slot="trailing"
           class="-mr-1 -my-1"

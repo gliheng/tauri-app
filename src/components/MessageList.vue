@@ -52,11 +52,15 @@ watch(
         :is="editingId === message.id ? MessageEdit : MessageBubble"
         :key="message.id"
         :last="message.id === displayMessages[displayMessages.length - 1].id"
+        :loading="
+          message.id === displayMessages[displayMessages.length - 1].id &&
+          (status == 'submitted' || status == 'streaming')
+        "
         @start-edit="() => (editingId = message.id)"
         @cancel-edit="() => (editingId = '')"
       />
       <MessageBubble
-        v-if="props.status == 'submitted'"
+        v-if="status == 'submitted'"
         key="thinking"
         id="thinking"
         role="assistant"

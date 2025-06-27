@@ -61,10 +61,14 @@ function startEdit() {
   <section :class="bubbleStyle({ role })">
     <template v-if="role == 'assistant'">
       <h1 class="flex items-center gap-2 mb-2">
-        <UAvatar icon="i-lucide-bot" size="md" />
+        <UAvatar
+          :class="{ 'animate-bounce': loading }"
+          icon="i-lucide-bot"
+          size="md"
+        />
         Assistant
       </h1>
-      <div :class="{ 'animate-bounce': loading, 'w-full': true }">
+      <div class="w-full">
         <div
           v-for="(part, i) in displayParts"
           :key="i"
