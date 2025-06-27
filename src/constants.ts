@@ -5,3 +5,4 @@ export const MESSAGE_GRAPH = Symbol("message-graph") as InjectionKey<{
   graph: Ref<Record<string, any>>;
   select: (id: string, i: number) => void;
 }>;
+export const ROOT_NODE_ID = "__root";

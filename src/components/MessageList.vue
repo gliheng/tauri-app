@@ -33,10 +33,7 @@ watch(
   () => {
     const scroller = (listRef.value as any).scroller;
     if (scroller) {
-      scroller.scrollTo({
-        top: scroller.maxScrollY,
-        behavior: "smooth",
-      });
+      scroller.scrollToBottom();
     }
   },
 );

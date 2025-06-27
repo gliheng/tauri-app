@@ -252,6 +252,20 @@ class Scroller {
     this.el.scrollTo(options);
   }
 
+  scrollToTop() {
+    this.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  scrollToBottom() {
+    this.scrollTo({
+      top: this.maxScrollY,
+      behavior: "smooth",
+    });
+  }
+
   handleEvent(_: MouseEvent) {
     this.updateScrollPos();
   }

@@ -1,4 +1,5 @@
 import { Message } from "ai";
+import { ROOT_NODE_ID } from "./constants";
 
 let db: IDBDatabase;
 
@@ -33,7 +34,7 @@ export async function init() {
         const messageStore = db.createObjectStore("message", {
           autoIncrement: true,
         });
-        messageStore.createIndex("chatId", "chatId", { unique: false });
+        messageStore.createIndex("byChatId", "chatId", { unique: false });
         messageStore.createIndex("byChatIdAndMessageId", ["chatId", "id"], {
           unique: true,
         });
@@ -194,7 +195,7 @@ export function getChat(chatId: string) {
       });
 
       const messagesTask = new Promise<ChatMessage[]>((resolve, reject) => {
-        const messageIndex = messageStore.index("chatId");
+        const messageIndex = messageStore.index("byChatId");
         const messageRequest = messageIndex.getAll(chatId);
         messageRequest.onerror = (event: Event) => {
           console.error("Error getting messages:", event);
@@ -324,7 +325,7 @@ export function getMessages(
   return new Promise<ChatMessage[]>((resolve, reject) => {
     const tr = db.transaction(["message"], "readonly");
     const messageStore = tr.objectStore("message");
-    const request = messageStore.index("chatId").getAll(chatId);
+    const request = messageStore.index("byChatId").getAll(chatId);
 
     request.onsuccess = () => {
       const messages = request.result as ChatMessage[];
@@ -544,7 +545,7 @@ function selectMessagesFromTree(
   const tree: Record<string, string[]> = {};
   for (const msg of messages) {
     msgMap[msg.id] = msg;
-    const parent = msg.parent ?? "__root";
+    const parent = msg.parent ?? ROOT_NODE_ID;
     if (!tree[parent]) {
       tree[parent] = [];
     }
@@ -558,7 +559,7 @@ function selectMessagesFromTree(
   }
 
   const list: ChatMessage[] = [];
-  let nodeId = "__root";
+  let nodeId = ROOT_NODE_ID;
   let children;
   while ((children = tree[nodeId])) {
     const i = pathSelection?.[nodeId] ?? children.length - 1;

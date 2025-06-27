@@ -9,7 +9,7 @@ import ChatBox from "@/components/ChatBox.vue";
 import MessageList from "@/components/MessageList.vue";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage, getChat, getMessages } from "@/db";
-import { CHAT_ACTIONS, MESSAGE_GRAPH } from "@/constants";
+import { CHAT_ACTIONS, MESSAGE_GRAPH, ROOT_NODE_ID } from "@/constants";
 
 const route = useRoute();
 const chatId = route.params.id as string;
@@ -24,6 +24,7 @@ function addMessageToGraph(id: string, parent?: string) {
   if (!(id in graph)) {
     graph[id] = {
       children: [],
+      parent,
       siblingCount: 1,
       siblingIndex: 0,
     };
@@ -40,6 +41,17 @@ function addMessageToGraph(id: string, parent?: string) {
         siblingNode.siblingIndex = i;
       }
     });
+  } else {
+    const kv = Object.entries(graph).find(
+      ([msgId, msg]) => !msg.parent && msgId != id,
+    );
+    if (kv) {
+      const [oldId, oldNode] = kv;
+      delete graph[oldId];
+      const node = graph[id];
+      node.siblingCount = oldNode.siblingCount + 1;
+      node.siblingIndex = oldNode.siblingIndex + 1;
+    }
   }
 }
 
@@ -62,8 +74,11 @@ const {
   onFinish(message) {
     const len = messages.value.length;
     const userMessage = messages.value[len - 2];
+    debugger;
+    // Add user message to graph
     const prevAssistantMessage = messages.value[len - 3];
     addMessageToGraph(userMessage.id, prevAssistantMessage?.id);
+    // Add assistant message to graph
     addMessageToGraph(message.id, userMessage.id);
   },
 });
@@ -83,21 +98,31 @@ const showMessageList = computed(() => {
   return messages.value.length || status.value != "ready";
 });
 
-provide(CHAT_ACTIONS, { reload, stop, append, input, status, handleSubmit });
+provide(CHAT_ACTIONS, {
+  messages,
+  reload,
+  stop,
+  append,
+  input,
+  status,
+  setMessages,
+  handleSubmit,
+});
 provide(MESSAGE_GRAPH, {
   graph: messageGraph,
+  // switch node path, id is the parent id, index is the child index
   async select(id: string, index: number) {
-    pathSelection[id] = index;
+    console.info("select", id, index);
+    pathSelection[id ?? ROOT_NODE_ID] = index;
     const messages = await getMessages(chatId, pathSelection);
     loadMessages(messages);
-    console.log("select", id, index);
   },
 });
 </script>
 
 <template>
   <div class="flex-1 flex flex-col min-h-0 justify-center relative">
-    <header class="absolute top-2 right-2">
+    <header class="absolute top-2 right-2 z-10">
       <UPopover>
         <UButton
           icon="i-lucide-sliders-horizontal"
