@@ -21,6 +21,7 @@ declare module 'vue' {
     RichEditor: typeof import('./src/components/RichEditor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Scrollbar: typeof import('./src/components/Scrollbar.vue')['default']
     Settings: typeof import('./src/components/Settings.vue')['default']
     Sidebar: typeof import('./src/components/Sidebar.vue')['default']
     Spinner: typeof import('./src/components/Spinner.vue')['default']
