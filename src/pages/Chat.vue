@@ -138,12 +138,18 @@ provide(MESSAGE_GRAPH, {
                 :min="0"
                 :max="1"
                 :default-value="0.5"
-                block
+                tooltip
               />
             </label>
             <label class="block">
               <span class="block mb-2">Context size</span>
-              <USlider :step="1" :min="0" :max="20" :default-value="5" block />
+              <USlider
+                :step="1"
+                :min="0"
+                :max="20"
+                :default-value="5"
+                tooltip
+              />
             </label>
           </div>
         </template>

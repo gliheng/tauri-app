@@ -7,7 +7,7 @@ import { Agent, Library } from "@/db";
 import { tv } from "tailwind-variants";
 
 const buttonStyle = tv({
-  base: "items-center w-full h-10",
+  base: "items-center w-full",
 });
 
 const router = useRouter();
@@ -36,8 +36,12 @@ function addAgent() {
   });
 }
 
+function agentUrl(agent: Agent) {
+  return `/agent/${agent.id}`;
+}
+
 function openAgent(agent: Agent) {
-  tabsStore.openTab(`/agent/${agent.id}`, agent.name);
+  tabsStore.openTab(agentUrl(agent), agent.name);
   router.push({
     name: "agent",
     params: {
@@ -98,7 +102,7 @@ function openLibrary(library: Library) {
         >Agent</UButton
       >
       <template #content>
-        <section>
+        <section class="space-y-1">
           <UButton
             v-for="agent in sidebarStore.agents"
             :key="agent.id"
@@ -106,6 +110,9 @@ function openLibrary(library: Library) {
             :icon="agent.icon"
             color="neutral"
             variant="soft"
+            active-color="primary"
+            active-variant="solid"
+            :active="$route.path === agentUrl(agent)"
             @click="openAgent(agent)"
             >{{ agent.name }}</UButton
           >
@@ -137,7 +144,7 @@ function openLibrary(library: Library) {
         Library
       </UButton>
       <template #content>
-        <section>
+        <section class="space-y-1">
           <UButton
             :class="buttonStyle({})"
             icon="i-lucide-plus"
