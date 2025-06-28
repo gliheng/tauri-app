@@ -130,8 +130,8 @@ provide(MESSAGE_GRAPH, {
           variant="subtle"
         />
         <template #content>
-          <div class="p-4 w-60 bg-elevated">
-            <label>
+          <div class="p-4 w-60 bg-elevated space-y-4">
+            <label class="block">
               <span class="block mb-2">Temperature</span>
               <USlider
                 :step="0.01"
@@ -140,6 +140,10 @@ provide(MESSAGE_GRAPH, {
                 :default-value="0.5"
                 block
               />
+            </label>
+            <label class="block">
+              <span class="block mb-2">Context size</span>
+              <USlider :step="1" :min="0" :max="20" :default-value="5" block />
             </label>
           </div>
         </template>
