@@ -74,7 +74,6 @@ const {
   onFinish(message) {
     const len = messages.value.length;
     const userMessage = messages.value[len - 2];
-    debugger;
     // Add user message to graph
     const prevAssistantMessage = messages.value[len - 3];
     addMessageToGraph(userMessage.id, prevAssistantMessage?.id);
