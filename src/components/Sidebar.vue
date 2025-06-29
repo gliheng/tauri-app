@@ -78,7 +78,7 @@ function openLibrary(library: Library) {
   >
     <h1 class="text-xl font-bold mb-2 flex flex-row gap-2 items-center">
       <img class="w-16 h-16" src="/logo3.png" alt="Logo" />
-      Raven
+      Apex
     </h1>
     <UButton
       icon="i-lucide-message-circle"

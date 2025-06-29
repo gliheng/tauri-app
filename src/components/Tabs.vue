@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, useTemplateRef } from "vue";
-import { nanoid } from "nanoid";
-import { storeToRefs } from "pinia";
-import { useTabsStore } from "@/stores/tabs";
+import { ref, useTemplateRef, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
+import { nanoid } from "nanoid";
+import { useTabsStore } from "@/stores/tabs";
 
 const router = useRouter();
 const store = useTabsStore();
@@ -15,9 +15,68 @@ const dragging = ref(false);
 const dragData = ref();
 const offset = ref(0);
 const currentIndex = ref(-1);
+const showScrollButtons = ref(false);
 
 let startX = 0;
-let posList: number[];
+let posList: number[]; // TOOD: update this when reordering tabs
+
+function calcPosList() {
+  const containerRect = tabContainerRef.value!.getBoundingClientRect();
+  posList = Array.from(
+    tabContainerRef.value!.querySelectorAll("[data-idx]") ?? [],
+  ).map((e) => {
+    const rect = e.getBoundingClientRect();
+    return rect.left + rect.width / 2 - containerRect.left;
+  });
+}
+
+const mutationObserver = new MutationObserver(
+  (mutationList: MutationRecord[]) => {
+    for (const mutation of mutationList) {
+      if (mutation.type === "childList") {
+        calcPosList();
+        calcScroll();
+        // Scroll to new tab
+        if (mutation.addedNodes.length) {
+          const newTab = mutation.addedNodes[0];
+          if (newTab instanceof HTMLElement) {
+            const scroller = newTab.parentElement!;
+            const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+            scroller.scrollTo({ left: maxScroll, behavior: "smooth" });
+          }
+        }
+      }
+    }
+  },
+);
+
+const resizeObserver = new ResizeObserver(() => {
+  calcScroll();
+});
+
+function calcScroll() {
+  const container = tabContainerRef.value!;
+  canScrollLeft.value = container.scrollLeft > 0;
+  canScrollRight.value =
+    container.scrollLeft < container.scrollWidth - container.clientWidth;
+  showScrollButtons.value = canScrollLeft.value || canScrollRight.value;
+}
+
+onMounted(() => {
+  mutationObserver.observe(tabContainerRef.value!, {
+    attributes: false,
+    childList: true,
+    subtree: false,
+  });
+  resizeObserver.observe(tabContainerRef.value!);
+  calcPosList();
+  calcScroll();
+});
+
+onUnmounted(() => {
+  mutationObserver.disconnect();
+  resizeObserver.disconnect();
+});
 
 function startDrag(evt: PointerEvent) {
   if (evt.button != 0) return;
@@ -37,13 +96,8 @@ function startDrag(evt: PointerEvent) {
 function move(evt: PointerEvent) {
   if (!dragging.value) {
     // Prevent accidental moves
-    if (Math.abs(evt.movementX) < 1) return;
+    if (Math.abs(evt.movementX) < 2) return;
     dragging.value = true;
-    const containerRect = tabContainerRef.value!.getBoundingClientRect();
-    posList = Array.from(tabContainerRef.value!.children ?? []).map((e) => {
-      const rect = e.getBoundingClientRect();
-      return rect.left + rect.width / 2 - containerRect.left;
-    });
   }
 
   let left = evt.clientX - startX;
@@ -63,6 +117,35 @@ function stopDrag() {
   currentIndex.value = -1;
   document.body.removeEventListener("pointermove", move);
   document.body.removeEventListener("pointerup", stopDrag);
+}
+
+function onWheel(evt: WheelEvent) {
+  evt.preventDefault();
+  const container = tabContainerRef.value!;
+  container.scrollLeft += evt.deltaX;
+}
+
+function onScroll() {
+  calcScroll();
+}
+
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
+
+function onScrollLeft() {
+  const container = tabContainerRef.value!;
+  container.scrollBy({
+    left: -300,
+    behavior: "smooth",
+  });
+}
+
+function onScrollRight() {
+  const container = tabContainerRef.value!;
+  container.scrollBy({
+    left: 300,
+    behavior: "smooth",
+  });
 }
 
 function bisect(nums: number[], n: number) {
@@ -86,7 +169,22 @@ function bisect(nums: number[], n: number) {
       class="relative flex p-1 items-center w-full gap-1 whitespace-nowrap"
       data-tauri-drag-region
     >
-      <div class="flex flex-row gap-1" ref="tabContainer">
+      <div
+        class="flex flex-row gap-1 min-w-0 overflow-hidden"
+        ref="tabContainer"
+        @wheel="onWheel"
+        @scroll="onScroll"
+      >
+        <UButton
+          class="sticky min-h-full top-0 left-0 px-0 rounded-none bg-elevated shadow -mr-1 disabled:text-zinc-300 dark:disabled:text-slate-600"
+          icon="i-lucide-chevron-left"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :hidden="!showScrollButtons"
+          :disabled="!canScrollLeft"
+          @click="onScrollLeft"
+        />
         <UButton
           v-for="(tab, i) in tabs"
           :key="tab.path"
@@ -117,6 +215,16 @@ function bisect(nums: number[], n: number) {
             @click.stop.prevent="closeTab(tab.path)"
           />
         </UButton>
+        <UButton
+          class="sticky min-h-full top-0 right-0 px-0 rounded-none bg-elevated shadow -ml-1 disabled:text-zinc-300 dark:disabled:text-slate-600"
+          icon="i-lucide-chevron-right"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :hidden="!showScrollButtons"
+          :disabled="!canScrollRight"
+          @click="onScrollRight"
+        />
       </div>
       <UButton
         v-if="dragging && dragData"
