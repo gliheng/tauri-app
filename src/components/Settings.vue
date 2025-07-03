@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TabsItem } from "@nuxt/ui";
-import { reactive } from "vue";
+import { storeToRefs } from "pinia";
+import { useSettingsStore } from "@/stores/settings";
 
 const tabItems = [
   {
@@ -24,18 +25,13 @@ const providerItems = [
     label: "Deepseek",
     value: "deepseek",
   },
+  {
+    label: "Silliconflow",
+    value: "silliconflow",
+  },
 ] satisfies TabsItem[];
 
-const modelSettings = reactive({
-  openrouter: {
-    apiKey: "",
-    enabled: true,
-  },
-  deepseek: {
-    apiKey: "",
-    enabled: true,
-  },
-});
+const { modelSettings } = storeToRefs(useSettingsStore());
 </script>
 
 <template>
@@ -58,7 +54,7 @@ const modelSettings = reactive({
               />
               <UFormField label="Api Key" name="apiKey">
                 <UInput
-                  v-model="modelSettings[item.value].apiKey"
+                  v-model.trim="modelSettings[item.value].apiKey"
                   class="w-full"
                 />
               </UFormField>
