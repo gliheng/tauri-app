@@ -29,7 +29,9 @@ const store = useStore();
       >
     </SplitterPanel>
     <SplitterResizeHandle class="w-0.5 splitter-handle" />
-    <SplitterPanel>
+    <SplitterPanel
+      :default-size="80"
+    >
       <RichEditor />
     </SplitterPanel>
   </SplitterGroup>
