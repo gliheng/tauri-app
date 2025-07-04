@@ -7,7 +7,6 @@ export function getModel(model?: string) {
   model = model ?? "deepseek::deepseek-chat";
   const [provider, name] = model.split("::");
   const apiKey = loadModelSettings()[provider]?.apiKey;
-  debugger;
   if (provider == "deepseek") {
     // sk-f721ca4afb6b4fb3a3937bb3e3b64e3d
     return createDeepSeek({

@@ -28,12 +28,6 @@
     "motion-v": "^1.1.1",
     "nanoid": "^5.1.5",
     "pinia": "^3.0.3",
-    "prosemirror-example-setup": "^1.2.3",
-    "prosemirror-model": "^1.25.1",
-    "prosemirror-schema-basic": "^1.2.4",
-    "prosemirror-schema-list": "^1.5.1",
-    "prosemirror-state": "^1.4.3",
-    "prosemirror-view": "^1.40.0",
     "reka-ui": "^2.3.1",
     "shiki": "^3.6.0",
     "tailwind-variants": "^1.0.0",
@@ -56,5 +50,8 @@
     "vite": "^6.0.3",
     "vue-tsc": "^2.1.10"
   },
-  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538"
+  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538",
+  "workspaces": [
+    "packages/*"
+  ]
 }

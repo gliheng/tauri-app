@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
-import RichEditor from "@/components/RichEditor.vue";
 import { createLibraryStore } from "@/stores/library";
+import 'rich-editor';
 
 const route = useRoute();
 const useStore = createLibraryStore(route.params.id as string);
@@ -32,7 +32,7 @@ const store = useStore();
     <SplitterPanel
       :default-size="80"
     >
-      <RichEditor />
+      <rich-editor />
     </SplitterPanel>
   </SplitterGroup>
 </template>
