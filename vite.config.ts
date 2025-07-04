@@ -8,7 +8,13 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [vue(), tailwindcss(), ui()],
+  plugins: [vue({
+    template: {
+      compilerOptions: {
+        isCustomElement: (tag) => tag.startsWith('rich-editor'),
+      }
+    }
+  }), tailwindcss(), ui()],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

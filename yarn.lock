@@ -4278,7 +4278,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rich-editor@workspace:packages/rich-editor":
+"rich-editor@workspace:*, rich-editor@workspace:packages/rich-editor":
   version: 0.0.0-use.local
   resolution: "rich-editor@workspace:packages/rich-editor"
   dependencies:
@@ -4925,6 +4925,7 @@ __metadata:
     nanoid: "npm:^5.1.5"
     pinia: "npm:^3.0.3"
     reka-ui: "npm:^2.3.1"
+    rich-editor: "workspace:*"
     sass-embedded: "npm:^1.89.2"
     shiki: "npm:^3.6.0"
     tailwind-merge: "npm:^3.3.0"
