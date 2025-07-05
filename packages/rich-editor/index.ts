@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 import { ref, createRef } from 'lit/directives/ref.js';
 import { undo, redo, history } from "prosemirror-history";
 import { toggleMark, wrapIn, chainCommands, exitCode, setBlockType, joinUp, joinDown, lift, selectParentNode, baseKeymap } from 'prosemirror-commands';
@@ -12,13 +12,13 @@ import { gapCursor } from 'prosemirror-gapcursor';
 import { undoInputRule, smartQuotes, ellipsis, emDash, wrappingInputRule, textblockTypeInputRule, inputRules } from 'prosemirror-inputrules';
 import pmStyle from "prosemirror-view/style/prosemirror.css?raw";
 import { Schema } from 'prosemirror-model';
-import './menuBar'
+import { menuBar } from './menuBar';
 
 @customElement('rich-editor')
 class RichEditorElement extends LitElement {
-  el = createRef<HTMLElement>()
-
   view?: EditorView
+
+  el = createRef<HTMLElement>()
 
   firstUpdated() {
     let plugins = [
@@ -28,6 +28,7 @@ class RichEditorElement extends LitElement {
       dropCursor(),
       gapCursor(),
       history(),
+      menuBar(),
     ];
 
     const state = EditorState.create({
@@ -54,7 +55,6 @@ class RichEditorElement extends LitElement {
   render() {
     return html`
       <style>${pmStyle}</style>
-      <rich-editor-menu .view=${view}></rich-editor-menu>
       <div class="root" ${ref(this.el)}></div>
     `;
   }
@@ -67,6 +67,10 @@ class RichEditorElement extends LitElement {
       min-height: 100%;
     }
     .root {
+      flex: 1;
+      display: flex;
+    }
+    .wrapper {
       flex: 1;
       display: flex;
       flex-direction: column;
