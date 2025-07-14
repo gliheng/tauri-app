@@ -6,13 +6,14 @@ import { toggleMark, wrapIn, chainCommands, exitCode, setBlockType, joinUp, join
 import { keymap } from "prosemirror-keymap";
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { schema } from 'prosemirror-schema-basic';
+import { splitListItem, liftListItem, sinkListItem } from 'prosemirror-schema-list';
 import { dropCursor } from 'prosemirror-dropcursor';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { undoInputRule, smartQuotes, ellipsis, emDash, wrappingInputRule, textblockTypeInputRule, inputRules } from 'prosemirror-inputrules';
 import pmStyle from "prosemirror-view/style/prosemirror.css?raw";
 import { Schema } from 'prosemirror-model';
 import { menuBar } from './menuBar';
+import { schema } from './schema';
 
 @customElement('rich-editor')
 class RichEditorElement extends LitElement {
