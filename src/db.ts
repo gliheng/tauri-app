@@ -45,8 +45,8 @@ export async function init() {
         agentStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
       }
 
-      if (!db.objectStoreNames.contains("library")) {
-        const userStore = db.createObjectStore("library", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("note")) {
+        const userStore = db.createObjectStore("note", { keyPath: "id" });
         userStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
       }
     };
@@ -79,7 +79,7 @@ export interface Agent {
   updatedAt: Date;
 }
 
-export interface Library {
+export interface Note {
   id: string;
   name: string;
   createdAt: Date;

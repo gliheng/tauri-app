@@ -18,8 +18,6 @@ declare module 'vue' {
     MessageList: typeof import('./src/components/MessageList.vue')['default']
     MessageSwitcher: typeof import('./src/components/MessageSwitcher.vue')['default']
     ModelSelector: typeof import('./src/components/ModelSelector.vue')['default']
-    RichEditor: typeof import('./src/components/RichEditor.vue')['default']
-    RishEditor: typeof import('./src/components/RishEditor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Scrollbar: typeof import('./src/components/Scrollbar.vue')['default']

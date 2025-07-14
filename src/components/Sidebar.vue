@@ -3,7 +3,7 @@ import { useRouter } from "vue-router";
 import { nanoid } from "nanoid";
 import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
-import { Agent, Library } from "@/db";
+import { Agent, Note } from "@/db";
 import { tv } from "tailwind-variants";
 
 const buttonStyle = tv({
@@ -50,23 +50,23 @@ function openAgent(agent: Agent) {
   });
 }
 
-function addLibrary() {
+function addNote() {
   const id = nanoid();
-  tabsStore.openTab(`/library/${id}`, "New library");
+  tabsStore.openTab(`/note/${id}`, "New note");
   router.push({
-    name: "library",
+    name: "note",
     params: {
       id,
     },
   });
 }
 
-function openLibrary(library: Library) {
-  tabsStore.openTab(`/library/${library.id}`, library.name);
+function openNote(note: Note) {
+  tabsStore.openTab(`/note/${note.id}`, note.name);
   router.push({
-    name: "library",
+    name: "note",
     params: {
-      id: library.id,
+      id: note.id,
     },
   });
 }
@@ -77,7 +77,7 @@ function openLibrary(library: Library) {
     class="flex-1 size-full bg-elevated flex flex-col p-2 gap-2 items-stretch"
   >
     <h1 class="text-xl font-bold mb-2 flex flex-row gap-2 items-center">
-      <img class="w-16 h-16" src="/logo.png" alt="Logo" />
+      <img class="w-16 h-16" src="/lily.png" alt="Logo" />
       Raven
     </h1>
     <UButton
@@ -130,7 +130,7 @@ function openLibrary(library: Library) {
     <UCollapsible class="flex flex-col gap-2" default-open>
       <UButton
         class="group"
-        icon="i-lucide-library"
+        icon="i-lucide-notebook-text"
         variant="subtle"
         color="neutral"
         :ui="{
@@ -141,7 +141,7 @@ function openLibrary(library: Library) {
         default-open
         block
       >
-        Library
+        Note
       </UButton>
       <template #content>
         <section class="space-y-1">
@@ -150,7 +150,7 @@ function openLibrary(library: Library) {
             icon="i-lucide-plus"
             color="neutral"
             variant="soft"
-            @click="addLibrary"
+            @click="addNote"
             >Add</UButton
           >
         </section>
