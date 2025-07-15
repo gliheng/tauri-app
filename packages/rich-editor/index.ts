@@ -63,7 +63,7 @@ class RichEditorElement extends LitElement {
       <style>${pmStyle}</style>
       <style>
         .ProseMirror {
-          width: ${this.width} ? ${this.width}px : '100%';
+          width: ${this.width ? this.width + 'px' : '100%'};
         }
       </style>
       <div class="root" ${ref(this.el)}></div>
@@ -89,8 +89,10 @@ class RichEditorElement extends LitElement {
     .ProseMirror {
       display: flow-root;
       padding: 4px 8px;
+      box-sizing: border-box;
       flex: 1;
       outline: none;
+      align-self: center;
     }
   `
 }
