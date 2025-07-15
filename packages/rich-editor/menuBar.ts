@@ -61,8 +61,10 @@ class RichEditorMenuElement extends LitElement {
       padding: 0 0.5rem;
       box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
     }
+    button {
+      border: 1px solid var(--ui-border-muted);
+    }
     button[data-active] {
-      border: 1px solid var(--ui-color-primary-200);
       background-color: var(--ui-color-primary-200);
     }
   `;
@@ -97,7 +99,7 @@ interface MenuOptions {
 }
 
 interface MenuItem extends MenuOptions {
-  enable?: (state: EditorState) => Command;
+  enable?: (state: EditorState) => boolean;
   active?: (state: EditorState) => boolean;
   run: (state: EditorState, dispatch: (tr: Transaction) => void, view: EditorView) => void;
 }
@@ -120,7 +122,32 @@ export function blockTypeItem(options: MenuOptions & {
   }
 }
 
-export function markItem(options: ButtonOptions & {
+export function blockTypeToggleItem(options: MenuOptions & {
+  nodeType: NodeType;
+  attrs?: Attrs;
+}): MenuItem {
+  const { nodeType, attrs, ...rest } = options;
+  return {
+    ...rest,
+    active(state: EditorState) {
+      let { $from, to, node } = state.selection as NodeSelection;
+      if (node) return node.hasMarkup(nodeType, attrs);
+      return to <= $from.end() && $from.parent.hasMarkup(nodeType, attrs);
+    },
+    run(state, dispatch, view) {
+      let command: Command;
+      if (this.active!(state)) {
+        const paragraphType = schema.nodes.paragraph;
+        command = setBlockType(paragraphType);
+      } else {
+        command = setBlockType(nodeType, attrs);
+      }
+      command(state, dispatch, view);
+    },
+  }
+}
+
+export function markItem(options: MenuOptions & {
   markType: MarkType;
 }) {
   const { markType, ...rest } = options;
@@ -136,7 +163,7 @@ export function markItem(options: ButtonOptions & {
   };
 }
 
-const menuBarItems = [
+const menuBarItems: MenuItem[] = [
   {
     name: 'undo',
     title: 'Undo',
@@ -149,7 +176,7 @@ const menuBarItems = [
     run: redo,
     enable(state: EditorState) { return redoDepth(state) == 0 },
   },
-  blockTypeItem({
+  blockTypeToggleItem({
     name: 'heading',
     title: 'Heading',
     icon: '',
@@ -158,11 +185,11 @@ const menuBarItems = [
       level: 2,
     },
   }),
-  blockTypeItem({
-    name: 'paragraph',
-    title: 'Paragraph',
+  blockTypeToggleItem({
+    name: 'code',
+    title: 'Code block',
     icon: '',
-    nodeType: schema.nodes.paragraph,
+    nodeType: schema.nodes.code_block,
   }),
   markItem({
     name: 'strong',

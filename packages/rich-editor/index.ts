@@ -6,7 +6,7 @@ import { toggleMark, wrapIn, chainCommands, exitCode, setBlockType, joinUp, join
 import { keymap } from "prosemirror-keymap";
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { splitListItem, liftListItem, sinkListItem } from 'prosemirror-schema-list';
+import { splitListItem, liftListItem, sinkListItem, wrapInList } from 'prosemirror-schema-list';
 import { dropCursor } from 'prosemirror-dropcursor';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { undoInputRule, smartQuotes, ellipsis, emDash, wrappingInputRule, textblockTypeInputRule, inputRules } from 'prosemirror-inputrules';
