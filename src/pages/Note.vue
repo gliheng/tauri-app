@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useNoteStore } from "@/stores/note";
-import 'rich-editor';
+import "rich-editor";
 
 const store = useNoteStore();
 </script>

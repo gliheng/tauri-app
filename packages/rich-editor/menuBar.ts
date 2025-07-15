@@ -1,9 +1,18 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { EditorView } from 'prosemirror-view';
-import { EditorState } from 'prosemirror-state';
+import { Plugin, EditorState, NodeSelection, Transaction, Command } from 'prosemirror-state';
 import { undo, redo, undoDepth, redoDepth } from "prosemirror-history";
-import { Plugin } from 'prosemirror-state';
+import { toggleMark, lift, joinUp, selectParentNode, wrapIn, setBlockType } from "prosemirror-commands"
+import { Attrs, MarkType, NodeType } from 'prosemirror-model';
+import { map } from 'lit/directives/map.js';
+import { schema } from './schema';
+
+function markActive(state: EditorState, type: MarkType) {
+  let {from, $from, to, empty} = state.selection
+  if (empty) return !!type.isInSet(state.storedMarks || $from.marks())
+  else return state.doc.rangeHasMark(from, to, type)
+}
 
 @customElement('rich-editor-menu')
 class RichEditorMenuElement extends LitElement {
@@ -13,31 +22,32 @@ class RichEditorMenuElement extends LitElement {
   })
   view: EditorView
 
+  @state()
+  enableMap = {}
+
+  @state()
+  activeMap = {}
+
   updateView() {
-    const { state } = this.view
-    this.undoDisabled = undoDepth(state) == 0;
-    this.redoDisabled = redoDepth(state) == 0;
+    this.enableMap = Object.fromEntries(menuBarItems.map(e => [e.name, e.enable?.(this.view.state)]).filter(e => e[1] !== undefined));
+    this.activeMap = Object.fromEntries(menuBarItems.map(e => [e.name, e.active?.(this.view.state)]).filter(e => e[1] !== undefined));
+    console.log('enableMap: ', this.enableMap, 'activeMap: ', this.activeMap);
   }
 
-  @state()
-  undoDisabled = true
-  undo = () => {
-    const { state, dispatch } = this.view
-    undo(state, dispatch, this.view);
-  }
-
-  @state()
-  redoDisabled = true
-  redo = () => {
-    const { state, dispatch } = this.view
-    redo(state, dispatch, this.view);
+  runMenuCommand = (menuItem, evt: PointerEvent) => {
+    evt.preventDefault();
+    menuItem.run(this.view.state, this.view.dispatch, this.view);
   }
 
   render() {
     return html`
       <header>
-        <button @click=${this.undo} .disabled=${this.undoDisabled}>undo</button>
-        <button @click=${this.redo} .disabled=${this.redoDisabled}>redo</button>
+        ${map(menuBarItems, (e) => html`
+          <button
+            @mousedown=${this.runMenuCommand.bind(null, e)}
+            .disabled=${!(this.enableMap[e.name] ?? true)}
+            ?data-active=${this.activeMap[e.name]}
+          >${e.title}</button>`)}
       </header>
     `;
   }
@@ -45,11 +55,15 @@ class RichEditorMenuElement extends LitElement {
   static styles = css`
     header {
       height: 40px;
-      border-bottom: 1px solid var(--re-menu-border-color, silver);
       display: flex;
       align-items: center;
       gap: 0.5rem;
       padding: 0 0.5rem;
+      box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
+    }
+    button[data-active] {
+      border: 1px solid var(--ui-color-primary-200);
+      background-color: var(--ui-color-primary-200);
     }
   `;
 }
@@ -75,3 +89,85 @@ export const menuBar = () => {
     }
   });
 }
+
+interface MenuOptions {
+  name: string;
+  title?: string;
+  icon?: string;
+}
+
+interface MenuItem extends MenuOptions {
+  enable?: (state: EditorState) => Command;
+  active?: (state: EditorState) => boolean;
+  run: (state: EditorState, dispatch: (tr: Transaction) => void, view: EditorView) => void;
+}
+
+export function blockTypeItem(options: MenuOptions & {
+  nodeType: NodeType;
+  attrs?: Attrs;
+}): MenuItem {
+  const { nodeType, attrs, ...rest } = options;
+  let command = setBlockType(nodeType, attrs);
+  return {
+    ...rest,
+    enable(state: EditorState) { return command(state) },
+    active(state: EditorState) {
+      let { $from, to, node } = state.selection as NodeSelection;
+      if (node) return node.hasMarkup(nodeType, attrs);
+      return to <= $from.end() && $from.parent.hasMarkup(nodeType, attrs);
+    },
+    run: command,
+  }
+}
+
+export function markItem(options: ButtonOptions & {
+  markType: MarkType;
+}) {
+  const { markType, ...rest } = options;
+  return {
+    ...rest,
+    active(state: EditorState) {
+      return markActive(state, markType);
+    },
+    run(state: EditorState, dispatch: (tr: Transaction) => void, view: EditorView) {
+      toggleMark(markType)(state, dispatch, view);
+      view.focus();
+    },
+  };
+}
+
+const menuBarItems = [
+  {
+    name: 'undo',
+    title: 'Undo',
+    run: undo,
+    enable(state: EditorState) { return undoDepth(state) == 0 },
+  },
+  {
+    name: 'redo',
+    title: 'Redo',
+    run: redo,
+    enable(state: EditorState) { return redoDepth(state) == 0 },
+  },
+  blockTypeItem({
+    name: 'heading',
+    title: 'Heading',
+    icon: '',
+    nodeType: schema.nodes.heading,
+    attrs: {
+      level: 2,
+    },
+  }),
+  blockTypeItem({
+    name: 'paragraph',
+    title: 'Paragraph',
+    icon: '',
+    nodeType: schema.nodes.paragraph,
+  }),
+  markItem({
+    name: 'strong',
+    title: 'Strong',
+    icon: '',
+    markType: schema.marks.strong,
+  }),
+];
