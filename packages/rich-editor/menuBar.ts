@@ -31,10 +31,9 @@ class RichEditorMenuElement extends LitElement {
   updateView() {
     this.enableMap = Object.fromEntries(menuBarItems.map(e => [e.name, e.enable?.(this.view.state)]).filter(e => e[1] !== undefined));
     this.activeMap = Object.fromEntries(menuBarItems.map(e => [e.name, e.active?.(this.view.state)]).filter(e => e[1] !== undefined));
-    console.log('enableMap: ', this.enableMap, 'activeMap: ', this.activeMap);
   }
 
-  runMenuCommand = (menuItem, evt: PointerEvent) => {
+  runMenuCommand = (menuItem: MenuItem, evt: PointerEvent) => {
     evt.preventDefault();
     menuItem.run(this.view.state, this.view.dispatch, this.view);
   }

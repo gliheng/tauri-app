@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { ref, createRef } from 'lit/directives/ref.js';
 import { undo, redo, history } from "prosemirror-history";
 import { toggleMark, wrapIn, chainCommands, exitCode, setBlockType, joinUp, joinDown, lift, selectParentNode, baseKeymap } from 'prosemirror-commands';
@@ -18,6 +18,11 @@ import { schema } from './schema';
 @customElement('rich-editor')
 class RichEditorElement extends LitElement {
   view?: EditorView
+
+  @property({
+    type: Number,
+  })
+  width: number
 
   el = createRef<HTMLElement>()
 
@@ -56,6 +61,11 @@ class RichEditorElement extends LitElement {
   render() {
     return html`
       <style>${pmStyle}</style>
+      <style>
+        .ProseMirror {
+          width: ${this.width} ? ${this.width}px : '100%';
+        }
+      </style>
       <div class="root" ${ref(this.el)}></div>
     `;
   }
