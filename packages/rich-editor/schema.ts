@@ -1,4 +1,5 @@
-import {Schema, NodeSpec, MarkSpec, DOMOutputSpec} from "prosemirror-model"
+import {Schema, NodeSpec, MarkSpec, DOMOutputSpec} from "prosemirror-model";
+import { bulletList, orderedList, listItem, addListNodes } from 'prosemirror-schema-list';
 
 const pDOM: DOMOutputSpec = ["p", 0], blockquoteDOM: DOMOutputSpec = ["blockquote", 0],
       hrDOM: DOMOutputSpec = ["hr"], preDOM: DOMOutputSpec = ["pre", ["code", 0]],
@@ -115,7 +116,11 @@ export const nodes = {
   } as NodeSpec
 }
 
-const emDOM: DOMOutputSpec = ["em", 0], strongDOM: DOMOutputSpec = ["strong", 0], codeDOM: DOMOutputSpec = ["code", 0]
+const emDOM: DOMOutputSpec = ["em", 0],
+  strongDOM: DOMOutputSpec = ["strong", 0],
+  codeDOM: DOMOutputSpec = ["code", 0],
+  strikeDOM: DOMOutputSpec = ["s", 0],
+  underlineDOM: DOMOutputSpec = ["u", 0];
 
 /// [Specs](#model.MarkSpec) for the marks in the schema.
 export const marks = {
@@ -159,14 +164,32 @@ export const marks = {
     ],
     toDOM() { return strongDOM }
   } as MarkSpec,
+  
+  /// Strike mark. Represented as a `<s>` element.
+  strike: {
+    parseDOM: [
+      {tag: "s"},
+    ],
+    toDOM() { return strikeDOM }
+  } as MarkSpec,
+
+  /// Underline mark. Represented as a `<u>` element.
+  underline: {
+    parseDOM: [
+      {tag: "u"},
+    ],
+    toDOM() { return underlineDOM }
+  } as MarkSpec,
 
   /// Code font mark. Represented as a `<code>` element.
   code: {
     code: true,
     parseDOM: [{tag: "code"}],
     toDOM() { return codeDOM }
-  } as MarkSpec
+  } as MarkSpec,
 }
+
+const base = new Schema({ nodes, marks })
 
 /// This schema roughly corresponds to the document schema used by
 /// [CommonMark](http://commonmark.org/), minus the list elements,
@@ -175,4 +198,8 @@ export const marks = {
 ///
 /// To reuse elements from this schema, extend or read from its
 /// `spec.nodes` and `spec.marks` [properties](#model.Schema.spec).
-export const schema = new Schema({nodes, marks})
+export const schema = new Schema({
+  nodes: addListNodes(base.spec.nodes, "paragraph block*", "block"),
+  marks: base.spec.marks,
+})
+

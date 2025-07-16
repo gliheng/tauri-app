@@ -1,11 +1,12 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { map } from 'lit/directives/map.js';
 import { EditorView } from 'prosemirror-view';
 import { Plugin, EditorState, NodeSelection, Transaction, Command } from 'prosemirror-state';
 import { undo, redo, undoDepth, redoDepth } from "prosemirror-history";
-import { toggleMark, lift, joinUp, selectParentNode, wrapIn, setBlockType } from "prosemirror-commands"
 import { Attrs, MarkType, NodeType } from 'prosemirror-model';
-import { map } from 'lit/directives/map.js';
+import { toggleMark, lift, joinUp, selectParentNode, wrapIn, setBlockType } from "prosemirror-commands"
+import { wrapInList } from 'prosemirror-schema-list';
 import { schema } from './schema';
 
 function markActive(state: EditorState, type: MarkType) {
@@ -56,6 +57,7 @@ class RichEditorMenuElement extends LitElement {
       height: 40px;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
       padding: 0 0.5rem;
       box-shadow: rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
@@ -162,6 +164,45 @@ export function markItem(options: MenuOptions & {
   };
 }
 
+export function wrapItem(options: MenuOptions & {
+  nodeType: NodeType;
+}): MenuItem {
+  const { nodeType, ...rest } = options;
+  return {
+    ...rest,
+    active(state) {
+      return lift(state);
+    },
+    run(state, dispatch, view) {
+      if (this.active!(state)) {
+        lift(state, dispatch, view);
+      } else {
+        wrapIn(nodeType)(state, dispatch, view);
+      }
+      view.focus();
+    },
+  };
+}
+
+export function wrapInListItem(options: MenuOptions & {
+  nodeType: NodeType;
+}): MenuItem {
+  const { nodeType, ...rest } = options;
+  return {
+    ...rest,
+    active(state: EditorState) {
+      return !wrapInList(nodeType)(state);
+    },
+    run(state, dispatch, view) {
+      if (this.active!(state)) {
+        lift(state, dispatch, view);
+      } else {
+        wrapInList(nodeType)(state, dispatch, view);
+      }
+    },
+  };
+}
+
 const menuBarItems: MenuItem[] = [
   {
     name: 'undo',
@@ -190,10 +231,52 @@ const menuBarItems: MenuItem[] = [
     icon: '',
     nodeType: schema.nodes.code_block,
   }),
+  wrapItem({
+    name: 'blockquote',
+    title: 'Block quote',
+    icon: '',
+    nodeType: schema.nodes.blockquote,
+  }),
+  wrapInListItem({
+    name: 'bulletList',
+    title: 'Bullet list',
+    icon: '',
+    nodeType: schema.nodes.bullet_list,
+  }),
+  wrapInListItem({
+    name: 'orderedList',
+    title: 'Ordered list',
+    icon: '',
+    nodeType: schema.nodes.ordered_list,
+  }),
   markItem({
     name: 'strong',
     title: 'Strong',
     icon: '',
     markType: schema.marks.strong,
+  }),
+  markItem({
+    name: 'italic',
+    title: 'Italic',
+    icon: '',
+    markType: schema.marks.em,
+  }),
+  markItem({
+    name: 'strike',
+    title: 'Strike',
+    icon: '',
+    markType: schema.marks.strike,
+  }),
+  markItem({
+    name: 'underline',
+    title: 'Underline',
+    icon: '',
+    markType: schema.marks.underline,
+  }),
+  markItem({
+    name: 'code',
+    title: 'Code',
+    icon: '',
+    markType: schema.marks.code,
   }),
 ];
