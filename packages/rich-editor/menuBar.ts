@@ -173,7 +173,7 @@ export function wrapItem(options: MenuOptions & {
   return {
     ...rest,
     active(state) {
-      return lift(state);
+      return !!findParentNodeOfType([nodeType])(state.selection);
     },
     run(state, dispatch, view) {
       if (this.active!(state)) {
