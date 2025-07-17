@@ -4126,6 +4126,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"prosemirror-utils@npm:^1.2.2":
+  version: 1.2.2
+  resolution: "prosemirror-utils@npm:1.2.2"
+  peerDependencies:
+    prosemirror-model: ^1.19.2
+    prosemirror-state: ^1.4.3
+  checksum: 10c0/f882bd160f8d21ef23889080a231d16c9500d156778be23280e42505aa52e2804bedfa1a993349a6764dd1615dd2909d48379471f295bf594320453cbe8b603e
+  languageName: node
+  linkType: hard
+
 "prosemirror-view@npm:^1.0.0, prosemirror-view@npm:^1.1.0, prosemirror-view@npm:^1.27.0, prosemirror-view@npm:^1.31.0, prosemirror-view@npm:^1.40.0":
   version: 1.40.0
   resolution: "prosemirror-view@npm:1.40.0"
@@ -4288,6 +4298,7 @@ __metadata:
     prosemirror-schema-list: "npm:^1.5.1"
     prosemirror-state: "npm:^1.4.3"
     prosemirror-transform: "npm:^1.10.4"
+    prosemirror-utils: "npm:^1.2.2"
     prosemirror-view: "npm:^1.40.0"
     typescript: "npm:^5.6.2"
   languageName: unknown

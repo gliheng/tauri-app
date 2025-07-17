@@ -4,9 +4,10 @@ import { map } from 'lit/directives/map.js';
 import { EditorView } from 'prosemirror-view';
 import { Plugin, EditorState, NodeSelection, Transaction, Command } from 'prosemirror-state';
 import { undo, redo, undoDepth, redoDepth } from "prosemirror-history";
-import { Attrs, MarkType, NodeType } from 'prosemirror-model';
-import { toggleMark, lift, joinUp, selectParentNode, wrapIn, setBlockType } from "prosemirror-commands"
+import { Attrs, MarkType, NodeType, ResolvedPos, Schema } from 'prosemirror-model';
+import { toggleMark, lift, joinUp, selectParentNode, wrapIn, setBlockType, chainCommands } from "prosemirror-commands"
 import { wrapInList } from 'prosemirror-schema-list';
+import { findParentNodeOfType } from 'prosemirror-utils';
 import { schema } from './schema';
 
 function markActive(state: EditorState, type: MarkType) {
@@ -64,6 +65,7 @@ class RichEditorMenuElement extends LitElement {
     }
     button {
       border: 1px solid var(--ui-border-muted);
+      white-space: nowrap;
     }
     button[data-active] {
       background-color: var(--ui-color-primary-200);
@@ -191,13 +193,23 @@ export function wrapInListItem(options: MenuOptions & {
   return {
     ...rest,
     active(state: EditorState) {
-      return !wrapInList(nodeType)(state);
+      const parentList = findParentNodeOfType([nodeType])(state.selection);
+      return parentList?.node.type === nodeType;
     },
     run(state, dispatch, view) {
       if (this.active!(state)) {
         lift(state, dispatch, view);
       } else {
-        wrapInList(nodeType)(state, dispatch, view);
+        const { bullet_list, ordered_list } = schema.nodes;
+        const parentList = findParentNodeOfType([bullet_list, ordered_list])(state.selection);
+        if (!parentList) {
+          wrapInList(nodeType)(state, dispatch, view);
+        } else if (parentList.node.type === nodeType) {
+          lift(state, dispatch, view);
+        } else {
+          // replace list node
+          dispatch(state.tr.setNodeMarkup(parentList.pos, nodeType, parentList.node.attrs));
+        }
       }
     },
   };
