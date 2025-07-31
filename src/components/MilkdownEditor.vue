@@ -2,17 +2,25 @@
 import { Milkdown, useEditor } from "@milkdown/vue";
 import { Crepe } from "@milkdown/crepe";
 
-const props = defineProps({
-  value: String,
+const model = defineModel({
+  type: String,
+  required: true,
 });
 
 useEditor((root) => {
   const crepe = new Crepe({
     root,
-    defaultValue: props.value,
+    defaultValue: model.value,
+  });
+  crepe.on((listener) => {
+    listener.markdownUpdated((ctx, markdown, prevMarkdown) => {
+      if (markdown !== prevMarkdown) {
+        model.value = markdown;
+      }
+    });
   });
   return crepe;
-})
+});
 </script>
 
 <template>
