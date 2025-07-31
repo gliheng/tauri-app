@@ -82,6 +82,7 @@ export interface Agent {
 export interface Note {
   id: string;
   name: string;
+  content?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -397,6 +398,107 @@ export function getAgent(id: string) {
 
     request.onerror = (event: Event) => {
       console.error("Error getting agent:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
+ * Write a note to the database
+ */
+export function writeNote(data: Note): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(["note"], "readwrite");
+    const store = transaction.objectStore("note");
+    const request = store.put(data);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error writing note:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
+ * Update an existing note
+ */
+export function updateNote(id: string, data: Partial<Note>): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tr = db.transaction(["note"], "readwrite");
+    const store = tr.objectStore("note");
+
+    // First get the existing note
+    const getRequest = store.get(id);
+
+    getRequest.onsuccess = () => {
+      const existingNote = getRequest.result;
+      if (!existingNote) {
+        reject(new Error(`Note with ID ${id} not found`));
+        return;
+      }
+
+      // Update the note with new data
+      const updatedNote = { ...existingNote, ...data };
+      const putRequest = store.put(updatedNote);
+
+      putRequest.onsuccess = () => {
+        resolve();
+      };
+
+      putRequest.onerror = (event: Event) => {
+        console.error("Error updating note:", event);
+        reject(event);
+      };
+    };
+
+    getRequest.onerror = (event: Event) => {
+      console.error("Error getting note for update:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
+ * Get all notes
+ */
+export function getAllNotes(): Promise<Note[]> {
+  return new Promise((resolve, reject) => {
+    const tr = db.transaction(["note"], "readonly");
+    const store = tr.objectStore("note");
+    const noteIndex = store.index("byUpdateTime");
+    const request = noteIndex.getAll();
+
+    request.onsuccess = () => {
+      resolve(request.result.reverse());
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting note list:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
+ * Get a single note by ID
+ */
+export function getNote(id: string): Promise<Note | undefined> {
+  return new Promise<Note | undefined>((resolve, reject) => {
+    const transaction = db.transaction(["note"], "readonly");
+    const store = transaction.objectStore("note");
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      const note = request.result as Note | undefined;
+      resolve(note);
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting note:", event);
       reject(event);
     };
   });

@@ -8,9 +8,6 @@ import MilkdownEditor from "@/components/MilkdownEditor.vue";
 
 const store = useNoteStore();
 const { expanded } = storeToRefs(useTabsStore());
-const viewWidth = computed(() =>
-  expanded.value ? undefined : Math.min(screen.width / 3, 600),
-);
 </script>
 
 <template>
