@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import { nanoid } from "nanoid";
+import { tv } from "tailwind-variants";
+import { useColorMode } from "@vueuse/core";
 import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Agent, Note } from "@/db";
-import { tv } from "tailwind-variants";
+import { computed } from "vue";
 
 const buttonStyle = tv({
   base: "items-center w-full",
@@ -13,6 +15,11 @@ const buttonStyle = tv({
 const router = useRouter();
 const tabsStore = useTabsStore();
 const sidebarStore = useSidebarStore();
+const mode = useColorMode();
+
+const logoImg = computed(() => {
+  return mode.value === "dark" ? "/raven-dark.png" : "/raven-light.png";
+});
 
 sidebarStore.load();
 
@@ -81,7 +88,7 @@ function openNote(note: Note) {
     class="flex-1 size-full bg-elevated flex flex-col p-2 gap-2 items-stretch"
   >
     <h1 class="text-xl font-bold mb-2 flex flex-row gap-2 items-center">
-      <img class="w-16 h-16" src="/raven.png" alt="Logo" />
+      <img class="w-16 h-16" :src="logoImg" alt="Logo" />
       Raven
     </h1>
     <UButton
