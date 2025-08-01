@@ -1,11 +1,14 @@
 import { Message } from "ai";
 import { ROOT_NODE_ID } from "./constants";
 
+const dbName = "ai-studio";
+const dbVer = 3;
+
 let db: IDBDatabase;
 
 export async function init() {
   return new Promise<void>((resolve, reject) => {
-    const request = indexedDB.open("ai-studio", 2);
+    const request = indexedDB.open(dbName, dbVer);
     request.onerror = (event: Event) => {
       console.error(
         "Why didn't you allow my web app to use IndexedDB?!",
@@ -465,7 +468,7 @@ export function updateNote(id: string, data: Partial<Note>): Promise<void> {
 /**
  * Get all notes
  */
-export function getAllNotes(): Promise<Note[]> {
+export function getNotes(): Promise<Note[]> {
   return new Promise((resolve, reject) => {
     const tr = db.transaction(["note"], "readonly");
     const store = tr.objectStore("note");

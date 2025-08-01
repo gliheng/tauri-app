@@ -1,17 +1,18 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import { Agent, Library, getAgents } from "@/db";
+import { Agent, getAgents, getNotes, Note } from "@/db";
 
 export const useSidebarStore = defineStore("sidebar", () => {
   async function load() {
     agents.value = await getAgents();
+    notes.value = await getNotes();
   }
   const agents = ref<Agent[]>([]);
-  const libraries = ref<Library[]>([]);
+  const notes = ref<Note[]>([]);
   return {
     load,
     agents,
-    libraries,
+    notes,
     setSidebarAgent(id: string, name: string) {
       const agent = agents.value.find((agent) => agent.id === id);
       if (agent) {

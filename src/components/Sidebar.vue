@@ -40,6 +40,10 @@ function agentUrl(agent: Agent) {
   return `/agent/${agent.id}`;
 }
 
+function noteUrl(note: Note) {
+  return `/note/${note.id}`;
+}
+
 function openAgent(agent: Agent) {
   tabsStore.openTab(agentUrl(agent), agent.name);
   router.push({
@@ -145,6 +149,19 @@ function openNote(note: Note) {
       </UButton>
       <template #content>
         <section class="space-y-1">
+          <UButton
+            v-for="note in sidebarStore.notes"
+            :key="note.id"
+            :class="buttonStyle({})"
+            icon="i-lucide-sticky-note"
+            color="neutral"
+            variant="soft"
+            active-color="primary"
+            active-variant="solid"
+            :active="$route.path === noteUrl(note)"
+            @click="openNote(note)"
+            >{{ note.name }}</UButton
+          >
           <UButton
             :class="buttonStyle({})"
             icon="i-lucide-plus"
