@@ -2902,6 +2902,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "raven"
+version = "0.1.0"
+dependencies = [
+ "objc2 0.6.1",
+ "objc2-app-kit",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+]
+
+[[package]]
 name = "raw-window-handle"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3609,20 +3623,6 @@ dependencies = [
  "webview2-com",
  "window-vibrancy",
  "windows",
-]
-
-[[package]]
-name = "tauri-app"
-version = "0.1.0"
-dependencies = [
- "objc2 0.6.1",
- "objc2-app-kit",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
 ]
 
 [[package]]

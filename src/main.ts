@@ -8,15 +8,17 @@ import { router } from "./router";
 import App from "./App.vue";
 import { init as initDb } from "./db";
 
-const app = createApp(App);
-const pinia = createPinia();
-
-await initDb();
-app.use(pinia);
-app.use(router);
-app.use(ui);
-app.mount("#app");
-
-if (isTauri()) {
-  initNative();
-}
+(async () => {
+  const app = createApp(App);
+  const pinia = createPinia();
+  
+  await initDb();
+  app.use(pinia);
+  app.use(router);
+  app.use(ui);
+  app.mount("#app");
+  
+  if (isTauri()) {
+    initNative();
+  }
+})();
