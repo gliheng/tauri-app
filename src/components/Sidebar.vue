@@ -160,7 +160,7 @@ function openNote(note: Note) {
             v-for="note in sidebarStore.notes"
             :key="note.id"
             :class="buttonStyle({})"
-            icon="i-lucide-sticky-note"
+            :icon="note.icon"
             color="neutral"
             variant="soft"
             active-color="primary"

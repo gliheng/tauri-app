@@ -85,6 +85,7 @@ export interface Agent {
 export interface Note {
   id: string;
   name: string;
+  icon: string;
   content?: string;
   createdAt: Date;
   updatedAt: Date;

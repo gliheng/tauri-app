@@ -27,4 +27,4 @@ useEditor((root) => {
   <Milkdown />
 </template>
 
-<style lang="scss" src="@/assets/milddown.scss"></style>
+<style lang="scss" src="@/assets/milkdown.scss"></style>

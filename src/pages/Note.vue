@@ -5,19 +5,30 @@ import { throttle } from "lodash-es";
 import { getNote, writeNote, updateNote } from "@/db";
 import { MilkdownProvider } from "@milkdown/vue";
 import MilkdownEditor from "@/components/MilkdownEditor.vue";
+import NameEdit from "@/components/NameEdit.vue";
+import IconEdit from "@/components/IconEdit.vue";
+import { useSidebarStore } from "@/stores/sidebar";
+
+const sidebarStore = useSidebarStore();
 
 const route = useRoute();
+
 const initialData = await getNote(route.params.id as string);
-const model = ref(initialData?.content ?? "");
+const note = ref(Object.assign({
+  content: '',
+  name: 'New Note',
+  icon: 'i-lucide-sticky-note',
+}, initialData));
 
 let created = !!initialData;
 
-watch(model, throttle(async (value) => {
+const throttledWatcher = throttle(async (note) => {
   if (!created) {
     await writeNote({
       id: route.params.id as string,
-      name: "New Note",
-      content: value,
+      name: note.name,
+      icon: note.icon,
+      content: note.content,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -26,16 +37,27 @@ watch(model, throttle(async (value) => {
     await updateNote(
       route.params.id as string,
       {
-        content: value,
+        content: note.content,
+        name: note.name,
+        icon: note.icon,
         updatedAt: new Date(),
       },
     );
   }
-}, 1000));
+  sidebarStore.loadNotes();
+}, 1000);
+
+watch(note, throttledWatcher, {
+  deep: true,
+});
 </script>
 
 <template>
+  <hgroup class="flex flex-row gap-2 items-center mx-[8rem] mt-[4rem]">
+    <IconEdit v-model:icon="note.icon" />
+    <NameEdit v-model:name="note.name" />
+  </hgroup>
   <MilkdownProvider>
-    <MilkdownEditor v-model="model" />
+    <MilkdownEditor v-model="note.content" />
   </MilkdownProvider>
 </template>

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, useTemplateRef, nextTick, watch } from "vue";
+import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { writeAgent, getAgent, Agent } from "@/db";
-import { useTabsStore } from "@/stores/tabs";
-import { useSidebarStore } from "@/stores/sidebar";
 import { throttle } from "lodash-es";
+import { writeAgent, getAgent, Agent } from "@/db";
+import { useSidebarStore } from "@/stores/sidebar";
+import NameEdit from "@/components/NameEdit.vue";
+import IconEdit from "@/components/IconEdit.vue";
 
 const route = useRoute();
 const agentId = route.params.id as string;
@@ -16,37 +17,11 @@ const agent = ref<{
   instructions: string;
 }>({
   name: initialData?.name ?? "New Agent",
-  icon: initialData?.icon ?? "i-lucide-brain",
+  icon: initialData?.icon ?? "i-lucide-sticky-note",
   instructions: initialData?.instructions ?? "",
 });
 
-const { setTitle } = useTabsStore();
 const sidebarStore = useSidebarStore();
-const toast = useToast();
-const open = ref(false);
-const editingName = ref(false);
-const agentName = ref("");
-const input = useTemplateRef("input");
-
-function startEdit() {
-  editingName.value = true;
-  agentName.value = agent.value.name;
-  nextTick(() => {
-    const el = input.value?.inputRef;
-    el?.focus();
-    el?.select();
-  });
-}
-
-function saveEdit() {
-  agent.value.name = agentName.value;
-  editingName.value = false;
-  setTitle(route.path, agent.value.name);
-}
-
-function cancelEdit() {
-  editingName.value = false;
-}
 
 const throttledWatcher = throttle(async (newValue) => {
   const data: Agent = {
@@ -59,78 +34,19 @@ const throttledWatcher = throttle(async (newValue) => {
     data.createdAt = new Date();
   }
   await writeAgent(data);
-  sidebarStore.load();
-});
+  sidebarStore.loadAgents();
+}, 1000);
 
 watch(agent, throttledWatcher, {
   deep: true,
 });
-
-const iconList = [
-  "i-lucide-user",
-  "i-lucide-pyramid",
-  "i-lucide-snail",
-  "i-lucide-heart",
-  "i-lucide-star",
-  "i-lucide-cannabis",
-  "i-lucide-leaf",
-  "i-lucide-circle-dollar-sign",
-  "i-lucide-rocket",
-  "i-lucide-traffic-cone",
-  "i-lucide-life-buoy",
-  "i-lucide-target",
-  "i-lucide-sailboat",
-  "i-lucide-snowflake",
-  "i-lucide-school",
-  "i-lucide-palette",
-];
-function selectIcon(event: MouseEvent) {
-  const icon = (event.target as HTMLElement).closest(
-    "[data-icon]",
-  ) as HTMLElement;
-  if (icon) {
-    agent.value.icon = icon.dataset.icon!;
-  }
-}
 </script>
 
 <template>
   <div class="size-full p-6 space-y-4">
     <hgroup class="flex flex-row gap-2 items-center">
-      <UPopover v-model:open="open">
-        <UButton :icon="agent.icon" variant="outline" />
-        <template #content>
-          <div
-            class="size-48 p-4 flex flex-wrap justify-center items-center gap-2"
-            @click="selectIcon"
-          >
-            <UButton
-              v-for="icon in iconList"
-              :icon="icon"
-              variant="outline"
-              :data-icon="icon"
-            />
-          </div>
-        </template>
-      </UPopover>
-      <h1 v-if="!editingName" class="flex-1 text-lg" @click="startEdit">
-        {{ agent.name }}
-      </h1>
-      <template v-else>
-        <UInput
-          ref="input"
-          v-model="agentName"
-          class="flex-1"
-          @keydown.enter="saveEdit"
-        />
-        <UButton
-          icon="i-lucide-check"
-          variant="outline"
-          :disabled="!agent.name"
-          @click="saveEdit"
-        />
-        <UButton icon="i-lucide-x" variant="outline" @click="cancelEdit" />
-      </template>
+      <IconEdit v-model:icon="agent.icon" />
+      <NameEdit v-model:name="agent.name" />
     </hgroup>
     <section>
       <h2 class="text-lg mb-2">Instructions</h2>
