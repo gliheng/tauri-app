@@ -2,7 +2,7 @@ import { Message } from "ai";
 import { ROOT_NODE_ID } from "./constants";
 
 const dbName = "ai-studio";
-const dbVer = 3;
+const dbVer = 4;
 
 let db: IDBDatabase;
 
@@ -52,6 +52,11 @@ export async function init() {
         const userStore = db.createObjectStore("note", { keyPath: "id" });
         userStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
       }
+
+      if (!db.objectStoreNames.contains("file")) {
+        db.createObjectStore("file", { autoIncrement: true });
+      }
+
     };
   });
 }
@@ -80,6 +85,11 @@ export interface Agent {
   instructions: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface FileStore {
+  file: File;
+  createdAt: Date;
 }
 
 export interface Note {
@@ -389,6 +399,44 @@ export function getAgents() {
 /**
  * Get a single agent by ID
  */
+export function writeFile(file: File): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
+    const transaction = db.transaction(["file"], "readwrite");
+    const store = transaction.objectStore("file");
+    const dataToStore: FileStore = {
+      file: file,
+      createdAt: new Date(),
+    };
+    const request = store.add(dataToStore);
+
+    request.onsuccess = () => {
+      resolve(request.result as number);
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error writing file:", event);
+      reject(event);
+    };
+  });
+}
+
+export function readFile(id: number): Promise<FileStore | undefined> {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(["file"], "readonly");
+    const store = transaction.objectStore("file");
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      resolve(request.result as FileStore | undefined);
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error reading file:", event);
+      reject(event);
+    };
+  });
+}
+
 export function getAgent(id: string) {
   return new Promise<Agent | undefined>((resolve, reject) => {
     const transaction = db.transaction(["agent"], "readonly");
