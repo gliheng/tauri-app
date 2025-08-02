@@ -50,14 +50,38 @@ const throttledWatcher = throttle(async (note) => {
 watch(note, throttledWatcher, {
   deep: true,
 });
+
+function downloadNote() {
+  const blob = new Blob([note.value.content], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = note.value.name + ".md";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 </script>
 
 <template>
-  <hgroup class="flex flex-row gap-2 items-center mx-[8rem] mt-[4rem]">
-    <IconEdit v-model:icon="note.icon" />
-    <NameEdit v-model:name="note.name" />
-  </hgroup>
-  <MilkdownProvider>
-    <MilkdownEditor v-model="note.content" />
-  </MilkdownProvider>
+  <div class="flex-1 flex flex-col min-h-0 justify-center relative">
+    <header class="absolute top-2 right-2 z-10">
+      <UButton
+        icon="i-lucide-download"
+        color="neutral"
+        variant="subtle"
+        @click="downloadNote"
+      />
+    </header>
+    <div class="flex-1 min-h-0 overflow-y-auto">
+      <hgroup class="flex flex-row gap-2 items-center mx-[8rem] mt-[4rem]">
+        <IconEdit v-model:icon="note.icon" />
+        <NameEdit v-model:name="note.name" />
+      </hgroup>
+      <MilkdownProvider>
+        <MilkdownEditor v-model="note.content" />
+      </MilkdownProvider>
+    </div>
+  </div>
 </template>
