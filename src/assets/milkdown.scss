@@ -1,15 +1,5 @@
 @import "@milkdown/crepe/theme/common/style.css";
 
-[data-milkdown-root] {
-  min-height: 100%;
-  overflow-y: auto;
-}
-
-.milkdown {
-  min-height: 100%;
-
-}
-
 .milkdown .ProseMirror {
   padding: 1rem 8rem 5rem;
 }
