@@ -23,7 +23,7 @@ defineShortcuts({
 
 <template>
   <header class="flex flex-row items-center bg-elevated shadow select-none">
-    <WindowControls v-if="tauri && platform.startsWith('Mac')" />
+    <WindowControls class="fixed left-0 top-2" v-if="tauri && platform.startsWith('Mac')" />
     <Tabs>
       <template #extra>
         <slot name="extra">

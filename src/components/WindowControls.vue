@@ -32,7 +32,7 @@ const isAppleDevice = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
 </script>
 
 <template>
-  <div class="flex flex-row px-2 gap-1 items-center">
+  <div class="flex flex-row px-2 gap-1 items-center select-none">
     <template v-if="isAppleDevice">
       <UButton
         class="rounded-full"
