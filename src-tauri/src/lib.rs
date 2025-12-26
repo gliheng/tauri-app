@@ -16,7 +16,13 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(handlers::get_invoke_handler())
+        .invoke_handler(tauri::generate_handler![
+            handlers::acp_initialize,
+            handlers::acp_send_message,
+            handlers::acp_start_listening,
+            handlers::acp_stop_listening,
+            handlers::acp_dispose,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

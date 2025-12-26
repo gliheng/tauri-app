@@ -1,5 +1,4 @@
 use tauri::Emitter;
-use tauri::ipc::Invoke;
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
 use tokio::process::Command as TokioCommand;
@@ -15,9 +14,7 @@ static LISTENING_TASKS: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::tas
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 #[tauri::command]
-async fn initialize_acp(agent: &str) -> Result<String, String> {
-    // Launch qwen --experimental-acp with stdin/stdout pipes
-    println!("initialize_acp {}", agent);
+pub async fn acp_initialize(agent: &str) -> Result<String, String> {
     let child = TokioCommand::new("bun")
         .args(&["x", "@zed-industries/codex-acp"])
         .stdin(Stdio::piped())
@@ -36,15 +33,13 @@ async fn initialize_acp(agent: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn send_message_to_agent(agent: &str, message: serde_json::Value) -> Result<String, String> {
-    println!("send_message_to_agent {} {:?}", agent, message);
+pub async fn acp_send_message(agent: &str, message: serde_json::Value) -> Result<String, String> {
     let mut processes = AGENT_PROCESSES.lock().await;
     let child = processes.get_mut(agent)
         .ok_or_else(|| format!("Agent {} not found", agent))?;
 
     if let Some(stdin) = child.stdin.as_mut() {
         let json_str = message.to_string();
-        println!("write value {:?}", json_str);
         stdin.write_all(json_str.as_bytes()).await
             .map_err(|e| format!("Failed to write to stdin: {}", e))?;
         stdin.write_all(b"\n").await
@@ -56,11 +51,10 @@ async fn send_message_to_agent(agent: &str, message: serde_json::Value) -> Resul
 }
 
 #[tauri::command]
-async fn start_listening(agent: &str, window: tauri::Window) -> Result<(), String> {
+pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<(), String> {
     let agent_name = agent.to_string();
     let window_clone = window.clone();
     let agent_name_clone = agent_name.clone();
-    println!("start_listening {}", agent_name);
     
     let handle = tokio::spawn(async move {
         let mut reader_opt = None;
@@ -92,24 +86,26 @@ async fn start_listening(agent: &str, window: tauri::Window) -> Result<(), Strin
                 match reader.read_line(&mut line).await {
                     Ok(0) => {
                         // EOF reached
-                        let _ = window_clone.emit("agent_message", serde_json::json!({
+                        let _ = window_clone.emit("acp_message", serde_json::json!({
                             "agent": agent_name_clone,
                             "type": "disconnect",
                         }));
                         break;
                     },
                     Ok(n) => {
-                        println!("Read {} bytes: {}", n, line.trim());
+                        // println!("Read {} bytes: {}", n, line.trim());
                         
-                        let _ = window_clone.emit("agent_message", serde_json::json!({
+                        let event_data = serde_json::json!({
                             "agent": agent_name_clone,
                             "type": "message",
                             "message": line.trim().to_string()
-                        }));
+                        });
+                        
+                        let _ = window_clone.emit("acp_message", event_data);
                     },
                     Err(e) => {
                         println!("Error reading from stdout: {}", e);
-                        let _ = window_clone.emit("agent_message", serde_json::json!({
+                        let _ = window_clone.emit("acp_message", serde_json::json!({
                             "agent": agent_name_clone,
                             "type": "error",
                             "error": format!("Read error: {}", e)
@@ -139,7 +135,7 @@ async fn start_listening(agent: &str, window: tauri::Window) -> Result<(), Strin
 }
 
 #[tauri::command]
-async fn stop_listening(agent: &str) -> Result<(), String> {
+pub async fn acp_stop_listening(agent: &str) -> Result<(), String> {
     let mut tasks = LISTENING_TASKS.lock().await;
     
     if let Some(handle) = tasks.remove(agent) {
@@ -150,6 +146,44 @@ async fn stop_listening(agent: &str) -> Result<(), String> {
     }
 }
 
-pub fn get_invoke_handler() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
-    tauri::generate_handler![initialize_acp, send_message_to_agent, start_listening, stop_listening]
+#[tauri::command]
+pub async fn acp_dispose(agent: &str) -> Result<String, String> {
+    println!("acp_dispose {}", agent);
+    
+    // First stop listening if active
+    {
+        let mut tasks = LISTENING_TASKS.lock().await;
+        if let Some(handle) = tasks.remove(agent) {
+            handle.abort();
+        }
+    }
+    
+    // Then kill and remove the process
+    {
+        let mut processes = AGENT_PROCESSES.lock().await;
+        if let Some(mut child) = processes.remove(agent) {
+            // Try to kill the process gracefully first
+            match child.kill().await {
+                Ok(_) => {
+                    // Wait for the process to actually terminate
+                    match child.wait().await {
+                        Ok(status) => {
+                            println!("Agent {} process terminated with status: {}", agent, status);
+                        },
+                        Err(e) => {
+                            println!("Error waiting for agent {} to terminate: {}", agent, e);
+                        }
+                    }
+                },
+                Err(e) => {
+                    println!("Error killing agent {} process: {}", agent, e);
+                    return Err(format!("Failed to kill agent process: {}", e));
+                }
+            }
+        } else {
+            return Err(format!("Agent {} not found", agent));
+        }
+    }
+    
+    Ok(format!("Agent {} disposed successfully", agent))
 }

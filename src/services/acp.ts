@@ -1,11 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { Ref } from "vue";
-
-export interface Message {
-  role: string;
-  content: string;
-}
 
 export interface AgentMessagePayload {
   jsonrpc: string;
@@ -14,16 +8,53 @@ export interface AgentMessagePayload {
   params?: any;
 }
 
-export const initialize = async (program: string) => {
-  // Initialize the agent process
-  const result = await invoke("initialize_acp", { agent: program });
-  
-  // Send initialization message and wait for OK response
-  const initMessage: AgentMessagePayload = {
-    "jsonrpc": "2.0",
-    "id": 0,
-    "method": "initialize",
-    "params": {
+export interface ACPServiceConfig {
+  program: string;
+  directory: string;
+  mcpServers: {
+    name: string;
+    command: string;
+    args: string[];
+    env?: {
+      name: string;
+      value: string;
+    }[];
+  }[]
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onInvoke?: (method: string, params: any) => void;
+}
+
+export class ACPService {
+  private program: string;
+  private directory: string;
+  private mcpServers: ACPServiceConfig['mcpServers'];
+  private unlistenFn?: (() => void) | null;
+  private onConnect?: () => void;
+  private onDisconnect?: () => void;
+  private onInvoke?: (method: string, params: any) => void;
+  private agentCapabilities?: Record<string, boolean>;
+  private sessionId?: string;
+  private pendingCalls: Record<number, {
+    resolve: (value: any) => void;
+    reject: (reason: any) => void;
+    promise: Promise<any>,
+  }> = {};
+  private msgId = 0;
+
+  constructor(config: ACPServiceConfig) {
+    this.program = config.program;
+    this.directory = config.directory;
+    this.mcpServers = config.mcpServers;
+    this.onConnect = config.onConnect;
+    this.onDisconnect = config.onDisconnect;
+    this.onInvoke = config.onInvoke;
+  }
+
+  async initialize(): Promise<void> {
+    await invoke("acp_initialize", { agent: this.program, directory: this.directory });
+    this.startListening();
+    const ret = await this.rpc("initialize", {
       "protocolVersion": 1,
       "clientCapabilities": {
         "fs": {
@@ -33,87 +64,118 @@ export const initialize = async (program: string) => {
         "terminal": true
       },
       "clientInfo": {
-        "name": "my-client",
-        "title": "My Client",
+        "name": "raven",
+        "title": "Raven",
         "version": "1.0.0"
       }
-    }
-  };
-  
-  await invoke("send_message_to_agent", { agent: program, message: initMessage });
-  return result;
-};
-
-export const startListening = async (
-  program: string, 
-  messages: Message[],
-  debug: Ref<string>
-) => {
-  try {
-    await invoke("start_listening", { agent: program });
-    debug.value += "\nStarted listening for messages...";
-    
-    const unlistenAgentMessage = await listen("agent_message", (event) => {
-      console.log("agent_message", event);
-      const { agent, message } = event.payload as { agent: string; message: string };
-      if (agent === program) {
-        debug.value += `\nReceived message: ${message}`;
-        try {
-          const parsedMessage = JSON.parse(message);
-          messages.push({
-            role: "assistant",
-            content: JSON.stringify(parsedMessage, null, 2)
-          });
-        } catch {
-          messages.push({
-            role: "assistant", 
-            content: message
-          });
-        }
-      }
     });
-    
-    return unlistenAgentMessage;
-  } catch (err) {
-    console.error("Failed to start listening:", err);
-    throw new Error(`Failed to start listening: ${err}`);
+    this.agentCapabilities = ret.agentCapabilities;
   }
-};
 
-export const sendMessage = async (
-  program: string,
-  userMessage: string,
-  debug: Ref<string>
-) => {
-  try {
-    debug.value += `\nSending message: ${userMessage}`;
-    
+  async startListening(): Promise<() => void> {
+    try {
+      await invoke("acp_start_listening", { agent: this.program });
+      
+      this.unlistenFn = await listen("acp_message", (event) => {
+        const { agent, type, message } = event.payload as { agent: string; type: string; message: string };
+        if (agent === this.program) {
+          if (type == 'connect') {
+            this.onConnect?.();
+          } else if (type == 'message') {
+            const { id, result, error, method, params } = JSON.parse(message);
+            if (typeof id == 'number') {
+              if (error) {
+                this.pendingCalls[id].reject(error);
+              } else {
+                this.pendingCalls[id].resolve(result);
+              }
+            } else if (method) {
+              this.onInvoke?.(method, params);
+            }
+          } else if (type == 'disconnect') {
+            this.onDisconnect?.();
+          }
+        }
+      });
+      
+      return this.unlistenFn;
+    } catch (err) {
+      console.error("Failed to start listening:", err);
+      throw new Error(`Failed to start listening: ${err}`);
+    }
+  }
+
+  async stopListening(): Promise<void> {
+    await invoke("acp_stop_listening", { agent: this.program });
+    if (this.unlistenFn) {
+      this.unlistenFn();
+      this.unlistenFn = null;
+    }
+  }
+
+  async rpc(method: string, message: Record<string, any>): Promise<any> {
+    const id = this.msgId;
+    this.pendingCalls[id] = Promise.withResolvers();
     const messagePayload: AgentMessagePayload = {
       jsonrpc: "2.0",
-      id: Date.now(),
-      method: "chat",
-      params: {
-        message: userMessage
-      }
+      id,
+      method,
+      params: message,
     };
-    
-    await invoke("send_message_to_agent", { 
-      agent: program, 
-      message: messagePayload 
+    await invoke("acp_send_message", {
+      agent: this.program,
+      message: messagePayload,
     });
-    
-    debug.value += "\nMessage sent successfully";
-  } catch (err) {
-    console.error("Failed to send message:", err);
-    throw new Error(`Failed to send message: ${err}`);
+    this.msgId++;
+    return this.pendingCalls[id].promise;
   }
-};
 
-export const stopListening = async (program: string) => {
-  try {
-    await invoke("stop_listening", { agent: program });
-  } catch (err) {
-    console.error("Failed to stop listening:", err);
-    throw new Error(`Failed to stop listening: ${err}`);
+  async send(method: string, message: Record<string, any>): Promise<any> {
+    const id = this.msgId;
+    const messagePayload: AgentMessagePayload = {
+      jsonrpc: "2.0",
+      id,
+      method,
+      params: message,
+    };
+    await invoke("acp_send_message", {
+      agent: this.program,
+      message: messagePayload,
+    });
+    this.msgId++;
   }
-};
+
+  async sessionNew(): Promise<any> {
+    if (this.sessionId) {
+      return {
+        sessionId: this.sessionId,
+      };
+    }
+    let ret = await this.rpc("session/new", {
+      cwd: this.directory,
+      mcpServers: this.mcpServers,
+    });
+    this.sessionId = ret.sessionId;
+    return ret;
+  }
+
+  async sessionPrompt(message: {
+    type: 'text',
+    text: string,
+  }): Promise<any> {
+    return this.rpc("session/prompt", {
+      prompt: [message],
+      sessionId: this.sessionId,
+    });
+  }
+
+  async dispose(): Promise<void> {
+    // Stop listening first
+    await this.stopListening();
+    
+    // Dispose the ACP process
+    await invoke("acp_dispose", { agent: this.program });
+
+    console.log(`ACP service for ${this.program} disposed successfully`);
+  }
+}
