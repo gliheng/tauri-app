@@ -9,6 +9,10 @@ const props = defineProps({
     type: Object as PropType<Agent>,
     required: true,
   },
+  sessionId: {
+    type: String,
+    required: false,
+  },
 });
 const isInitialized = ref(false);
 const input = ref("");

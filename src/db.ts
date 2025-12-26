@@ -2,7 +2,7 @@ import { Message } from "ai";
 import { ROOT_NODE_ID } from "./constants";
 
 const dbName = "ai-studio";
-const dbVer = 4;
+const dbVer = 5;
 
 let db: IDBDatabase;
 
@@ -57,6 +57,13 @@ export async function init() {
         db.createObjectStore("file", { autoIncrement: true });
       }
 
+      if (!db.objectStoreNames.contains("agent_session")) {
+        const agentSessionStore = db.createObjectStore("agent_session", { keyPath: "id" });
+        agentSessionStore.createIndex("byAgentId", "agentId", { unique: false });
+        agentSessionStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
+        agentSessionStore.createIndex("byLastMessageTime", "lastMessageAt", { unique: false });
+      }
+
     };
   });
 }
@@ -102,6 +109,16 @@ export interface Note {
   content?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AgentSession {
+  id: string;
+  agentId: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastMessageAt?: Date;
+  messageCount?: number;
 }
 
 export function writeChat(data: Chat): Promise<void> {
@@ -728,4 +745,112 @@ function selectMessagesFromTree(
   }
 
   return list;
+}
+
+// Agent Session functions
+export function writeAgentSession(data: AgentSession): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(["agent_session"], "readwrite");
+    const store = transaction.objectStore("agent_session");
+    const request = store.put(data);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error writing agent session:", event);
+      reject(event);
+    };
+  });
+}
+
+export function getAgentSessions(agentId: string): Promise<AgentSession[]> {
+  return new Promise<AgentSession[]>((resolve, reject) => {
+    const transaction = db.transaction(["agent_session"], "readonly");
+    const store = transaction.objectStore("agent_session");
+    const index = store.index("byAgentId");
+    const request = index.getAll(agentId);
+
+    request.onsuccess = () => {
+      const sessions = request.result as AgentSession[];
+      resolve(sessions.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()));
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting agent sessions:", event);
+      reject(event);
+    };
+  });
+}
+
+export function getAgentSession(sessionId: string): Promise<AgentSession | undefined> {
+  return new Promise<AgentSession | undefined>((resolve, reject) => {
+    const transaction = db.transaction(["agent_session"], "readonly");
+    const store = transaction.objectStore("agent_session");
+    const request = store.get(sessionId);
+
+    request.onsuccess = () => {
+      const session = request.result as AgentSession | undefined;
+      resolve(session);
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting agent session:", event);
+      reject(event);
+    };
+  });
+}
+
+export function updateAgentSession(id: string, data: Partial<AgentSession>): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tr = db.transaction(["agent_session"], "readwrite");
+    const store = tr.objectStore("agent_session");
+
+    // First get the existing session
+    const getRequest = store.get(id);
+
+    getRequest.onsuccess = () => {
+      const existingSession = getRequest.result;
+      if (!existingSession) {
+        reject(new Error(`Agent session with ID ${id} not found`));
+        return;
+      }
+
+      // Update the session with new data
+      const updatedSession = { ...existingSession, ...data, updatedAt: new Date() };
+      const putRequest = store.put(updatedSession);
+
+      putRequest.onsuccess = () => {
+        resolve();
+      };
+
+      putRequest.onerror = (event: Event) => {
+        console.error("Error updating agent session:", event);
+        reject(event);
+      };
+    };
+
+    getRequest.onerror = (event: Event) => {
+      console.error("Error getting agent session for update:", event);
+      reject(event);
+    };
+  });
+}
+
+export function deleteAgentSession(sessionId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(["agent_session"], "readwrite");
+    const store = transaction.objectStore("agent_session");
+    const request = store.delete(sessionId);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error deleting agent session:", event);
+      reject(event);
+    };
+  });
 }
