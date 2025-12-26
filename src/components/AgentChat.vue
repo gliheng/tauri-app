@@ -28,6 +28,7 @@ const acpService = new ACPService({
     console.log('onDisconnect');
   },
   onInvoke(method, params) {
+    console.log("Method", method, "invoked with params", params);
     if (method == 'session/update') {
       const { update } = params;
       if (update.sessionUpdate == 'agent_message_chunk') {
@@ -35,9 +36,13 @@ const acpService = new ACPService({
           role: "assistant",
           content: update.content,
         });
+      } else if (update.sessionUpdate == 'user_message_chunk') {
+        messages.value.push({
+          role: "user",
+          content: update.content,
+        });
       }
     }
-    console.log("Method", method, "invoked with params", params);
   },
 });
 
