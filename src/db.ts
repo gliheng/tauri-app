@@ -82,9 +82,12 @@ export interface Agent {
   id: string;
   name: string;
   icon: string;
-  instructions: string;
+  type: "chat" | "code";
   createdAt: Date;
   updatedAt: Date;
+  instructions?: string;
+  directory?: string;
+  program?: "codex" | "gemini-cli" | "qwen-code";
 }
 
 export interface FileStore {

@@ -1,24 +1,25 @@
 <script setup lang="ts">
-import { ref, computed, inject } from "vue";
+import { ref, computed } from "vue";
 import { modelList } from "@/llm/models";
 import { Attachment } from "ai";
 import { file2DataUrl } from "@/utils/file";
 import FileImage from "./FileImage.vue";
-import { CHAT_ACTIONS } from "@/constants";
 
 const props = defineProps({
-  id: {
-    type: String,
-    required: true,
-  },
+  status: String,
 });
+
+const input = defineModel<string>();
+
+const emit = defineEmits<{
+  submit: [data: { data: { model: string }; experimental_attachments: Attachment[] }];
+  stop: [];
+}>();
 
 const model = ref(modelList[0]);
 
-const { input, status, stop, handleSubmit } = inject(CHAT_ACTIONS);
-
 const streaming = computed(
-  () => status.value == "submitted" || status.value == "streaming",
+  () => props.status == "submitted" || props.status == "streaming",
 );
 
 async function send(evt: KeyboardEvent) {
@@ -29,7 +30,7 @@ async function send(evt: KeyboardEvent) {
     attachments = await Promise.all(files.value.map(file2DataUrl));
   }
   files.value = [];
-  handleSubmit(evt, {
+  emit('submit', {
     data: {
       model: model.value.value,
     },
@@ -38,6 +39,7 @@ async function send(evt: KeyboardEvent) {
 }
 
 const files = ref<File[]>([]);
+
 function appendFiles(newFiles: FileList) {
   files.value = [...files.value, ...newFiles];
 }
@@ -99,7 +101,7 @@ function appendFiles(newFiles: FileList) {
           v-if="streaming"
           class="rounded-full"
           icon="i-mdi-stop"
-          @click="stop"
+          @click="emit('stop')"
         />
         <UButton
           v-else

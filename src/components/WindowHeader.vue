@@ -47,17 +47,6 @@ defineShortcuts({
             variant="ghost"
             @click="toggleExpanded"
           />
-          <UModal
-            class=""
-            :ui="{
-              content: 'min-w-[600px] min-h-[400px]',
-            }"
-          >
-            <UButton icon="i-mdi-cog" color="neutral" variant="ghost" />
-            <template #content>
-              <Settings />
-            </template>
-          </UModal>
         </slot>
       </template>
     </Tabs>

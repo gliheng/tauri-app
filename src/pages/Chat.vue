@@ -60,6 +60,7 @@ const viewWidth = computed(() =>
 );
 
 const {
+  error,
   status,
   messages,
   setMessages,
@@ -174,8 +175,11 @@ provide(MESSAGE_GRAPH, {
     </AnimatePresence>
     <div class="px-8 my-4">
       <ChatBox
+        v-model="input"
+        :status="status"
         :style="{ width: viewWidth ? `${viewWidth}px` : '100%' }"
-        :id="chatId"
+        @submit="(data) => handleSubmit(undefined, data)"
+        @stop="stop"
       />
     </div>
   </div>

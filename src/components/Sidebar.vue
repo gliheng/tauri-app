@@ -186,5 +186,22 @@ const isMac = platform.startsWith("Mac");
         </section>
       </template>
     </UCollapsible>
+    <div class="flex-1"></div>
+    <UModal
+      class=""
+      :ui="{
+        content: 'min-w-[600px] min-h-[400px]',
+      }"
+    >
+      <UButton
+        icon="i-mdi-cog"
+        color="neutral"
+        variant="subtle"
+        label="Settings"
+      />
+      <template #content>
+        <Settings />
+      </template>
+    </UModal>
   </aside>
 </template>
