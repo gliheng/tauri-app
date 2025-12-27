@@ -11,6 +11,7 @@ export const useTabsStore = defineStore("tabs", () => {
       title: string;
     }[]
   >(loadTabs());
+  const showArtifactView = ref(false);
   return {
     tabs,
     openTab(path: string, title: string) {
@@ -54,6 +55,10 @@ export const useTabsStore = defineStore("tabs", () => {
         tab.title = topic;
         saveTabs(tabs.value);
       }
+    },
+    showArtifactView,
+    toggleArtifactView() {
+      showArtifactView.value = !showArtifactView.value;
     },
   };
 });

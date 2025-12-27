@@ -2,9 +2,12 @@
 import { ref, computed, Suspense, KeepAlive } from "vue";
 import { useElementSize } from "@vueuse/core";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
+import { useTabsStore } from "@/stores/tabs";
+import { storeToRefs } from "pinia";
 import WindowHeader from "@/components/WindowHeader.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import Spinner from "@/components/Spinner.vue";
+import WorkspaceEditor from "@/components/WorkspaceEditor.vue";
 
 const root = ref(null);
 
@@ -12,6 +15,8 @@ const { width } = useElementSize(root);
 const collapsed = computed(() => (56 / width.value) * 100);
 const defaultSize = computed(() => (140 / width.value) * 100);
 const minSidebarSize = computed(() => (200 / width.value) * 100);
+const tabsStore = useTabsStore();
+const { showArtifactView } = storeToRefs(tabsStore);
 </script>
 
 <template>
@@ -50,6 +55,12 @@ const minSidebarSize = computed(() => (200 / width.value) * 100);
           </main>
         </div>
       </SplitterPanel>
+      <template v-if="showArtifactView">
+        <SplitterResizeHandle class="w-0.5 splitter-handle" />
+        <SplitterPanel>
+          <WorkspaceEditor />
+        </SplitterPanel>
+      </template>
     </SplitterGroup>
   </div>
 </template>

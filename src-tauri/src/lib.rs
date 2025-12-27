@@ -22,6 +22,14 @@ pub fn run() {
             handlers::acp_start_listening,
             handlers::acp_stop_listening,
             handlers::acp_dispose,
+            handlers::read_directory,
+            handlers::read_file,
+            handlers::write_file,
+            handlers::create_file,
+            handlers::create_directory,
+            handlers::rename_file,
+            handlers::delete_file,
+            handlers::move_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

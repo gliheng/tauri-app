@@ -5,6 +5,9 @@ use tokio::process::Command as TokioCommand;
 use tokio::sync::Mutex;
 use std::sync::Arc;
 use std::collections::HashMap;
+use std::path::{Path};
+use std::fs;
+use serde::{Deserialize, Serialize};
 
 // Global state to manage agent processes and callbacks
 static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::process::Child>>>> = 
@@ -258,4 +261,155 @@ pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::V
     Ok(serde_json::json!({
         "code": 0,
     }))
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FileNode {
+    name: String,
+    path: String,
+    is_file: bool,
+    is_dir: bool,
+    children: Option<Vec<FileNode>>,
+    size: Option<u64>,
+}
+
+#[tauri::command]
+pub async fn read_directory(path: &str) -> Result<FileNode, String> {
+    let path_buf = Path::new(path);
+    
+    if !path_buf.exists() {
+        return Err("Directory does not exist".to_string());
+    }
+
+    let metadata = fs::metadata(path_buf)
+        .map_err(|e| format!("Failed to read metadata: {}", e))?;
+
+    let name = path_buf.file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("")
+        .to_string();
+
+    if metadata.is_dir() {
+        let mut children = Vec::new();
+        let entries = fs::read_dir(path_buf)
+            .map_err(|e| format!("Failed to read directory: {}", e))?;
+
+        for entry in entries {
+            let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+            let child_path = entry.path();
+            let child_metadata = entry.metadata()
+                .map_err(|e| format!("Failed to read child metadata: {}", e))?;
+            
+            let child_name = child_path.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_string();
+
+            let child_node = if child_metadata.is_dir() {
+                FileNode {
+                    name: child_name,
+                    path: child_path.to_string_lossy().to_string(),
+                    is_file: false,
+                    is_dir: true,
+                    children: None, // Lazy load children
+                    size: None,
+                }
+            } else {
+                FileNode {
+                    name: child_name,
+                    path: child_path.to_string_lossy().to_string(),
+                    is_file: true,
+                    is_dir: false,
+                    children: None,
+                    size: Some(child_metadata.len()),
+                }
+            };
+            
+            children.push(child_node);
+        }
+
+        // Sort directories first, then files, both alphabetically
+        children.sort_by(|a, b| {
+            match (a.is_dir, b.is_dir) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => a.name.cmp(&b.name),
+            }
+        });
+
+        Ok(FileNode {
+            name,
+            path: path_buf.to_string_lossy().to_string(),
+            is_file: false,
+            is_dir: true,
+            children: Some(children),
+            size: None,
+        })
+    } else {
+        Ok(FileNode {
+            name,
+            path: path_buf.to_string_lossy().to_string(),
+            is_file: true,
+            is_dir: false,
+            children: None,
+            size: Some(metadata.len()),
+        })
+    }
+}
+
+#[tauri::command]
+pub async fn read_file(path: &str) -> Result<String, String> {
+    fs::read_to_string(path)
+        .map_err(|e| format!("Failed to read file: {}", e))
+}
+
+#[tauri::command]
+pub async fn write_file(path: &str, content: &str) -> Result<(), String> {
+    fs::write(path, content)
+        .map_err(|e| format!("Failed to write file: {}", e))
+}
+
+#[tauri::command]
+pub async fn create_file(path: &str) -> Result<(), String> {
+    fs::write(path, "")
+        .map_err(|e| format!("Failed to create file: {}", e))
+}
+
+#[tauri::command]
+pub async fn create_directory(path: &str) -> Result<(), String> {
+    fs::create_dir_all(path)
+        .map_err(|e| format!("Failed to create directory: {}", e))
+}
+
+#[tauri::command]
+pub async fn rename_file(old_path: &str, new_path: &str) -> Result<(), String> {
+    fs::rename(old_path, new_path)
+        .map_err(|e| format!("Failed to rename: {}", e))
+}
+
+#[tauri::command]
+pub async fn delete_file(path: &str) -> Result<(), String> {
+    let path_buf = Path::new(path);
+    
+    if path_buf.is_dir() {
+        fs::remove_dir_all(path_buf)
+            .map_err(|e| format!("Failed to delete directory: {}", e))?;
+    } else {
+        fs::remove_file(path_buf)
+            .map_err(|e| format!("Failed to delete file: {}", e))?;
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn move_file(from_path: &str, to_path: &str) -> Result<(), String> {
+    // Ensure the destination directory exists
+    if let Some(parent) = Path::new(to_path).parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create destination directory: {}", e))?;
+    }
+    
+    fs::rename(from_path, to_path)
+        .map_err(|e| format!("Failed to move file: {}", e))
 }

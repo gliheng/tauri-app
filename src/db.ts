@@ -434,6 +434,62 @@ export function updateAgent(id: string, data: Partial<Agent>): Promise<void> {
 }
 
 /**
+ * Delete an agent
+ */
+export function deleteAgent(id: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // First delete all agent sessions for this agent
+    const tr1 = db.transaction(["agent_session"], "readwrite");
+    const sessionStore = tr1.objectStore("agent_session");
+    const sessionIndex = sessionStore.index("byAgentId");
+    const sessionRequest = sessionIndex.openCursor(IDBKeyRange.only(id));
+
+    const sessionsToDelete: string[] = [];
+
+    sessionRequest.onsuccess = (event: Event) => {
+      const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+      if (cursor) {
+        sessionsToDelete.push(cursor.value.id);
+        cursor.continue();
+      } else {
+        // Delete all collected sessions
+        const deletePromises = sessionsToDelete.map(sessionId => {
+          return new Promise<void>((resolveDelete, rejectDelete) => {
+            const deleteRequest = sessionStore.delete(sessionId);
+            deleteRequest.onsuccess = () => resolveDelete();
+            deleteRequest.onerror = (e: Event) => rejectDelete(e);
+          });
+        });
+
+        Promise.all(deletePromises).then(() => {
+          // Now delete the agent
+          const tr2 = db.transaction(["agent"], "readwrite");
+          const agentStore = tr2.objectStore("agent");
+          const deleteAgentRequest = agentStore.delete(id);
+
+          deleteAgentRequest.onsuccess = () => {
+            resolve();
+          };
+
+          deleteAgentRequest.onerror = (event: Event) => {
+            console.error("Error deleting agent:", event);
+            reject(event);
+          };
+        }).catch((error) => {
+          console.error("Error deleting agent sessions:", error);
+          reject(error);
+        });
+      }
+    };
+
+    sessionRequest.onerror = (event: Event) => {
+      console.error("Error finding agent sessions:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
  * Get all agents
  */
 export function getAgents() {
@@ -609,6 +665,26 @@ export function getNote(id: string): Promise<Note | undefined> {
 
     request.onerror = (event: Event) => {
       console.error("Error getting note:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
+ * Delete a note
+ */
+export function deleteNote(id: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(["note"], "readwrite");
+    const store = transaction.objectStore("note");
+    const request = store.delete(id);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error deleting note:", event);
       reject(event);
     };
   });

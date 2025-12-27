@@ -11,10 +11,24 @@ export default defineConfig(async () => ({
   plugins: [vue({
     template: {
       compilerOptions: {
-        isCustomElement: (tag) => tag.startsWith('rich-editor'),
+        isCustomElement: (tag) => false,
       }
     }
   }), tailwindcss(), ui()],
+  
+  optimizeDeps: {
+    include: ['monaco-editor/esm/vs/editor/editor.worker']
+  },
+  
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          monaco: ['monaco-editor']
+        }
+      }
+    }
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

@@ -26,7 +26,11 @@ defineShortcuts({
       <template #extra>
         <slot name="extra">
           <UModal v-model:open="commandPaletteOpen">
-            <UButton icon="i-mdi-history" color="neutral" variant="ghost" />
+            <UButton
+              icon="i-mdi-history"
+              color="neutral"
+              variant="ghost"
+            />
             <template #content>
               <Suspense>
                 <CommandPalette @close="commandPaletteOpen = false" />
@@ -39,6 +43,11 @@ defineShortcuts({
             </template>
           </UModal>
           <ThemeSwitcher />
+          <UButton icon="i-lucide-arrow-left-from-line"
+            color="neutral"
+            variant="ghost"
+            @click="tabsStore.toggleArtifactView()"
+          />
         </slot>
       </template>
     </Tabs>
