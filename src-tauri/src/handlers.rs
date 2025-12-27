@@ -14,14 +14,17 @@ static LISTENING_TASKS: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::tas
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 #[tauri::command]
-pub async fn acp_initialize(agent: &str) -> Result<String, String> {
+pub async fn acp_initialize(agent: &str) -> Result<serde_json::Value, serde_json::Value> {
     let child = TokioCommand::new("bun")
         .args(&["x", "@zed-industries/codex-acp"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| format!("Failed to start qwen process: {}", e))?;
+        .map_err(|e| serde_json::json!({
+            "code": 1,
+            "message": format!("Failed to start qwen process: {}", e)
+        }))?;
 
     // Store the process for later communication
     {
@@ -29,29 +32,47 @@ pub async fn acp_initialize(agent: &str) -> Result<String, String> {
         processes.insert(agent.to_string(), child);
     }
 
-    Ok(format!("Agent {} initialized successfully", agent))
+    println!("Agent {} initialized successfully", agent);
+    Ok(serde_json::json!({
+        "code": 0,
+    }))
 }
 
 #[tauri::command]
-pub async fn acp_send_message(agent: &str, message: serde_json::Value) -> Result<String, String> {
+pub async fn acp_send_message(agent: &str, message: serde_json::Value) -> Result<serde_json::Value, serde_json::Value> {
     let mut processes = AGENT_PROCESSES.lock().await;
     let child = processes.get_mut(agent)
-        .ok_or_else(|| format!("Agent {} not found", agent))?;
+        .ok_or_else(|| serde_json::json!({
+            "code": 2,
+            "message": format!("Agent {} not found", agent)
+        }))?;
 
     if let Some(stdin) = child.stdin.as_mut() {
         let json_str = message.to_string();
         stdin.write_all(json_str.as_bytes()).await
-            .map_err(|e| format!("Failed to write to stdin: {}", e))?;
+            .map_err(|e| serde_json::json!({
+                "code": 3,
+                "message": format!("Failed to write to stdin: {}", e)
+            }))?;
         stdin.write_all(b"\n").await
-            .map_err(|e| format!("Failed to write newline to stdin: {}", e))?;
-        stdin.flush().await.map_err(|e| format!("Failed to flush stdin: {}", e))?;
+            .map_err(|e| serde_json::json!({
+                "code": 4,
+                "message": format!("Failed to write newline to stdin: {}", e)
+            }))?;
+        stdin.flush().await.map_err(|e| serde_json::json!({
+            "code": 5,
+            "message": format!("Failed to flush stdin: {}", e)
+        }))?;
     }
 
-    Ok(format!("Message sent to agent {}", agent))
+    println!("Message sent to agent {}", agent);
+    Ok(serde_json::json!({
+        "code": 0,
+    }))
 }
 
 #[tauri::command]
-pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<(), String> {
+pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<serde_json::Value, serde_json::Value> {
     let agent_name = agent.to_string();
     let window_clone = window.clone();
     let agent_name_clone = agent_name.clone();
@@ -92,8 +113,8 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<(
                         }));
                         break;
                     },
-                    Ok(n) => {
-                        // println!("Read {} bytes: {}", n, line.trim());
+                    Ok(_n) => {
+                        // println!("Read {} bytes: {}", _n, line.trim());
                         
                         let event_data = serde_json::json!({
                             "agent": agent_name_clone,
@@ -131,23 +152,32 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<(
         tasks.insert(agent_name, handle);
     }
     
-    Ok(())
+    println!("Started listening to agent {}", agent);
+    Ok(serde_json::json!({
+        "code": 0,
+    }))
 }
 
 #[tauri::command]
-pub async fn acp_stop_listening(agent: &str) -> Result<(), String> {
+pub async fn acp_stop_listening(agent: &str) -> Result<serde_json::Value, serde_json::Value> {
     let mut tasks = LISTENING_TASKS.lock().await;
     
     if let Some(handle) = tasks.remove(agent) {
         handle.abort();
-        Ok(())
+        println!("Stopped listening to agent {}", agent);
+        Ok(serde_json::json!({
+            "code": 0,
+        }))
     } else {
-        Err(format!("No active listener for agent {}", agent))
+        Err(serde_json::json!({
+            "code": 6,
+            "message": format!("No active listener for agent {}", agent)
+        }))
     }
 }
 
 #[tauri::command]
-pub async fn acp_dispose(agent: &str) -> Result<String, String> {
+pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::Value> {
     println!("acp_dispose {}", agent);
     
     // First stop listening if active
@@ -177,13 +207,22 @@ pub async fn acp_dispose(agent: &str) -> Result<String, String> {
                 },
                 Err(e) => {
                     println!("Error killing agent {} process: {}", agent, e);
-                    return Err(format!("Failed to kill agent process: {}", e));
+                    return Err(serde_json::json!({
+                        "code": 7,
+                        "message": format!("Failed to kill agent process: {}", e)
+                    }));
                 }
             }
         } else {
-            return Err(format!("Agent {} not found", agent));
+            return Err(serde_json::json!({
+                "code": 8,
+                "message": format!("Agent {} not found", agent)
+            }));
         }
     }
     
-    Ok(format!("Agent {} disposed successfully", agent))
+    println!("Agent {} disposed successfully", agent);
+    Ok(serde_json::json!({
+        "code": 0,
+    }))
 }

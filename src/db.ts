@@ -2,7 +2,7 @@ import { Message } from "ai";
 import { ROOT_NODE_ID } from "./constants";
 
 const dbName = "ai-studio";
-const dbVer = 5;
+const dbVer = 6;
 
 let db: IDBDatabase;
 
@@ -61,9 +61,7 @@ export async function init() {
         const agentSessionStore = db.createObjectStore("agent_session", { keyPath: "id" });
         agentSessionStore.createIndex("byAgentId", "agentId", { unique: false });
         agentSessionStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
-        agentSessionStore.createIndex("byLastMessageTime", "lastMessageAt", { unique: false });
       }
-
     };
   });
 }
@@ -114,11 +112,10 @@ export interface Note {
 export interface AgentSession {
   id: string;
   agentId: string;
+  sessionId: string;
   title: string;
   createdAt: Date;
   updatedAt: Date;
-  lastMessageAt?: Date;
-  messageCount?: number;
 }
 
 export function writeChat(data: Chat): Promise<void> {
@@ -784,11 +781,11 @@ export function getAgentSessions(agentId: string): Promise<AgentSession[]> {
   });
 }
 
-export function getAgentSession(sessionId: string): Promise<AgentSession | undefined> {
+export function getAgentSession(id: string): Promise<AgentSession | undefined> {
   return new Promise<AgentSession | undefined>((resolve, reject) => {
     const transaction = db.transaction(["agent_session"], "readonly");
     const store = transaction.objectStore("agent_session");
-    const request = store.get(sessionId);
+    const request = store.get(id);
 
     request.onsuccess = () => {
       const session = request.result as AgentSession | undefined;
@@ -838,11 +835,11 @@ export function updateAgentSession(id: string, data: Partial<AgentSession>): Pro
   });
 }
 
-export function deleteAgentSession(sessionId: string): Promise<void> {
+export function deleteAgentSession(id: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(["agent_session"], "readwrite");
     const store = transaction.objectStore("agent_session");
-    const request = store.delete(sessionId);
+    const request = store.delete(id);
 
     request.onsuccess = () => {
       resolve();

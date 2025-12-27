@@ -1,7 +1,7 @@
-import { defineStore } from "pinia";
-import { nanoid } from "nanoid";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { defineStore } from "pinia";
+import { nanoid } from "nanoid";
 
 export const useTabsStore = defineStore("tabs", () => {
   const router = useRouter();
@@ -11,12 +11,7 @@ export const useTabsStore = defineStore("tabs", () => {
       title: string;
     }[]
   >(loadTabs());
-  const expanded = ref(false);
   return {
-    expanded,
-    toggleExpanded() {
-      expanded.value = !expanded.value;
-    },
     tabs,
     openTab(path: string, title: string) {
       if (tabs.value.some((tab) => tab.path === path)) {

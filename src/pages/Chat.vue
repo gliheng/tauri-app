@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { provide, computed, ref, reactive } from "vue";
+import { provide, computed, ref } from "vue";
 import { useRoute } from "vue-router";
-import { storeToRefs } from "pinia";
 import { AnimatePresence } from "motion-v";
 import { omit } from "lodash-es";
-import { useTabsStore } from "@/stores/tabs";
 import ChatBox from "@/components/ChatBox.vue";
 import MessageList from "@/components/MessageList.vue";
 import { useChat } from "@/hooks/useChat";
@@ -15,7 +13,7 @@ const route = useRoute();
 const chatId = route.params.id as string;
 const initialData = await getChat(chatId);
 
-const { expanded } = storeToRefs(useTabsStore());
+const expanded = ref(false);
 const messageGraph = ref<Record<string, any>>({});
 const pathSelection: Record<string, number> = {};
 
@@ -122,7 +120,13 @@ provide(MESSAGE_GRAPH, {
 
 <template>
   <div class="flex-1 flex flex-col min-h-0 justify-center relative">
-    <header class="absolute top-2 right-2 z-10">
+    <header class="absolute top-2 right-2 z-10 flex flex-row gap-2">
+      <UButton
+        icon="i-mdi-arrow-expand-horizontal"
+        color="neutral"
+        variant="subtle"
+        @click="expanded = !expanded"
+      />
       <UPopover>
         <UButton
           icon="i-lucide-sliders-horizontal"

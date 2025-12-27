@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted, PropType } from "vue";
-import type { Agent } from "@/db";
+import { getAgentSession, writeAgentSession, type Agent } from "@/db";
 import { ACPService } from "@/services/acp";
 import ChatBox from "@/components/ChatBox.vue";
 
@@ -9,20 +9,19 @@ const props = defineProps({
     type: Object as PropType<Agent>,
     required: true,
   },
-  sessionId: {
+  chatId: {
     type: String,
-    required: false,
+    required: true,
   },
 });
 const isInitialized = ref(false);
 const input = ref("");
 const messages = ref<any[]>([]);
-const status = ref<'submitted' | 'streaming' | 'ready' | 'error'>("ready");
+const status = ref<'loading' | 'submitted' | 'streaming' | 'ready' | 'error'>("ready");
 const error = ref<string | null>(null);
-const debug = ref<string[]>([]);
 
 const acpService = new ACPService({ 
-  program: props.agent.program!,
+  program: props.agent.program! + "::" + props.chatId, // Start a new process for each chat
   directory: props.agent.directory!,
   mcpServers: [],
   onConnect() {
@@ -50,21 +49,26 @@ const acpService = new ACPService({
   },
 });
 
+let agentSession = await getAgentSession(props.chatId);
+
 const start = async () => {
   try {
     error.value = null;
-    debug.value.push("Starting agent initialization...");
-    status.value = "streaming";
+    console.log("Starting agent initialization...");
+    status.value = "loading";
             
     await acpService.initialize();
+
+    if (agentSession && agentSession.sessionId) {
+      await acpService.sessionLoad(agentSession.sessionId);
+    }
     
-    debug.value.push("Agent initialized successfully", JSON.stringify((acpService as any).initializeResponse, null, 2));
+    console.log("Agent initialized successfully");
     isInitialized.value = true;
     status.value = "ready";
   } catch (err) {
     console.error("Failed to launch agent:", err);
-    error.value = `Failed to launch agent: ${err}`;
-    debug.value.push(`Error: ${JSON.stringify(err, null, 2)}`);
+    error.value = `Failed to launch agent: ${JSON.stringify(err, null, 2)}`;
     status.value = "error";
   }
 };
@@ -72,7 +76,7 @@ const start = async () => {
 const stop = async () => {
   try {
     error.value = null;
-    debug.value.push("Stopping agent...");
+    console.log("Stopping agent...");
     
     if (acpService && isInitialized.value) {
       await acpService.dispose();
@@ -80,11 +84,11 @@ const stop = async () => {
     
     status.value = "ready";
     isInitialized.value = false;
-    debug.value.push("Agent stopped successfully");
+    console.log("Agent stopped successfully");
   } catch (err) {
     console.error("Failed to stop agent:", err);
     error.value = `Failed to stop agent: ${err}`;
-    debug.value.push(`Error stopping agent: ${JSON.stringify(err, null, 2)}`);
+    console.log(`Error stopping agent: ${JSON.stringify(err, null, 2)}`);
     status.value = "error";
   }
 };
@@ -106,7 +110,18 @@ const handleSubmit = async () => {
       content: userMessage
     });
 
-    await acpService.sessionNew();
+    if (!agentSession || !agentSession.sessionId) {
+      const ret = await acpService.sessionNew();
+      agentSession = {
+        id: props.chatId,
+        agentId: props.agent.id,
+        sessionId: ret.sessionId,
+        title: "New Session",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      await writeAgentSession(agentSession);
+    }
     
     await acpService.sessionPrompt(userMessage);
     
@@ -115,7 +130,6 @@ const handleSubmit = async () => {
   } catch (err) {
     console.error("Failed to send message:", err);
     error.value = `Failed to send message: ${err}`;
-    debug.value.push(`Error sending message: ${JSON.stringify(err, null, 2)}`);
     status.value = "error";
   }
 };

@@ -75,10 +75,11 @@ export class ACPService {
   async startListening(): Promise<() => void> {
     try {
       await invoke("acp_start_listening", { agent: this.program });
-      
       this.unlistenFn = await listen("acp_message", (event) => {
         const { agent, type, message } = event.payload as { agent: string; type: string; message: string };
+        // Multiple page will receive this!
         if (agent === this.program) {
+          console.log('Received acp_message', event.payload);
           if (type == 'connect') {
             this.onConnect?.();
           } else if (type == 'message') {
@@ -126,6 +127,7 @@ export class ACPService {
       agent: this.program,
       message: messagePayload,
     });
+    console.log('Sent acp_message', messagePayload);
     this.msgId++;
     return this.pendingCalls[id].promise;
   }
@@ -156,6 +158,16 @@ export class ACPService {
       mcpServers: this.mcpServers,
     });
     this.sessionId = ret.sessionId;
+    return ret;
+  }
+
+  async sessionLoad(sessionId: string): Promise<any> {
+    const ret = await this.rpc("session/load", {
+      sessionId,
+      cwd: this.directory,
+      mcpServers: this.mcpServers,
+    });
+    this.sessionId = sessionId;
     return ret;
   }
 

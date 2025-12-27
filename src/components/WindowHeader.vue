@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { isTauri } from "@tauri-apps/api/core";
-import Settings from "@/components/Settings.vue";
 import Tabs from "@/components/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
 
-const { toggleExpanded } = useTabsStore();
 const tauri = isTauri();
 const platform = navigator.platform;
 
@@ -41,12 +39,6 @@ defineShortcuts({
             </template>
           </UModal>
           <ThemeSwitcher />
-          <UButton
-            icon="i-mdi-arrow-expand-horizontal"
-            color="neutral"
-            variant="ghost"
-            @click="toggleExpanded"
-          />
         </slot>
       </template>
     </Tabs>
