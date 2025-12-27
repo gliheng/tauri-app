@@ -19,20 +19,17 @@ export interface ACPServiceConfig {
       name: string;
       value: string;
     }[];
-  }[]
+  }[];
+  model: string;
+  baseUrl: string;
+  apiKey: string;
   onConnect?: () => void;
   onDisconnect?: () => void;
   onInvoke?: (method: string, params: any) => void;
 }
 
 export class ACPService {
-  private program: string;
-  private directory: string;
-  private mcpServers: ACPServiceConfig['mcpServers'];
   private unlistenFn?: (() => void) | null;
-  private onConnect?: () => void;
-  private onDisconnect?: () => void;
-  private onInvoke?: (method: string, params: any) => void;
   private agentCapabilities?: Record<string, boolean>;
   private sessionId?: string;
   private pendingCalls: Record<number, {
@@ -42,17 +39,16 @@ export class ACPService {
   }> = {};
   private msgId = 0;
 
-  constructor(config: ACPServiceConfig) {
-    this.program = config.program;
-    this.directory = config.directory;
-    this.mcpServers = config.mcpServers;
-    this.onConnect = config.onConnect;
-    this.onDisconnect = config.onDisconnect;
-    this.onInvoke = config.onInvoke;
-  }
+  constructor(private config: ACPServiceConfig) {}
 
   async initialize(): Promise<void> {
-    await invoke("acp_initialize", { agent: this.program, directory: this.directory });
+    await invoke("acp_initialize", {
+      agent: this.config.program,
+      directory: this.config.directory,
+      model: this.config.model,
+      apiKey: this.config.apiKey,
+      baseUrl: this.config.baseUrl,
+    });
     this.startListening();
     const ret = await this.rpc("initialize", {
       "protocolVersion": 1,
@@ -74,28 +70,25 @@ export class ACPService {
 
   async startListening(): Promise<() => void> {
     try {
-      await invoke("acp_start_listening", { agent: this.program });
-      this.unlistenFn = await listen("acp_message", (event) => {
-        const { agent, type, message } = event.payload as { agent: string; type: string; message: string };
-        // Multiple page will receive this!
-        if (agent === this.program) {
-          console.log('Received acp_message', event.payload);
-          if (type == 'connect') {
-            this.onConnect?.();
-          } else if (type == 'message') {
-            const { id, result, error, method, params } = JSON.parse(message);
-            if (typeof id == 'number') {
-              if (error) {
-                this.pendingCalls[id].reject(error);
-              } else {
-                this.pendingCalls[id].resolve(result);
-              }
-            } else if (method) {
-              this.onInvoke?.(method, params);
+      await invoke("acp_start_listening", { agent: this.config.program });
+      this.unlistenFn = await listen("acp_message::" + this.config.program, (event) => {
+        const { type, message } = event.payload as { agent: string; type: string; message: string };
+        console.log('Received acp_message', event.payload);
+        if (type == 'connect') {
+          this.config.onConnect?.();
+        } else if (type == 'message') {
+          const { id, result, error, method, params } = JSON.parse(message);
+          if (typeof id == 'number') {
+            if (error) {
+              this.pendingCalls[id].reject(error);
+            } else {
+              this.pendingCalls[id].resolve(result);
             }
-          } else if (type == 'disconnect') {
-            this.onDisconnect?.();
+          } else if (method) {
+            this.config.onInvoke?.(method, params);
           }
+        } else if (type == 'disconnect') {
+          this.config.onDisconnect?.();
         }
       });
       
@@ -107,7 +100,7 @@ export class ACPService {
   }
 
   async stopListening(): Promise<void> {
-    await invoke("acp_stop_listening", { agent: this.program });
+    await invoke("acp_stop_listening", { agent: this.config.program });
     if (this.unlistenFn) {
       this.unlistenFn();
       this.unlistenFn = null;
@@ -124,7 +117,7 @@ export class ACPService {
       params: message,
     };
     await invoke("acp_send_message", {
-      agent: this.program,
+      agent: this.config.program,
       message: messagePayload,
     });
     console.log('Sent acp_message', messagePayload);
@@ -141,7 +134,7 @@ export class ACPService {
       params: message,
     };
     await invoke("acp_send_message", {
-      agent: this.program,
+      agent: this.config.program,
       message: messagePayload,
     });
     this.msgId++;
@@ -154,8 +147,8 @@ export class ACPService {
       };
     }
     let ret = await this.rpc("session/new", {
-      cwd: this.directory,
-      mcpServers: this.mcpServers,
+      cwd: this.config.directory,
+      mcpServers: this.config.mcpServers,
     });
     this.sessionId = ret.sessionId;
     return ret;
@@ -164,8 +157,8 @@ export class ACPService {
   async sessionLoad(sessionId: string): Promise<any> {
     const ret = await this.rpc("session/load", {
       sessionId,
-      cwd: this.directory,
-      mcpServers: this.mcpServers,
+      cwd: this.config.directory,
+      mcpServers: this.config.mcpServers,
     });
     this.sessionId = sessionId;
     return ret;
@@ -186,8 +179,8 @@ export class ACPService {
     await this.stopListening();
     
     // Dispose the ACP process
-    await invoke("acp_dispose", { agent: this.program });
+    await invoke("acp_dispose", { agent: this.config.program });
 
-    console.log(`ACP service for ${this.program} disposed successfully`);
+    console.log(`ACP service for ${this.config.program} disposed successfully`);
   }
 }

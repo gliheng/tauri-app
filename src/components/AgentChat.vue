@@ -3,6 +3,7 @@ import { ref, onUnmounted, onMounted, PropType } from "vue";
 import { getAgentSession, writeAgentSession, type Agent } from "@/db";
 import { ACPService } from "@/services/acp";
 import ChatBox from "@/components/ChatBox.vue";
+import { getModelConfig } from "@/llm";
 
 const props = defineProps({
   agent: {
@@ -20,10 +21,14 @@ const messages = ref<any[]>([]);
 const status = ref<'loading' | 'submitted' | 'streaming' | 'ready' | 'error'>("ready");
 const error = ref<string | null>(null);
 
+const { model, apiKey, baseUrl } = getModelConfig();
 const acpService = new ACPService({ 
   program: props.agent.program! + "::" + props.chatId, // Start a new process for each chat
   directory: props.agent.directory!,
   mcpServers: [],
+  model,
+  baseUrl,
+  apiKey,
   onConnect() {
     console.log('onConnect');
   },
@@ -129,7 +134,7 @@ const handleSubmit = async () => {
     status.value = "ready";
   } catch (err) {
     console.error("Failed to send message:", err);
-    error.value = `Failed to send message: ${err}`;
+    error.value = `Failed to send message: ${JSON.stringify(err, null, 2)}`;
     status.value = "error";
   }
 };

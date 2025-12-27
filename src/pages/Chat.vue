@@ -106,6 +106,7 @@ provide(CHAT_ACTIONS, {
   setMessages,
   handleSubmit,
 });
+
 provide(MESSAGE_GRAPH, {
   graph: messageGraph,
   // switch node path, id is the parent id, index is the child index

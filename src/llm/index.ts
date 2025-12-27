@@ -5,20 +5,16 @@ import { loadModelSettings } from "@/stores/settings";
 
 export function getModel(model?: string) {
   model = model ?? "deepseek::deepseek-chat";
-  const [provider, name] = model.split("::");
-  const apiKey = loadModelSettings()[provider]?.apiKey;
+  const { provider, model: name, apiKey } = getModelConfig(model);
   if (provider == "deepseek") {
-    // sk-f721ca4afb6b4fb3a3937bb3e3b64e3d
     return createDeepSeek({
       apiKey,
     })(name);
   } else if (provider == "openrouter") {
-    // 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
     return createOpenRouter({
       apiKey,
     })(name);
   } else if (provider == "silliconflow") {
-    // sk-hytuswwjmgybiopdpwtmxexnsaxejglwvrykkjfidzqgohny
     return createOpenAICompatible({
       name: 'silliconflow',
       apiKey,
@@ -27,4 +23,22 @@ export function getModel(model?: string) {
   }
 
   throw new Error("Invalid model");
+}
+
+export function getModelConfig(model?: string) {
+  model = model ?? "deepseek::deepseek-chat";
+  const [provider, name] = model.split("::");
+  return {
+    provider,
+    model: name,
+    apiKey: loadModelSettings()[provider].apiKey,
+    baseUrl: getProviderBaseUrl(provider),
+  };
+};
+
+export function getProviderBaseUrl(provider: string) {
+  if (provider === 'openrouter') return 'https://openrouter.ai/api/v1';
+  if (provider === 'deepseek') return 'https://api.deepseek.com';
+  if (provider === 'silliconflow') return 'https://api.siliconflow.cn/v1';
+  return '';
 }

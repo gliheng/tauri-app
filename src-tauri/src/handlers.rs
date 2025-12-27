@@ -14,9 +14,45 @@ static LISTENING_TASKS: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::tas
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 #[tauri::command]
-pub async fn acp_initialize(agent: &str) -> Result<serde_json::Value, serde_json::Value> {
+pub async fn acp_initialize(agent: &str, api_key: &str, base_url: &str, model: &str) -> Result<serde_json::Value, serde_json::Value> {
+    
+    let agent_parts: Vec<&str> = agent.split("::").collect();
+    let agent_name = agent_parts.first().unwrap_or(&agent);
+    
+    let mut args = vec!["x"];
+    let provider_base_url = format!("model_providers.x.base_url={}", base_url);
+
+    if *agent_name == "qwen" {
+        args.push("@qwen-code/qwen-code");
+        args.push("--auth-type");
+        args.push("openai");
+        args.push("--openai-api-key");
+        args.push(api_key);
+        args.push("--openai-base-url");
+        args.push(base_url);
+        args.push("--model");
+        args.push(model);
+        args.push("--experimental-acp");
+    } else if *agent_name == "codex" {
+        args.push("@zed-industries/codex-acp");
+        args.push("-c");
+        args.push("model_provider=x");
+        args.push("-c");
+        args.push(&provider_base_url);
+        args.push("-c");
+        args.push("model_providers.x.env_key=X_API_KEY");
+        args.push("-m");
+        args.push(model);
+    } else {
+        return Err(serde_json::json!({
+            "code": 9,
+            "message": format!("Unknown agent type: {}", agent_name)
+        }));
+    }
+    
     let child = TokioCommand::new("bun")
-        .args(&["x", "@zed-industries/codex-acp"])
+        .args(&args)
+        .env("X_API_KEY", api_key)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -89,7 +125,7 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<s
                 }
             }
         }
-        
+        let evt = "acp_message::".to_string() + &agent_name_clone;
         if let Some(mut reader) = reader_opt {
             loop {
                 // Check if agent still exists
@@ -107,8 +143,7 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<s
                 match reader.read_line(&mut line).await {
                     Ok(0) => {
                         // EOF reached
-                        let _ = window_clone.emit("acp_message", serde_json::json!({
-                            "agent": agent_name_clone,
+                        let _ = window_clone.emit(evt.as_str(), serde_json::json!({
                             "type": "disconnect",
                         }));
                         break;
@@ -117,17 +152,15 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<s
                         // println!("Read {} bytes: {}", _n, line.trim());
                         
                         let event_data = serde_json::json!({
-                            "agent": agent_name_clone,
                             "type": "message",
                             "message": line.trim().to_string()
                         });
                         
-                        let _ = window_clone.emit("acp_message", event_data);
+                        let _ = window_clone.emit(evt.as_str(), event_data);
                     },
                     Err(e) => {
                         println!("Error reading from stdout: {}", e);
-                        let _ = window_clone.emit("acp_message", serde_json::json!({
-                            "agent": agent_name_clone,
+                        let _ = window_clone.emit(evt.as_str(), serde_json::json!({
                             "type": "error",
                             "error": format!("Read error: {}", e)
                         }));

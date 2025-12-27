@@ -126,8 +126,9 @@ const launchAgent = () => {
             v-model="localAgent.program"
             :options="[
               { value: 'codex', label: 'Codex' },
-              { value: 'gemini-cli', label: 'Gemini CLI' },
-              { value: 'qwen-code', label: 'Qwen Code' }
+              { value: 'gemini', label: 'Gemini CLI' },
+              { value: 'claude', label: 'Claude Code' },
+              { value: 'qwen', label: 'Qwen Code' }
             ]"
           />
         </div>
