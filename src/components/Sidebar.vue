@@ -5,8 +5,10 @@ import { tv } from "tailwind-variants";
 import { useColorMode } from "@vueuse/core";
 import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
-import { Agent, Note } from "@/db";
+import { Agent, Note, writeAgent } from "@/db";
 import { computed } from "vue";
+import AgentConfig from "./AgentConfig.vue";
+import type { AgentFormData } from "./AgentConfig.vue";
 
 const buttonStyle = tv({
   base: "items-center w-full",
@@ -32,9 +34,27 @@ function addChat() {
   });
 }
 
-function addAgent() {
+const overlay = useOverlay();
+const agentCreateModal = overlay.create(AgentConfig);
+
+async function addAgent() {
+  const agent = await agentCreateModal.open() as AgentFormData | null;
+  if (!agent) {
+    return;
+  }
+
   const id = nanoid();
-  tabsStore.openTab(`/agent/${id}`, "New agent");
+  const fullAgent: Agent = {
+    ...agent,
+    id,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  
+  await writeAgent(fullAgent);
+  sidebarStore.loadAgents();
+
+  tabsStore.openTab(`/agent/${id}`, agent.name);
   router.push({
     name: "agent",
     params: {

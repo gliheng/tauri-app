@@ -1,34 +1,30 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import { throttle } from "lodash-es";
-import { writeAgent, getAgent, Agent } from "@/db";
-import { useSidebarStore } from "@/stores/sidebar";
+import { ref, toRaw } from "vue";
 import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup.vue";
 
-const props = defineProps<{
-  create: boolean;
-  agent: {
-    id: string;
-    name: string;
-    icon: string;
-    type: "chat" | "code";
-    instructions?: string;
-    directory?: string;
-    program?: "codex" | "gemini-cli" | "qwen-code";
-  };
-}>();
+export interface AgentFormData {
+  name: string;
+  icon: string;
+  type: "chat" | "code";
+  instructions?: string;
+  directory?: string;
+  program?: "codex" | "gemini" | "qwen";
+}
 
 const emit = defineEmits<{
-  'update:agent': [value: any];
-  'launch': [];
+  close: [agent: AgentFormData];
 }>();
 
-const sidebarStore = useSidebarStore();
-
-// Create local reactive copies for v-model bindings
-const localAgent = ref({ ...props.agent });
+const agent = ref<AgentFormData>({
+  name: 'New Agent',
+  icon: 'i-lucide-brain',
+  type: 'code' as const,
+  instructions: '',
+  directory: '',
+  program: 'codex' as const,
+});
 
 // Directory selection
 const selectDirectory = async () => {
@@ -42,106 +38,88 @@ const selectDirectory = async () => {
     });
     
     if (selected) {
-      localAgent.value.directory = selected as string;
-      emit('update:agent', localAgent.value);
+      agent.value.directory = selected as string;
     }
   } catch (error) {
     console.error('Failed to select directory:', error);
   }
 };
 
-const throttledWatcher = throttle(async (newValue) => {
-  const initialData = await getAgent(props.agent.id);
-  const data: Agent = {
-    ...initialData,
-    ...newValue,
-    updatedAt: new Date(),
-  };
-  if (!initialData) {
-    data.createdAt = new Date();
-  }
-  await writeAgent(data);
-  sidebarStore.loadAgents();
-}, 1000);
-
-watch(localAgent, (newValue) => {
-  emit('update:agent', newValue);
-  throttledWatcher(newValue);
-}, {
-  deep: true,
-});
-
 const launchAgent = () => {
-  emit('launch');
+  emit('close', toRaw(agent.value) as AgentFormData);
 };
 </script>
 
 <template>
-  <div class="size-full p-6 space-y-4">
-    <hgroup class="flex flex-row gap-2 items-center">
-      <IconEdit v-model:icon="localAgent.icon" />
-      <NameEdit v-model:name="localAgent.name" />
-    </hgroup>
-    <div class="flex flex-row gap-2 items-center">
-      <h2 class="text-lg">Type</h2>
-      <ToggleButtonGroup
-        v-model="localAgent.type"
-        :options="[
-          { value: 'chat', label: 'Chat' },
-          { value: 'code', label: 'Code' }
-        ]"
-      />
-    </div>
-    <section v-if="localAgent.type === 'chat'">
-      <h2 class="text-lg mb-2">Instructions</h2>
-      <UTextarea
-        v-model="localAgent.instructions"
-        class="w-full"
-        :rows="15"
-        :maxrows="30"
-        placeholder="Agent instructions"
-      />
-    </section>
-    <section v-else-if="localAgent.type === 'code'">
-      <div class="space-y-4">
-        <div>
-          <h2 class="text-lg mb-2">Working Directory</h2>
-          <div class="flex gap-2">
-            <UInput
-              :model-value="localAgent.directory"
-              placeholder="Select a directory..."
-              class="flex-1"
-              readonly
-            />
-            <UButton
-              icon="i-lucide-folder"
-              label="Browse"
-              @click="selectDirectory"
-            />
-          </div>
-        </div>
-        <div>
-          <h2 class="text-lg mb-2">Code Program</h2>
+  <UModal>
+    <template #content>
+      <div class="size-full p-6 space-y-4">
+        <hgroup class="flex flex-row gap-2 items-center">
+          <IconEdit v-model:icon="agent.icon" />
+          <NameEdit v-model:name="agent.name" />
+        </hgroup>
+        <div class="flex flex-row gap-2 items-center">
+          <h2 class="text-lg">Type</h2>
           <ToggleButtonGroup
-            v-model="localAgent.program"
+            v-model="agent.type"
             :options="[
-              { value: 'codex', label: 'Codex' },
-              { value: 'gemini', label: 'Gemini CLI' },
-              { value: 'claude', label: 'Claude Code' },
-              { value: 'qwen', label: 'Qwen Code' }
+              { value: 'chat', label: 'Chat' },
+              { value: 'code', label: 'Code' }
             ]"
           />
         </div>
+        <section v-if="agent.type === 'chat'">
+          <h2 class="text-lg mb-2">Instructions</h2>
+          <UTextarea
+            v-model.optional="agent.instructions"
+            class="w-full"
+            :rows="15"
+            :maxrows="30"
+            placeholder="Agent instructions"
+          />
+        </section>
+        <section v-else-if="agent.type === 'code'">
+          <div class="space-y-4">
+            <div>
+              <h2 class="text-lg mb-2">Working Directory</h2>
+              <div class="flex gap-2">
+                <UInput
+                  :model-value="agent.directory"
+                  placeholder="Select a directory..."
+                  class="flex-1"
+                  readonly
+                />
+                <UButton
+                  icon="i-lucide-folder"
+                  label="Browse"
+                  @click="selectDirectory"
+                />
+              </div>
+            </div>
+            <div>
+              <h2 class="text-lg mb-2">Code Program</h2>
+              <ToggleButtonGroup
+                v-model="agent.program"
+                :options="[
+                  { value: 'codex', label: 'Codex' },
+                  { value: 'gemini', label: 'Gemini CLI' },
+                  { value: 'claude', label: 'Claude Code' },
+                  { value: 'qwen', label: 'Qwen Code' }
+                ]"
+              />
+            </div>
+          </div>
+        </section>
+        <section class="flex justify-center mt-10">
+          <UButton
+            class="text-xl px-8 py-4"
+            color="primary"
+            size="xl"
+            icon="i-lucide-rocket"
+            @click="launchAgent"
+          >Launch</UButton>
+        </section>
       </div>
-    </section>
-    <section class="flex justify-center mt-10">
-      <UButton
-        class="text-xl px-8 py-4"
-        color="primary"
-        size="xl"
-        icon="i-lucide-rocket"
-        @click="launchAgent"
-      >{{ create ? 'Launch' : 'Save' }}</UButton>
-    </section>
-  </div>
+    </template>
+  </UModal>
 </template>

@@ -183,4 +183,8 @@ export class ACPService {
 
     console.log(`ACP service for ${this.config.program} disposed successfully`);
   }
+
+  hasCapability(capability: string): boolean {
+    return this.agentCapabilities?.[capability] ?? false;
+  }
 }

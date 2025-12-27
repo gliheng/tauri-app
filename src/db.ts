@@ -92,7 +92,7 @@ export interface Agent {
   updatedAt: Date;
   instructions?: string;
   directory?: string;
-  program?: "codex" | "gemini-cli" | "qwen-code";
+  program?: "codex" | "gemini" | "qwen";
 }
 
 export interface FileStore {
@@ -387,6 +387,47 @@ export function writeAgent(data: Agent) {
 
     request.onerror = (event: Event) => {
       console.error("Error writing agent:", event);
+      reject(event);
+    };
+  });
+}
+
+/**
+ * Update an existing agent
+ * @param id - The ID of the agent to update
+ * @param data - Partial agent data to merge with existing agent
+ */
+export function updateAgent(id: string, data: Partial<Agent>): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tr = db.transaction(["agent"], "readwrite");
+    const store = tr.objectStore("agent");
+
+    // First get the existing agent
+    const getRequest = store.get(id);
+
+    getRequest.onsuccess = () => {
+      const existingAgent = getRequest.result;
+      if (!existingAgent) {
+        reject(new Error(`Agent with ID ${id} not found`));
+        return;
+      }
+
+      // Update the agent with new data
+      const updatedAgent = { ...existingAgent, ...data, updatedAt: new Date() };
+      const putRequest = store.put(updatedAgent);
+
+      putRequest.onsuccess = () => {
+        resolve();
+      };
+
+      putRequest.onerror = (event: Event) => {
+        console.error("Error updating agent:", event);
+        reject(event);
+      };
+    };
+
+    getRequest.onerror = (event: Event) => {
+      console.error("Error getting agent for update:", event);
       reject(event);
     };
   });

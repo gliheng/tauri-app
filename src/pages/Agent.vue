@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { getAgent, type Agent } from "@/db";
-import AgentConfig from "@/components/AgentConfig.vue";
-import AgentSessionList from "@/components/AgentSessionList.vue";
 import { nanoid } from "nanoid";
+import { getModelConfig } from "@/llm";
+import { ACPService } from "@/services/acp";
+import AgentSessionList from "@/components/AgentSessionList.vue";
 
 const route = useRoute();
 const agentId = route.params.id as string;
@@ -22,56 +23,57 @@ const agent = ref<Agent>({
   createdAt: initialData?.createdAt ?? new Date(),
   updatedAt: initialData?.updatedAt ?? new Date(),
 });
-const showConfig = ref(initialData ? false : true);
-
-const updateAgent = (newAgentData: Partial<Agent>) => {
-  agent.value = { ...agent.value, ...newAgentData };
-};
-
-const launchAgent = async () => {
-  showConfig.value = false;
-}
 
 const onNewSession = () => {
   chatId.value = nanoid();
 }
+
+const enableLoadSession = ref(false);
+onMounted(async () => {
+  const { model, apiKey, baseUrl } = getModelConfig();
+  const acpService = new ACPService({ 
+    program: agent.value.program!,
+    directory: agent.value.directory!,
+    mcpServers: [],
+    model,
+    baseUrl,
+    apiKey,
+    onConnect() {
+      console.log('onConnect');
+    },
+    onDisconnect() {
+      console.log('onDisconnect');
+    },
+    onInvoke(method, params) {
+      console.log("Method", method, "invoked with params", params);
+    },
+  });
+  await acpService.initialize();
+  enableLoadSession.value = acpService.hasCapability("loadSession");
+  await acpService.dispose();
+});
 </script>
 
 <template>
   <div class="relative size-full">
-    <AgentConfig
-      v-if="showConfig"
-      :agent="agent"
-      :create="!initialData"
-      @update:agent="updateAgent"
-      @launch="launchAgent"
-    />
-    <div v-else class="h-full">
-      <div class="absolute top-2 right-2 flex items-center gap-2">
-        <UPopover>
-          <UButton
-            icon="i-heroicons-queue-list-20-solid"
-            color="neutral"
-            variant="subtle"
-          />
-          <template #content>
-            <AgentSessionList :agent-id="agentId" v-model:chat-id="chatId" @new-session="onNewSession" />
-          </template>
-        </UPopover>
+    <div class="absolute top-2 right-2 flex items-center gap-2">
+      <UPopover v-if="enableLoadSession">
         <UButton
-          icon="i-heroicons-arrow-up-tray-20-solid"
+          icon="i-heroicons-queue-list-20-solid"
           color="neutral"
           variant="subtle"
-          @click="showConfig = true"
-        ></UButton>
-      </div>
-      <KeepAlive>
-        <AgentChat
-          :key="chatId"
-          :agent="agent"
-          :chat-id="chatId"
         />
-      </KeepAlive>
+        <template #content>
+          <AgentSessionList :agent-id="agentId" v-model:chat-id="chatId" @new-session="onNewSession" />
+        </template>
+      </UPopover>
     </div>
+    <KeepAlive>
+      <AgentChat
+        :key="chatId"
+        :agent="agent"
+        :chat-id="chatId"
+      />
+    </KeepAlive>
   </div>
 </template>

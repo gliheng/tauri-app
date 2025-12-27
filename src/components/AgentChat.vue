@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, PropType } from "vue";
-import { getAgentSession, writeAgentSession, type Agent } from "@/db";
+import { ref, onUnmounted, onMounted, PropType, watch } from "vue";
+import { getAgentSession, writeAgentSession, type Agent, updateAgent } from "@/db";
 import { ACPService } from "@/services/acp";
 import ChatBox from "@/components/ChatBox.vue";
 import { getModelConfig } from "@/llm";
+import { useSidebarStore } from "@/stores/sidebar";
+import { useTabsStore } from "@/stores/tabs";
 
 const props = defineProps({
   agent: {
@@ -15,6 +17,9 @@ const props = defineProps({
     required: true,
   },
 });
+
+const name = ref(props.agent.name);
+const icon = ref(props.agent.icon);
 const isInitialized = ref(false);
 const input = ref("");
 const messages = ref<any[]>([]);
@@ -39,11 +44,17 @@ const acpService = new ACPService({
     console.log("Method", method, "invoked with params", params);
     if (method == 'session/update') {
       const { update } = params;
+      const lastMessage = messages.value[messages.value.length - 1];
       if (update.sessionUpdate == 'agent_message_chunk') {
-        messages.value.push({
-          role: "assistant",
-          content: update.content,
-        });
+        // Add message chunk
+        if (lastMessage.role === 'assistant' && lastMessage.content.type == 'text' && update.content.type == 'text') {
+          lastMessage.content.text += update.content.text;
+        } else {
+          messages.value.push({
+            role: "assistant",
+            content: update.content,
+          });
+        }
       } else if (update.sessionUpdate == 'user_message_chunk') {
         messages.value.push({
           role: "user",
@@ -63,8 +74,9 @@ const start = async () => {
     status.value = "loading";
             
     await acpService.initialize();
+    const enableLoadSession = acpService.hasCapability("loadSession");
 
-    if (agentSession && agentSession.sessionId) {
+    if (enableLoadSession && agentSession && agentSession.sessionId) {
       await acpService.sessionLoad(agentSession.sessionId);
     }
     
@@ -146,10 +158,33 @@ onMounted(() => {
 onUnmounted(() => {
   stop();
 });
+
+const sidebarStore = useSidebarStore();
+const tabsStore = useTabsStore();
+
+// Watch for name and icon changes and update agent
+watch([name, icon], async ([newName, newIcon]) => {
+  if (newName !== props.agent.name || newIcon !== props.agent.icon) {
+    try {
+      await updateAgent(props.agent.id, {
+        name: newName,
+        icon: newIcon
+      });
+      sidebarStore.loadAgents();
+      tabsStore.setTitle(`/agent/${props.agent.id}`, newName);
+    } catch (error) {
+      console.error('Failed to update agent:', error);
+    }
+  }
+});
 </script>
 
 <template>
   <div class="size-full p-6 flex flex-col gap-2 justify-between">
+    <hgroup class="flex flex-row gap-2 items-center">
+      <IconEdit v-model:icon="icon" />
+      <NameEdit v-model:name="name" />
+    </hgroup>
     <UAlert
       v-if="error"
       title="Error!"
@@ -160,7 +195,7 @@ onUnmounted(() => {
         icon: 'size-11'
       }"
     />
-    <div>
+    <div class="flex-1 overflow-y-auto min-h-0">
       <p v-for="msg of messages" :key="msg.id">{{ msg.content }}</p>
     </div>
     <ChatBox
