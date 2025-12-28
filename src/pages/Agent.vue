@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
+import { AnimatePresence, motion } from 'motion-v';
 import { getAgent, type Agent } from "@/db";
 import { nanoid } from "nanoid";
 import { getModelConfig } from "@/llm";
@@ -56,18 +57,20 @@ onMounted(async () => {
 
 <template>
   <div class="relative size-full">
-    <div class="absolute top-2 right-2 flex items-center gap-2">
-      <UPopover v-if="enableLoadSession">
-        <UButton
-          icon="i-heroicons-queue-list-20-solid"
-          color="neutral"
-          variant="subtle"
-        />
-        <template #content>
-          <AgentSessionList :agent-id="agentId" v-model:chat-id="chatId" @new-session="onNewSession" />
-        </template>
-      </UPopover>
-    </div>
+    <AnimatePresence>
+      <motion.div v-if="enableLoadSession" class="absolute top-2 right-2 flex items-center gap-2">
+        <UPopover >
+          <UButton
+            icon="i-heroicons-queue-list-20-solid"
+            color="neutral"
+            variant="subtle"
+          />
+          <template #content>
+            <AgentSessionList :agent-id="agentId" v-model:chat-id="chatId" @new-session="onNewSession" />
+          </template>
+        </UPopover>
+      </motion.div>
+    </AnimatePresence>
     <KeepAlive>
       <AgentChat
         :key="chatId"

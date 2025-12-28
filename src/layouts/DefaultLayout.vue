@@ -7,7 +7,7 @@ import { storeToRefs } from "pinia";
 import WindowHeader from "@/components/WindowHeader.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import Spinner from "@/components/Spinner.vue";
-import WorkspaceEditor from "@/components/WorkspaceEditor.vue";
+import WorkspaceEditor from "@/components/CodeEditor/WorkspaceEditor.vue";
 
 const root = ref(null);
 

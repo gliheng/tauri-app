@@ -30,6 +30,9 @@ const props = defineProps({
     default: false,
   },
   loading: Boolean,
+  enableBranching: Boolean,
+  enableReload: Boolean,
+  enableEdit: Boolean,
 });
 
 const emit = defineEmits(["start-edit"]);
@@ -50,11 +53,7 @@ function copyText() {
   navigator.clipboard.writeText(props.content);
 }
 
-const { reload } = inject(CHAT_ACTIONS);
-
-function startEdit() {
-  emit("start-edit");
-}
+const actions = inject(CHAT_ACTIONS) as any;
 </script>
 
 <template>
@@ -109,9 +108,16 @@ function startEdit() {
       </div>
     </template>
     <template v-else>
-      <p class="p-2 rounded-md bg-gray-100 dark:bg-gray-800">
-        {{ content }}
-      </p>
+      <div class="p-2 rounded-md bg-gray-100 dark:bg-gray-800">
+        <template v-if="parts?.length">
+          <div v-for="(part, i) in parts" :key="i">
+            {{ part?.text }}
+          </div>
+        </template>
+        <template v-else>
+          {{ content }}
+        </template>
+      </div>
     </template>
     <FileImage
       v-for="(attachment, index) of experimental_attachments"
@@ -120,7 +126,7 @@ function startEdit() {
       :url="attachment.url"
     />
     <div class="flex flex-row items-center gap-1 mt-2">
-      <MessageSwitcher :id="id" />
+      <MessageSwitcher v-if="enableBranching" :id="id" />
       <UTooltip text="Copy text">
         <UButton
           color="neutral"
@@ -129,20 +135,20 @@ function startEdit() {
           @click="copyText"
         />
       </UTooltip>
-      <UTooltip v-if="role === 'user'" text="Edit">
+      <UTooltip v-if="enableEdit && role === 'user'" text="Edit">
         <UButton
           color="neutral"
           variant="soft"
           trailing-icon="i-lucide-pen-line"
-          @click="startEdit"
+          @click="$emit('start-edit')"
         />
       </UTooltip>
-      <UTooltip v-if="last && role == 'assistant'" text="Reload">
+      <UTooltip v-if="enableReload && last && role == 'assistant'" text="Reload">
         <UButton
           color="neutral"
           variant="soft"
           trailing-icon="i-lucide-refresh-cw"
-          @click="reload"
+          @click="actions.reload"
         />
       </UTooltip>
     </div>

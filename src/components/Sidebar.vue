@@ -7,8 +7,8 @@ import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Agent, Note, writeAgent } from "@/db";
 import { computed } from "vue";
-import AgentConfig from "./AgentConfig.vue";
-import type { AgentFormData } from "./AgentConfig.vue";
+import AgentConfig from "./AgentChat/AgentConfig.vue";
+import type { AgentFormData } from "./AgentChat/AgentConfig.vue";
 
 const buttonStyle = tv({
   base: "items-center w-full",

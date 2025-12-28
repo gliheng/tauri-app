@@ -12,8 +12,8 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Agent: typeof import('./src/components/Agent.vue')['default']
-    AgentChat: typeof import('./src/components/AgentChat.vue')['default']
-    AgentConfig: typeof import('./src/components/AgentConfig.vue')['default']
+    AgentChat: typeof import('./src/components/AgentChat/AgentChat.vue')['default']
+    AgentConfig: typeof import('./src/components/AgentChat/AgentConfig.vue')['default']
     AgentSessionList: typeof import('./src/components/AgentSessionList.vue')['default']
     ChatBox: typeof import('./src/components/ChatBox.vue')['default']
     CodeEditor: typeof import('./src/components/CodeEditor.vue')['default']
@@ -24,7 +24,7 @@ declare module 'vue' {
     MarkdownText: typeof import('./src/components/MarkdownText.vue')['default']
     MessageBubble: typeof import('./src/components/MessageBubble.vue')['default']
     MessageEdit: typeof import('./src/components/MessageEdit.vue')['default']
-    MessageList: typeof import('./src/components/MessageList.vue')['default']
+    MessageList: typeof import('./src/components/AgentChat/MessageList.vue')['default']
     MessageSwitcher: typeof import('./src/components/MessageSwitcher.vue')['default']
     MilkdownEditor: typeof import('./src/components/MilkdownEditor.vue')['default']
     ModelSelector: typeof import('./src/components/ModelSelector.vue')['default']
@@ -61,6 +61,6 @@ declare module 'vue' {
     UTree: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_2a817318c58a783ae49232db0408a323/node_modules/@nuxt/ui/dist/runtime/components/Tree.vue')['default']
     WindowControls: typeof import('./src/components/WindowControls.vue')['default']
     WindowHeader: typeof import('./src/components/WindowHeader.vue')['default']
-    WorkspaceEditor: typeof import('./src/components/WorkspaceEditor.vue')['default']
+    WorkspaceEditor: typeof import('./src/components/CodeEditor/WorkspaceEditor.vue')['default']
   }
 }

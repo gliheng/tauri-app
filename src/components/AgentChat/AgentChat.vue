@@ -6,6 +6,8 @@ import ChatBox from "@/components/ChatBox.vue";
 import { getModelConfig } from "@/llm";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useTabsStore } from "@/stores/tabs";
+import MessageList from "./MessageList.vue";
+import { Message } from "ai";
 
 const props = defineProps({
   agent: {
@@ -22,7 +24,7 @@ const name = ref(props.agent.name);
 const icon = ref(props.agent.icon);
 const isInitialized = ref(false);
 const input = ref("");
-const messages = ref<any[]>([]);
+const messages = ref<Message[]>([]);
 const status = ref<'loading' | 'submitted' | 'streaming' | 'ready' | 'error'>("ready");
 const error = ref<string | null>(null);
 
@@ -47,18 +49,40 @@ const acpService = new ACPService({
       const lastMessage = messages.value[messages.value.length - 1];
       if (update.sessionUpdate == 'agent_message_chunk') {
         // Add message chunk
-        if (lastMessage.role === 'assistant' && lastMessage.content.type == 'text' && update.content.type == 'text') {
-          lastMessage.content.text += update.content.text;
+        if (lastMessage.role === 'assistant') {
+          const lastPart = lastMessage.parts![lastMessage.parts!.length - 1];
+          if (lastPart.type == 'text' && update.content.type == 'text') {
+            lastPart.text += update.content.text;
+          } else {
+            lastMessage.parts!.push({
+              type: 'text',
+              text: update.content.text,
+            });
+          }
         } else {
           messages.value.push({
+            id: String(messages.value.length),
             role: "assistant",
-            content: update.content,
+            content: '',
+            parts: [
+              {
+                type: 'text',
+                text: update.content.text,
+              }
+            ],
           });
         }
       } else if (update.sessionUpdate == 'user_message_chunk') {
         messages.value.push({
+          id: String(messages.value.length),
           role: "user",
-          content: update.content,
+          content: '',
+          parts: [
+            {
+              type: 'text',
+              text: update.content.text,
+            }
+          ],
         });
       }
     }
@@ -117,14 +141,19 @@ const handleSubmit = async () => {
     error.value = null;
     status.value = "streaming";
     
-    const userMessage = {
+    const text = input.value.trim();
+    const part = {
       type: 'text' as const,
-      text: input.value.trim(),
+      text,
     };
 
     messages.value.push({
+      id: String(messages.value.length),
       role: "user",
-      content: userMessage
+      content: '',
+      parts: [
+        part,
+      ],
     });
 
     if (!agentSession || !agentSession.sessionId) {
@@ -140,7 +169,7 @@ const handleSubmit = async () => {
       await writeAgentSession(agentSession);
     }
     
-    await acpService.sessionPrompt(userMessage);
+    await acpService.sessionPrompt(part);
     
     input.value = "";
     status.value = "ready";
@@ -195,8 +224,8 @@ watch([name, icon], async ([newName, newIcon]) => {
         icon: 'size-11'
       }"
     />
-    <div class="flex-1 overflow-y-auto min-h-0">
-      <p v-for="msg of messages" :key="msg.id">{{ msg.content }}</p>
+    <div class="flex-1 overflow-y-auto min-h-0 flex">
+      <MessageList :messages="messages" />
     </div>
     <ChatBox
       :style="{ width: '100%' }"

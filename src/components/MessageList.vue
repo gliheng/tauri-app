@@ -68,6 +68,9 @@ watch(
           role="assistant"
           content="Thinking ..."
           loading
+          enable-edit
+          enable-reload
+          enable-branching
         />
       </div>
     </Scrollbar>
