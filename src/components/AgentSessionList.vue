@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { getAgentSessions, type AgentSession, deleteAgentSession } from "@/db";
+import { getChatsByAgentId, deleteChat, type Chat } from "@/db";
+import { confirm } from "@tauri-apps/plugin-dialog";
 
 const props = defineProps({
   agentId: {
@@ -12,11 +13,11 @@ const props = defineProps({
 const chatId = defineModel<string>('chat-id');
 
 const { agentId } = props;
-const sessions = ref<AgentSession[]>(await getAgentSessions(agentId));
+const sessions = ref<Chat[]>(await getChatsByAgentId(agentId));
 
 const loadSessions = async () => {
   try {
-    sessions.value = await getAgentSessions(props.agentId);
+    sessions.value = await getChatsByAgentId(props.agentId);
   } catch (error) {
     console.error('Error loading sessions:', error);
   }
@@ -24,9 +25,15 @@ const loadSessions = async () => {
 
 const onDeleteSession = async (id: string) => {
   try {
-    // Note: You might want to add a confirmation dialog here
-    await deleteAgentSession(id);
-    await loadSessions();
+    const ok = await confirm("This action cannot be reverted. Are you sure?", {
+      title: "Delete chat",
+      kind: "warning",
+    });
+
+    if (ok) {
+      await deleteChat(id);
+      await loadSessions();
+    }
   } catch (error) {
     console.error('Error deleting session:', error);
   }
@@ -61,7 +68,7 @@ const emit = defineEmits(['new-session']);
       >
         <div class="flex items-center justify-between">
           <div class="flex-1 min-w-0">
-            <h4 class="font-medium truncate">{{ session.title }}</h4>
+            <h4 class="font-medium truncate">{{ session.topic }}</h4>
             <p class="text-xs text-gray-500 dark:text-gray-400">
               {{ session.updatedAt.toLocaleDateString() }} {{ session.updatedAt.toLocaleTimeString() }}
             </p>

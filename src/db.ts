@@ -2,7 +2,7 @@ import { Message } from "ai";
 import { ROOT_NODE_ID } from "./constants";
 
 const dbName = "ai-studio";
-const dbVer = 6;
+const dbVer = 8;
 
 let db: IDBDatabase;
 
@@ -31,6 +31,7 @@ export async function init() {
       if (!db.objectStoreNames.contains("chat")) {
         const chatStore = db.createObjectStore("chat", { keyPath: "id" });
         chatStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
+        chatStore.createIndex("byAgentId", "agentId", { unique: false });
       }
 
       if (!db.objectStoreNames.contains("message")) {
@@ -56,12 +57,6 @@ export async function init() {
       if (!db.objectStoreNames.contains("file")) {
         db.createObjectStore("file", { autoIncrement: true });
       }
-
-      if (!db.objectStoreNames.contains("agent_session")) {
-        const agentSessionStore = db.createObjectStore("agent_session", { keyPath: "id" });
-        agentSessionStore.createIndex("byAgentId", "agentId", { unique: false });
-        agentSessionStore.createIndex("byUpdateTime", "updatedAt", { unique: false });
-      }
     };
   });
 }
@@ -71,6 +66,8 @@ export interface Chat {
   topic: string;
   createdAt: Date;
   updatedAt: Date;
+  agentId?: string;
+  sessionId?: string;
 }
 
 export interface ChatMessage {
@@ -105,15 +102,6 @@ export interface Note {
   name: string;
   icon: string;
   content?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface AgentSession {
-  id: string;
-  agentId: string;
-  sessionId: string;
-  title: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -350,6 +338,25 @@ export function searchChats(query: string): Promise<Chat[]> {
   });
 }
 
+export function getChatsByAgentId(agentId: string): Promise<Chat[]> {
+  return new Promise((resolve, reject) => {
+    const tr = db.transaction(["chat"], "readonly");
+    const store = tr.objectStore("chat");
+    const index = store.index("byAgentId");
+    const request = index.getAll(agentId);
+
+    request.onsuccess = () => {
+      const chats = request.result as Chat[];
+      resolve(chats.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()));
+    };
+
+    request.onerror = (event: Event) => {
+      console.error("Error getting chats by agent ID:", event);
+      reject(event);
+    };
+  });
+}
+
 export function getMessages(
   chatId: string,
   pathSelection?: Record<string, number>,
@@ -438,24 +445,24 @@ export function updateAgent(id: string, data: Partial<Agent>): Promise<void> {
  */
 export function deleteAgent(id: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    // First delete all agent sessions for this agent
-    const tr1 = db.transaction(["agent_session"], "readwrite");
-    const sessionStore = tr1.objectStore("agent_session");
-    const sessionIndex = sessionStore.index("byAgentId");
-    const sessionRequest = sessionIndex.openCursor(IDBKeyRange.only(id));
+    // First delete all chats for this agent
+    const tr1 = db.transaction(["chat"], "readwrite");
+    const chatStore = tr1.objectStore("chat");
+    const chatIndex = chatStore.index("byAgentId");
+    const chatRequest = chatIndex.openCursor(IDBKeyRange.only(id));
 
-    const sessionsToDelete: string[] = [];
+    const chatsToDelete: string[] = [];
 
-    sessionRequest.onsuccess = (event: Event) => {
+    chatRequest.onsuccess = (event: Event) => {
       const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
       if (cursor) {
-        sessionsToDelete.push(cursor.value.id);
+        chatsToDelete.push(cursor.value.id);
         cursor.continue();
       } else {
-        // Delete all collected sessions
-        const deletePromises = sessionsToDelete.map(sessionId => {
+        // Delete all collected chats
+        const deletePromises = chatsToDelete.map(chatId => {
           return new Promise<void>((resolveDelete, rejectDelete) => {
-            const deleteRequest = sessionStore.delete(sessionId);
+            const deleteRequest = chatStore.delete(chatId);
             deleteRequest.onsuccess = () => resolveDelete();
             deleteRequest.onerror = (e: Event) => rejectDelete(e);
           });
@@ -476,14 +483,14 @@ export function deleteAgent(id: string): Promise<void> {
             reject(event);
           };
         }).catch((error) => {
-          console.error("Error deleting agent sessions:", error);
+          console.error("Error deleting agent chats:", error);
           reject(error);
         });
       }
     };
 
-    sessionRequest.onerror = (event: Event) => {
-      console.error("Error finding agent sessions:", event);
+    chatRequest.onerror = (event: Event) => {
+      console.error("Error finding agent chats:", event);
       reject(event);
     };
   });
@@ -861,110 +868,3 @@ function selectMessagesFromTree(
   return list;
 }
 
-// Agent Session functions
-export function writeAgentSession(data: AgentSession): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(["agent_session"], "readwrite");
-    const store = transaction.objectStore("agent_session");
-    const request = store.put(data);
-
-    request.onsuccess = () => {
-      resolve();
-    };
-
-    request.onerror = (event: Event) => {
-      console.error("Error writing agent session:", event);
-      reject(event);
-    };
-  });
-}
-
-export function getAgentSessions(agentId: string): Promise<AgentSession[]> {
-  return new Promise<AgentSession[]>((resolve, reject) => {
-    const transaction = db.transaction(["agent_session"], "readonly");
-    const store = transaction.objectStore("agent_session");
-    const index = store.index("byAgentId");
-    const request = index.getAll(agentId);
-
-    request.onsuccess = () => {
-      const sessions = request.result as AgentSession[];
-      resolve(sessions.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()));
-    };
-
-    request.onerror = (event: Event) => {
-      console.error("Error getting agent sessions:", event);
-      reject(event);
-    };
-  });
-}
-
-export function getAgentSession(id: string): Promise<AgentSession | undefined> {
-  return new Promise<AgentSession | undefined>((resolve, reject) => {
-    const transaction = db.transaction(["agent_session"], "readonly");
-    const store = transaction.objectStore("agent_session");
-    const request = store.get(id);
-
-    request.onsuccess = () => {
-      const session = request.result as AgentSession | undefined;
-      resolve(session);
-    };
-
-    request.onerror = (event: Event) => {
-      console.error("Error getting agent session:", event);
-      reject(event);
-    };
-  });
-}
-
-export function updateAgentSession(id: string, data: Partial<AgentSession>): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const tr = db.transaction(["agent_session"], "readwrite");
-    const store = tr.objectStore("agent_session");
-
-    // First get the existing session
-    const getRequest = store.get(id);
-
-    getRequest.onsuccess = () => {
-      const existingSession = getRequest.result;
-      if (!existingSession) {
-        reject(new Error(`Agent session with ID ${id} not found`));
-        return;
-      }
-
-      // Update the session with new data
-      const updatedSession = { ...existingSession, ...data, updatedAt: new Date() };
-      const putRequest = store.put(updatedSession);
-
-      putRequest.onsuccess = () => {
-        resolve();
-      };
-
-      putRequest.onerror = (event: Event) => {
-        console.error("Error updating agent session:", event);
-        reject(event);
-      };
-    };
-
-    getRequest.onerror = (event: Event) => {
-      console.error("Error getting agent session for update:", event);
-      reject(event);
-    };
-  });
-}
-
-export function deleteAgentSession(id: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(["agent_session"], "readwrite");
-    const store = transaction.objectStore("agent_session");
-    const request = store.delete(id);
-
-    request.onsuccess = () => {
-      resolve();
-    };
-
-    request.onerror = (event: Event) => {
-      console.error("Error deleting agent session:", event);
-      reject(event);
-    };
-  });
-}

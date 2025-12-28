@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted, PropType, watch } from "vue";
-import { getAgentSession, writeAgentSession, type Agent, updateAgent } from "@/db";
+import { getChat, writeChat, updateAgent, type Agent } from "@/db";
 import { ACPService } from "@/services/acp";
 import ChatBox from "@/components/ChatBox.vue";
 import { getModelConfig } from "@/llm";
@@ -89,7 +89,7 @@ const acpService = new ACPService({
   },
 });
 
-let agentSession = await getAgentSession(props.chatId);
+let agentChat = (await getChat(props.chatId))?.chat;
 
 const start = async () => {
   try {
@@ -100,8 +100,8 @@ const start = async () => {
     await acpService.initialize();
     const enableLoadSession = acpService.hasCapability("loadSession");
 
-    if (enableLoadSession && agentSession && agentSession.sessionId) {
-      await acpService.sessionLoad(agentSession.sessionId);
+    if (enableLoadSession && agentChat && agentChat.sessionId) {
+      await acpService.sessionLoad(agentChat.sessionId);
     }
     
     console.log("Agent initialized successfully");
@@ -156,17 +156,17 @@ const handleSubmit = async () => {
       ],
     });
 
-    if (!agentSession || !agentSession.sessionId) {
+    if (!agentChat || !agentChat.sessionId) {
       const ret = await acpService.sessionNew();
-      agentSession = {
+      agentChat = {
         id: props.chatId,
-        agentId: props.agent.id,
-        sessionId: ret.sessionId,
-        title: "New Session",
+        topic: "New Session",
         createdAt: new Date(),
         updatedAt: new Date(),
+        agentId: props.agent.id,
+        sessionId: ret.sessionId,
       };
-      await writeAgentSession(agentSession);
+      await writeChat(agentChat);
     }
     
     await acpService.sessionPrompt(part);

@@ -84,9 +84,9 @@ const launchAgent = () => {
               <h2 class="text-lg mb-2">Working Directory</h2>
               <div class="flex gap-2">
                 <UInput
-                  :model-value="agent.directory"
-                  placeholder="Select a directory..."
                   class="flex-1"
+                  placeholder="Select a directory..."
+                  :model-value="agent.directory"
                   readonly
                 />
                 <UButton
