@@ -3,11 +3,13 @@ import { ref } from "vue";
 import { isTauri } from "@tauri-apps/api/core";
 import Tabs from "@/components/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
+import { storeToRefs } from "pinia";
 
 const tauri = isTauri();
 const platform = navigator.platform;
 
 const tabsStore = useTabsStore();
+
 const commandPaletteOpen = ref(false);
 defineShortcuts({
   meta_p: () => {
@@ -17,6 +19,8 @@ defineShortcuts({
     tabsStore.closeActiveTab();
   },
 });
+
+const { showArtifactView } = storeToRefs(tabsStore);
 </script>
 
 <template>
@@ -43,7 +47,8 @@ defineShortcuts({
             </template>
           </UModal>
           <ThemeSwitcher />
-          <UButton icon="i-lucide-arrow-left-from-line"
+          <UButton
+            :icon="showArtifactView ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
             color="neutral"
             variant="ghost"
             @click="tabsStore.toggleArtifactView()"

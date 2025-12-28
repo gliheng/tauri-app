@@ -108,7 +108,7 @@ const isMac = platform.startsWith("Mac");
 
 <template>
   <aside
-    class="flex-1 size-full bg-elevated flex flex-col p-2 gap-2 items-stretch"
+    class="bg-elevated flex flex-col p-2 gap-2 items-stretch"
   >
     <h1 class="text-xl font-bold mb-2 flex flex-row gap-2 items-center justify-center"
       :class="{ 'pt-8': isMac }"

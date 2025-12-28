@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, Suspense, KeepAlive } from "vue";
-import { useElementSize } from "@vueuse/core";
+import { Suspense, KeepAlive, useTemplateRef, watch, onMounted, onBeforeMount, ref } from "vue";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
 import { useTabsStore } from "@/stores/tabs";
 import { storeToRefs } from "pinia";
@@ -9,29 +8,27 @@ import Sidebar from "@/components/Sidebar.vue";
 import Spinner from "@/components/Spinner.vue";
 import WorkspaceEditor from "@/components/CodeEditor/WorkspaceEditor.vue";
 
-const root = ref(null);
-
-const { width } = useElementSize(root);
-const collapsed = computed(() => (56 / width.value) * 100);
-const defaultSize = computed(() => (140 / width.value) * 100);
-const minSidebarSize = computed(() => (200 / width.value) * 100);
 const tabsStore = useTabsStore();
 const { showArtifactView } = storeToRefs(tabsStore);
+const artifactViewPanel = useTemplateRef("artifactViewPanel");
+const mountArtifactView = ref(false);
+watch(showArtifactView, (show) => {
+  if (show) {
+    if (!mountArtifactView.value) {
+      mountArtifactView.value = true;
+    } else if (artifactViewPanel.value!.isCollapsed) {
+      artifactViewPanel.value?.expand();
+    }
+  } else if (!artifactViewPanel.value!.isCollapsed) {
+    artifactViewPanel.value!.collapse();
+  }
+});
 </script>
 
 <template>
-  <div class="h-screen" ref="root">
-    <SplitterGroup v-if="width > 0" direction="horizontal">
-      <SplitterPanel
-        collapsible
-        :default-size="defaultSize"
-        :collapsed-size="collapsed"
-        :min-size="minSidebarSize"
-        :max-size="50"
-      >
-        <Sidebar />
-      </SplitterPanel>
-      <SplitterResizeHandle class="w-0.5 splitter-handle" />
+  <div class="h-screen flex flex-row">
+    <Sidebar class="w-[200px] h-full" />
+    <SplitterGroup class="flex-1" direction="horizontal">
       <SplitterPanel>
         <div class="h-full flex flex-col">
           <WindowHeader />
@@ -55,9 +52,17 @@ const { showArtifactView } = storeToRefs(tabsStore);
           </main>
         </div>
       </SplitterPanel>
-      <template v-if="showArtifactView">
+      <template v-if="mountArtifactView">
         <SplitterResizeHandle class="w-0.5 splitter-handle" />
-        <SplitterPanel>
+        <SplitterPanel
+          ref="artifactViewPanel"
+          collapsible
+          :default-size="40"
+          :min-size="10"
+          :collapsed-size="0"
+          @collapse="showArtifactView = false"
+          @expand="showArtifactView = true"
+        >
           <WorkspaceEditor />
         </SplitterPanel>
       </template>
