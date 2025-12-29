@@ -189,63 +189,47 @@ export function getAllChats(): Promise<Chat[]> {
   });
 }
 
+export interface ChatData {
+  chat: Chat;
+  messages: ChatMessage[];
+}
+
 export function getChat(chatId: string) {
-  return new Promise<{ chat: Chat; messages: ChatMessage[] } | null>(
-    (resolve, reject) => {
-      const tr = db.transaction(["chat", "message"], "readonly");
-      const chatStore = tr.objectStore("chat");
-      const messageStore = tr.objectStore("message");
+  return new Promise<Chat | undefined>((resolve, reject) => {
+    const tr = db.transaction(["chat"], "readonly");
+    const chatStore = tr.objectStore("chat");
+    const chatRequest = chatStore.get(chatId);
 
-      const chatTask = new Promise<Chat | null>(async (resolve, reject) => {
-        const chatRequest = chatStore.get(chatId);
-        chatRequest.onsuccess = () => {
-          const chat = chatRequest.result;
-          if (!chat) {
-            resolve(null);
-            return;
-          }
+    chatRequest.onsuccess = () => {
+      const chat = chatRequest.result;
+      resolve(chat);
+    };
 
-          resolve(chat as Chat);
-        };
+    chatRequest.onerror = (event: Event) => {
+      console.error("Error getting chat:", event);
+      reject(event);
+    };
+  });
+}
 
-        chatRequest.onerror = (event: Event) => {
-          console.error("Error getting chat:", event);
-          reject(event);
-        };
-      });
+export function getChatMessages(chatId: string) {
+  return new Promise<ChatMessage[]>((resolve, reject) => {
+    const tr = db.transaction(["message"], "readonly");
+    const messageStore = tr.objectStore("message");
+    const messageIndex = messageStore.index("byChatId");
+    const messageRequest = messageIndex.getAll(chatId);
 
-      const messagesTask = new Promise<ChatMessage[]>((resolve, reject) => {
-        const messageIndex = messageStore.index("byChatId");
-        const messageRequest = messageIndex.getAll(chatId);
-        messageRequest.onerror = (event: Event) => {
-          console.error("Error getting messages:", event);
-          reject(event);
-        };
-        messageRequest.onsuccess = () => {
-          const messages = messageRequest.result as ChatMessage[];
-          const latest = selectMessagesFromTree(messages);
-          resolve(latest);
-        };
-      });
+    messageRequest.onsuccess = () => {
+      const messages = messageRequest.result as ChatMessage[];
+      const latest = selectMessagesFromTree(messages);
+      resolve(latest);
+    };
 
-      Promise.all([chatTask, messagesTask]).then(
-        ([chat, messages]) => {
-          if (!chat) {
-            resolve(null);
-            return;
-          }
-          resolve({
-            chat,
-            messages,
-          });
-        },
-        (error) => {
-          console.error("Error getting chat and messages:", error);
-          reject(new Error("Error getting chat and messages"));
-        },
-      );
-    },
-  );
+    messageRequest.onerror = (event: Event) => {
+      console.error("Error getting messages:", event);
+      reject(event);
+    };
+  });
 }
 
 export function deleteChat(chatId: string): Promise<void> {
@@ -559,14 +543,14 @@ export function readFile(id: number): Promise<FileStore | undefined> {
 }
 
 export function getAgent(id: string) {
-  return new Promise<Agent | undefined>((resolve, reject) => {
+  return new Promise<Agent | null>((resolve, reject) => {
     const transaction = db.transaction(["agent"], "readonly");
     const store = transaction.objectStore("agent");
     const request = store.get(id);
 
     request.onsuccess = () => {
       const agent = request.result as Agent | undefined;
-      resolve(agent);
+      resolve(agent ?? null);
     };
 
     request.onerror = (event: Event) => {

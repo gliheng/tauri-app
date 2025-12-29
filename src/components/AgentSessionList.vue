@@ -29,8 +29,8 @@ const loadSessions = async () => {
 
 const router = useRouter();
 function onOpenSession(session: Chat) {
-  useTabsStore().openTab(`/agent-chat/${session.id}`, session.topic);
-  router.push({ name: 'agent-chat', params: { id: session.id} });
+  useTabsStore().openTab(`/chat/${session.id}`, session.topic);
+  router.push({ name: 'chat', params: { id: session.id} });
 }
 
 const onDeleteSession = async (id: string) => {

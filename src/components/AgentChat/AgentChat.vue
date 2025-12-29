@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted, PropType } from "vue";
-import { getChat, writeChat, type Agent } from "@/db";
+import { Chat, writeChat, type Agent } from "@/db";
 import { Message } from "ai";
 import { ACPService } from "@/services/acp";
 import ChatBox from "@/components/ChatBox.vue";
@@ -16,6 +16,10 @@ const props = defineProps({
   chatId: {
     type: String,
     required: true,
+  },
+  chat: {
+    type: Object as PropType<Chat>,
+    required: false,
   },
 });
 
@@ -108,8 +112,6 @@ const acpService = new ACPService({
   },
 });
 
-let agentChat = (await getChat(props.chatId))?.chat;
-
 const start = async () => {
   try {
     error.value = null;
@@ -119,8 +121,8 @@ const start = async () => {
     await acpService.initialize();
     const enableLoadSession = acpService.hasCapability("loadSession");
 
-    if (enableLoadSession && agentChat && agentChat.sessionId) {
-      await acpService.sessionLoad(agentChat.sessionId);
+    if (enableLoadSession && props.chat && props.chat.sessionId) {
+      await acpService.sessionLoad(props.chat.sessionId);
     }
     
     console.log("Agent initialized successfully");
@@ -175,9 +177,9 @@ const handleSubmit = async () => {
       ],
     });
 
-    if (!agentChat || !agentChat.sessionId) {
+    if (!props.chat) {
       const ret = await acpService.sessionNew();
-      agentChat = {
+      const agentChat = {
         id: props.chatId,
         topic: "New agent chat",
         createdAt: new Date(),

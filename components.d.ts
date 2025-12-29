@@ -15,6 +15,7 @@ declare module 'vue' {
     AgentChat: typeof import('./src/components/AgentChat/AgentChat.vue')['default']
     AgentConfig: typeof import('./src/components/AgentChat/AgentConfig.vue')['default']
     AgentSessionList: typeof import('./src/components/AgentSessionList.vue')['default']
+    Chat: typeof import('./src/components/Chat.vue')['default']
     ChatBox: typeof import('./src/components/ChatBox.vue')['default']
     CodeEditor: typeof import('./src/components/CodeEditor/CodeEditor.vue')['default']
     CommandPalette: typeof import('./src/components/CommandPalette.vue')['default']

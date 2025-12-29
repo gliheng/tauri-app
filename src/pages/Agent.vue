@@ -44,9 +44,9 @@ watch([name, icon], async ([newName, newIcon]) => {
 function onLaunch() {
   const id = nanoid();
   sessionStorage.setItem('chat-agent::' + id, agent!.id);
-  tabsStore.openTab(`/agent-chat/${id}`, "New agent chat");
+  tabsStore.openTab(`/chat/${id}`, "New agent chat");
   router.push({
-    name: 'agent-chat',
+    name: 'chat',
     params: {
       id,
     },

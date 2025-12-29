@@ -46,14 +46,9 @@ const groups = computed(() => [
 ]);
 
 function onSelect(item: any) {
-  const { chatId, agentId } = item;
-  if (agentId) {
-    openTab(`/agent/${chatId}`, item.label);
-    router.push({ name: "agent", params: { id: chatId } });
-  } else if (chatId) {
-    openTab(`/chat/${chatId}`, item.label);
-    router.push({ name: "chat", params: { id: chatId } });
-}
+  const { chatId } = item;
+  openTab(`/chat/${chatId}`, item.label);
+  router.push({ name: "chat", params: { id: chatId } });
   emit("close");
 }
 
