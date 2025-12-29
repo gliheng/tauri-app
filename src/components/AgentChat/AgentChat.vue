@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, PropType, watch } from "vue";
-import { getChat, writeChat, updateAgent, type Agent } from "@/db";
+import { ref, onUnmounted, onMounted, PropType } from "vue";
+import { getChat, writeChat, type Agent } from "@/db";
+import { Message } from "ai";
 import { ACPService } from "@/services/acp";
 import ChatBox from "@/components/ChatBox.vue";
 import { getModelConfig } from "@/llm";
-import { useSidebarStore } from "@/stores/sidebar";
-import { useTabsStore } from "@/stores/tabs";
 import MessageList from "./MessageList.vue";
-import { Message } from "ai";
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 
 const props = defineProps({
@@ -21,8 +19,6 @@ const props = defineProps({
   },
 });
 
-const name = ref(props.agent.name);
-const icon = ref(props.agent.icon);
 const isInitialized = ref(false);
 const input = ref("");
 const messages = ref<Message[]>([]);
@@ -183,7 +179,7 @@ const handleSubmit = async () => {
       const ret = await acpService.sessionNew();
       agentChat = {
         id: props.chatId,
-        topic: "New Session",
+        topic: "New agent chat",
         createdAt: new Date(),
         updatedAt: new Date(),
         agentId: props.agent.id,
@@ -213,33 +209,10 @@ onMounted(() => {
 onUnmounted(() => {
   stop();
 });
-
-const sidebarStore = useSidebarStore();
-const tabsStore = useTabsStore();
-
-// Watch for name and icon changes and update agent
-watch([name, icon], async ([newName, newIcon]) => {
-  if (newName !== props.agent.name || newIcon !== props.agent.icon) {
-    try {
-      await updateAgent(props.agent.id, {
-        name: newName,
-        icon: newIcon
-      });
-      sidebarStore.loadAgents();
-      tabsStore.setTitle(`/agent/${props.agent.id}`, newName);
-    } catch (error) {
-      console.error('Failed to update agent:', error);
-    }
-  }
-});
 </script>
 
 <template>
   <div class="size-full p-6 flex flex-col gap-2 justify-between">
-    <hgroup class="flex flex-row gap-2 items-center">
-      <IconEdit v-model:icon="icon" />
-      <NameEdit v-model:name="name" />
-    </hgroup>
     <UAlert
       v-if="error"
       title="Error!"

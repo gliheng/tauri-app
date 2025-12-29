@@ -1,40 +1,86 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { getAgent, updateAgent, deleteAgent } from '@/db';
+import { useSidebarStore } from '@/stores/sidebar';
+import { useTabsStore } from '@/stores/tabs';
 import { AnimatePresence, motion } from 'motion-v';
-import { getAgent, type Agent } from "@/db";
 import { nanoid } from "nanoid";
 import { getModelConfig } from "@/llm";
 import { ACPService } from "@/services/acp";
 import AgentSessionList from "@/components/AgentSessionList.vue";
+import { confirm, message } from '@tauri-apps/plugin-dialog';
+
 
 const route = useRoute();
-const agentId = route.params.id as string;
-const chatId = ref(nanoid());
-const initialData = await getAgent(agentId);
+const router = useRouter();
+const agent = await getAgent(route.params.id as string);
+if (!agent) throw new Error('Agent does not exist');
 
-const agent = ref<Agent>({
-  id: agentId,
-  name: initialData?.name ?? "New Agent",
-  icon: initialData?.icon ?? "i-lucide-sticky-note",
-  type: initialData?.type ?? "chat",
-  instructions: initialData?.instructions,
-  directory: initialData?.directory,
-  program: initialData?.program ?? "codex",
-  createdAt: initialData?.createdAt ?? new Date(),
-  updatedAt: initialData?.updatedAt ?? new Date(),
+const sidebarStore = useSidebarStore();
+const tabsStore = useTabsStore();
+
+const name = ref(agent.name);
+const icon = ref(agent.icon);
+
+// Watch for name and icon changes and update agent
+watch([name, icon], async ([newName, newIcon]) => {
+  if (agent && (newName !== agent.name || newIcon !== agent.icon)) {
+    try {
+      await updateAgent(agent.id, {
+        name: newName,
+        icon: newIcon
+      });
+      sidebarStore.loadAgents();
+      if (newName) {
+        tabsStore.setTitle(`/agent/${agent.id}`, newName);
+      }
+    } catch (error) {
+      console.error('Failed to update agent:', error);
+    }
+  }
 });
 
-const onNewSession = () => {
-  chatId.value = nanoid();
+function onLaunch() {
+  const id = nanoid();
+  sessionStorage.setItem('chat-agent::' + id, agent!.id);
+  tabsStore.openTab(`/agent-chat/${id}`, "New agent chat");
+  router.push({
+    name: 'agent-chat',
+    params: {
+      id,
+    },
+  });
+}
+
+async function onDelete() {
+  const ok = await confirm(`Are you sure you want to delete "${agent!.name}"? This will also delete all associated chats.`, {
+    title: 'Delete Agent',
+    kind: 'warning'
+  });
+  
+  if (ok) {
+    try {
+      await deleteAgent(agent!.id);
+      sidebarStore.loadAgents();
+      tabsStore.closeTab(`/agent/${agent!.id}`);
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to delete agent:', error);
+      await message('Failed to delete agent. Please try again.', {
+        title: 'Error',
+        kind: 'error'
+      });
+    }
+  }
 }
 
 const enableLoadSession = ref(false);
 onMounted(async () => {
   const { model, apiKey, baseUrl } = getModelConfig();
   const acpService = new ACPService({ 
-    program: agent.value.program!,
-    directory: agent.value.directory!,
+    program: agent.program!,
+    directory: agent.directory!,
     mcpServers: [],
     model,
     baseUrl,
@@ -56,27 +102,38 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="relative size-full">
-    <AnimatePresence>
-      <motion.div v-if="enableLoadSession" class="absolute top-2 right-2 flex items-center gap-2">
-        <UPopover >
-          <UButton
-            icon="i-heroicons-queue-list-20-solid"
-            color="neutral"
-            variant="subtle"
-          />
-          <template #content>
-            <AgentSessionList :agent-id="agentId" v-model:chat-id="chatId" @new-session="onNewSession" />
-          </template>
-        </UPopover>
-      </motion.div>
-    </AnimatePresence>
-    <KeepAlive>
-      <AgentChat
-        :key="chatId"
-        :agent="agent"
-        :chat-id="chatId"
-      />
-    </KeepAlive>
+  <div class="size-full p-4 flex flex-row">
+    <div class="flex flex-col items-center justify-center flex-1">
+      <hgroup class="flex flex-row gap-2 mb-6">
+        <IconEdit v-model:icon="icon" />
+        <NameEdit v-model:name="name" />
+      </hgroup>
+      <div class="flex mt-6 justify-center gap-4">
+        <UButton
+          class="text-xl px-8 py-4"
+          color="primary"
+          size="xl"
+          icon="i-lucide-rocket"
+          @click="onLaunch"
+        >Launch</UButton>
+        <UButton
+          class="text-xl px-8 py-4"
+          color="error"
+          size="xl"
+          icon="i-lucide-trash-2"
+          @click="onDelete"
+        >Delete</UButton>
+      </div>
+    </div>
+    <div class="flex-1">
+      <AnimatePresence>
+        <motion.div v-if="enableLoadSession" class="flex items-center gap-2">
+          <AgentSessionList :agent-id="agent.id" />
+        </motion.div>
+      </AnimatePresence>
+    </div>
   </div>
 </template>
+
+<style lang="scss" scoped>
+</style>

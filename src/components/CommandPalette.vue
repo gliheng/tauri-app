@@ -22,6 +22,7 @@ const groups = computed(() => [
     label: "Chat Sessions",
     items: chatList.value.map((e) => ({
       chatId: e.id,
+      agentId: e.agentId,
       label: e.topic,
       icon: "i-lucide-message-circle",
       suffix: moment(e.updatedAt).fromNow(),
@@ -45,12 +46,15 @@ const groups = computed(() => [
 ]);
 
 function onSelect(item: any) {
-  const { chatId } = item;
-  if (chatId) {
+  const { chatId, agentId } = item;
+  if (agentId) {
+    openTab(`/agent/${chatId}`, item.label);
+    router.push({ name: "agent", params: { id: chatId } });
+  } else if (chatId) {
     openTab(`/chat/${chatId}`, item.label);
     router.push({ name: "chat", params: { id: chatId } });
-    emit("close");
-  }
+}
+  emit("close");
 }
 
 async function removeChat(item: any) {

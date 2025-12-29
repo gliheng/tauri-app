@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import { nanoid } from "nanoid";
 import Chat from "./pages/Chat.vue";
 import Agent from "./pages/Agent.vue";
+import AgentChat from "./pages/AgentChat.vue";
 import Note from "./pages/Note.vue";
 import NotFound from "./pages/NotFound.vue";
 import DefaultLayout from "./layouts/DefaultLayout.vue";
@@ -19,6 +20,7 @@ export const router = createRouter({
       },
       children: [
         { name: "chat", path: "chat/:id", component: Chat },
+        { name: "agent-chat", path: "agent-chat/:id", component: AgentChat },
         { name: "agent", path: "agent/:id", component: Agent },
         { name: "note", path: "note/:id", component: Note },
       ],
