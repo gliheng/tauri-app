@@ -8,6 +8,7 @@ import { useSidebarStore } from "@/stores/sidebar";
 import { useTabsStore } from "@/stores/tabs";
 import MessageList from "./MessageList.vue";
 import { Message } from "ai";
+import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 
 const props = defineProps({
   agent: {
@@ -42,12 +43,13 @@ const acpService = new ACPService({
   onDisconnect() {
     console.log('onDisconnect');
   },
-  onInvoke(method, params) {
+  async onInvoke(method, params) {
     console.log("Method", method, "invoked with params", params);
     if (method == 'session/update') {
       const { update } = params;
       const lastMessage = messages.value[messages.value.length - 1];
-      if (update.sessionUpdate == 'agent_message_chunk') {
+      const { sessionUpdate } = update;
+      if (sessionUpdate == 'agent_message_chunk') {
         // Add message chunk
         if (lastMessage.role === 'assistant') {
           const lastPart = lastMessage.parts![lastMessage.parts!.length - 1];
@@ -72,7 +74,9 @@ const acpService = new ACPService({
             ],
           });
         }
-      } else if (update.sessionUpdate == 'user_message_chunk') {
+      } else if (sessionUpdate == 'plan') {
+      } else if (sessionUpdate == 'tool_call') {
+      } else if (sessionUpdate == 'user_message_chunk') {
         messages.value.push({
           id: String(messages.value.length),
           role: "user",
@@ -85,6 +89,25 @@ const acpService = new ACPService({
           ],
         });
       }
+    } else if (method == 'fs/read_text_file') {
+      const { path, line, limit } = params; // line and limit are optional
+      let content = await readTextFile(path);
+      
+      // If line and limit are specified, extract the specific lines
+      if (line !== undefined) {
+        const lines = content.split('\n');
+        const startLine = line - 1; // Convert to 0-indexed
+        const endLine = limit ? startLine + limit : lines.length;
+        content = lines.slice(startLine, endLine).join('\n');
+      }
+      
+      return {
+        content,
+      };
+    } else if (method == 'fs/write_text_file') {
+      const { path, content } = params;
+      await writeTextFile(path, content);
+      return null;
     }
   },
 });
@@ -169,10 +192,13 @@ const handleSubmit = async () => {
       await writeChat(agentChat);
     }
     
-    await acpService.sessionPrompt(part);
+    (async () => {
+      const ret = await acpService.sessionPrompt(part)
+      console.log('sessionPrompt result', ret);
+    })();
     
     input.value = "";
-    status.value = "ready";
+    status.value = "submitted";
   } catch (err) {
     console.error("Failed to send message:", err);
     error.value = `Failed to send message: ${JSON.stringify(err, null, 2)}`;

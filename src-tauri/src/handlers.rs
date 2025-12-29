@@ -47,6 +47,11 @@ pub async fn acp_initialize(agent: &str, api_key: &str, base_url: &str, model: &
         args.push("-m");
         args.push(model);
     } else {
+        // args.push("@zed-industries/claude-code-acp");
+        // Claude Code need to set these env variables
+        // ANTHROPIC_BASE_URL=""
+        // ANTHROPIC_MODEL=""
+        // ANTHROPIC_AUTH_TOKEN=""
         return Err(serde_json::json!({
             "code": 9,
             "message": format!("Unknown agent type: {}", agent_name)

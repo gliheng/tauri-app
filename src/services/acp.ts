@@ -85,7 +85,13 @@ export class ACPService {
               this.pendingCalls[id].resolve(result);
             }
           } else if (method) {
-            this.config.onInvoke?.(method, params);
+            const ret = this.config.onInvoke?.(method, params);
+            if (ret) {
+              this.send({
+                id,
+                result: ret,
+              });
+            }
           }
         } else if (type == 'disconnect') {
           this.config.onDisconnect?.();
@@ -125,19 +131,14 @@ export class ACPService {
     return this.pendingCalls[id].promise;
   }
 
-  async send(method: string, message: Record<string, any>): Promise<any> {
-    const id = this.msgId;
-    const messagePayload: AgentMessagePayload = {
-      jsonrpc: "2.0",
-      id,
-      method,
-      params: message,
-    };
+  async send(payload: Record<string, any>): Promise<any> {
     await invoke("acp_send_message", {
       agent: this.config.program,
-      message: messagePayload,
+      message: {
+        jsonrpc: "2.0",
+        ...payload,
+      },
     });
-    this.msgId++;
   }
 
   async sessionNew(): Promise<any> {
@@ -167,9 +168,17 @@ export class ACPService {
   async sessionPrompt(message: {
     type: 'text',
     text: string,
-  }): Promise<any> {
+  }): Promise<{
+    stopReason: string;
+  }> {
     return this.rpc("session/prompt", {
       prompt: [message],
+      sessionId: this.sessionId,
+    });
+  }
+
+  async sessionCancel(): Promise<void> {
+    return this.rpc("session/cancel", {
       sessionId: this.sessionId,
     });
   }
