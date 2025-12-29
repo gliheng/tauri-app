@@ -23,6 +23,7 @@ export const router = createRouter({
         { name: "note", path: "note/:id", component: Note },
       ],
     },
+    { name: "editor", path: "/editor", component: () => import("./pages/Editor.vue") },
     { name: "404", path: "/:pathMatch(.*)*", component: NotFound },
   ],
   history: createWebHashHistory(),

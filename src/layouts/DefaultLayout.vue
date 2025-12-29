@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Suspense, KeepAlive, useTemplateRef, watch, onMounted, onBeforeMount, ref } from "vue";
+import { Suspense, KeepAlive, useTemplateRef, watch, ref } from "vue";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
 import { useTabsStore } from "@/stores/tabs";
 import { storeToRefs } from "pinia";
