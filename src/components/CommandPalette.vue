@@ -16,51 +16,66 @@ const emit = defineEmits<{
   (e: "close"): void;
 }>();
 
-const groups = computed(() => [
-  {
-    id: "chat-sessions",
-    label: "Chat Sessions",
-    items: chatList.value.map((e) => ({
-      chatId: e.id,
-      agentId: e.agentId,
-      label: e.topic,
-      icon: "i-lucide-message-circle",
-      suffix: moment(e.updatedAt).fromNow(),
-      slot: "remove",
-    })),
-  },
-  {
-    id: "actions",
-    items: [
-      {
-        label: "Add new chat",
-        suffix: "Add new chat",
-        icon: "i-lucide-file-plus",
-        kbds: ["meta", "N"],
-        onSelect() {
-          toast.add({ title: "Add new file" });
+interface ChatHistoryItem {
+  chatId: string;
+  agentId?: string;
+  label: string;
+  icon: string;
+  suffix: string;
+}
+
+const groups = computed(() => {
+  const historyItems: ChatHistoryItem[] = chatList.value.map((e) => ({
+    chatId: e.id,
+    agentId: e.agentId,
+    label: e.topic,
+    icon: e.agentId ? "i-lucide-brain" : "i-lucide-message-circle",
+    suffix: moment(e.updatedAt).fromNow(),
+    slot: "chat-item",
+  }));
+
+  return [
+    {
+      id: "chat-sessions",
+      label: "Chat Sessions",
+      items: historyItems,
+    },
+    {
+      id: "actions",
+      items: [
+        {
+          label: "Add new chat",
+          suffix: "Add new chat",
+          icon: "i-lucide-file-plus",
+          kbds: ["meta", "N"],
+          onSelect() {
+            toast.add({ title: "Add new file" });
+          },
         },
-      },
-    ],
-  },
-]);
+      ],
+    },
+  ];
+});
 
 function onSelect(item: any) {
-  const { chatId } = item;
+  const { chatId } = item as ChatHistoryItem;
   openTab(`/chat/${chatId}`, item.label);
   router.push({ name: "chat", params: { id: chatId } });
   emit("close");
 }
 
-async function removeChat(item: any) {
+async function onRemoveChat(item: any) {
   const ok = await confirm("This action cannot be reverted. Are you sure?", {
     title: "Delete chat",
     kind: "warning",
   });
 
   if (ok) {
-    closeTab(item.id);
-    deleteChat(item.id);
+    const { chatId } = item as ChatHistoryItem;
+    closeTab(chatId);
+    await deleteChat(chatId);
+    // Remove from chatList
+    chatList.value = chatList.value.filter((e) => e.id !== chatId);
   }
 }
 </script>
@@ -71,12 +86,12 @@ async function removeChat(item: any) {
     :groups="groups"
     @update:model-value="onSelect"
   >
-    <template #remove-trailing="{ item }">
+    <template #chat-item-trailing="{ item }">
       <UButton
         color="error"
         size="sm"
         icon="i-lucide-trash"
-        @click.stop="removeChat(item)"
+        @click.stop="onRemoveChat(item)"
       />
     </template>
   </UCommandPalette>

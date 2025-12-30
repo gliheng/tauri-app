@@ -10,6 +10,7 @@ import { getModelConfig } from "@/llm";
 import { ACPService } from "@/services/acp";
 import AgentSessionList from "@/components/AgentSessionList.vue";
 import { confirm, message } from '@tauri-apps/plugin-dialog';
+import { openPath } from '@tauri-apps/plugin-opener';
 
 
 const route = useRoute();
@@ -75,6 +76,20 @@ async function onDelete() {
   }
 }
 
+async function openDirectory() {
+  if (agent?.directory) {
+    try {
+      await openPath(agent.directory);
+    } catch (error) {
+      console.error('Failed to open directory:', error);
+      await message('Failed to open directory. Please check if the path exists.', {
+        title: 'Error',
+        kind: 'error'
+      });
+    }
+  }
+}
+
 const enableLoadSession = ref(false);
 onMounted(async () => {
   const { model, apiKey, baseUrl } = getModelConfig();
@@ -125,21 +140,72 @@ onMounted(async () => {
     </div>
 
     <!-- Agent header section -->
-    <div 
-      class="flex flex-col items-center py-8"
-    >
-      <hgroup class="flex flex-row gap-2 mb-6">
-        <IconEdit v-model:icon="icon" />
-        <NameEdit v-model:name="name" />
-      </hgroup>
-      <div class="flex mt-6 justify-center">
-        <UButton
-          class="text-xl px-8 py-4"
-          color="primary"
-          size="xl"
-          icon="i-heroicons-chat-bubble-bottom-center-text"
-          @click="onChat"
-        >Chat</UButton>
+    <div class="flex flex-row gap-2">
+      <div
+        class="flex flex-col items-center justify-center py-8 flex-1"
+      >
+        <hgroup class="flex flex-row gap-2 mb-6">
+          <IconEdit v-model:icon="icon" />
+          <NameEdit v-model:name="name" />
+        </hgroup>
+        <div class="flex mt-6 justify-center">
+          <UButton
+            class="text-xl px-8 py-4"
+            color="primary"
+            size="xl"
+            icon="i-heroicons-chat-bubble-bottom-center-text"
+            @click="onChat"
+          >Chat</UButton>
+        </div>
+      </div>
+      <div class="flex-2 py-8">
+        <UCard>
+          <template #header>
+            <h3 class="text-lg font-semibold">Agent Details</h3>
+          </template>
+          
+          <div class="space-y-3">
+            <div class="flex items-start">
+              <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Type:</span>
+              <span class="font-medium">{{ agent.type }}</span>
+            </div>
+            
+            <div v-if="agent.program" class="flex items-start">
+              <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Program:</span>
+              <span class="font-medium">{{ agent.program }}</span>
+            </div>
+            
+            <div v-if="agent.directory" class="flex items-start">
+              <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Directory:</span>
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-sm break-all">{{ agent.directory }}</span>
+                <UButton
+                  icon="i-lucide-folder-open"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  @click="openDirectory"
+                  title="Open directory"
+                />
+              </div>
+            </div>
+            
+            <div v-if="agent.instructions" class="flex items-start">
+              <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Instructions:</span>
+              <span class="whitespace-pre-wrap">{{ agent.instructions }}</span>
+            </div>
+            
+            <div class="flex items-start">
+              <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Created:</span>
+              <span class="text-sm">{{ new Date(agent.createdAt).toLocaleString() }}</span>
+            </div>
+            
+            <div class="flex items-start">
+              <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Updated:</span>
+              <span class="text-sm">{{ new Date(agent.updatedAt).toLocaleString() }}</span>
+            </div>
+          </div>
+        </UCard>
       </div>
     </div>
 

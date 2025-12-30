@@ -6,6 +6,7 @@ mod handlers;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             #[cfg(debug_assertions)] // only include this code on debug builds
@@ -16,7 +17,6 @@ pub fn run() {
             }
             Ok(())
         })
-        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             handlers::acp_initialize,
             handlers::acp_send_message,
