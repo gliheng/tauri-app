@@ -41,7 +41,7 @@ watch([name, icon], async ([newName, newIcon]) => {
   }
 });
 
-function onLaunch() {
+function onChat() {
   const id = nanoid();
   sessionStorage.setItem('chat-agent::' + id, agent!.id);
   tabsStore.openTab(`/chat/${id}`, "New agent chat");
@@ -102,36 +102,53 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="size-full p-4 flex flex-row">
-    <div class="flex flex-col items-center justify-center flex-1">
+  <div class="size-full p-4 flex flex-col relative"
+    :class="enableLoadSession ? 'justify-start' : 'justify-center'"
+  >
+    <!-- Hover menu in top-right corner -->
+    <div class="absolute top-4 right-4 z-10">
+      <UDropdownMenu :items="[[
+        {
+          label: 'Delete Agent',
+          icon: 'i-lucide-trash-2',
+          color: 'error',
+          onSelect: onDelete
+        }
+      ]]">
+        <UButton
+          icon="i-heroicons-ellipsis-vertical"
+          color="neutral"
+          variant="outline"
+          size="sm"
+        />
+      </UDropdownMenu>
+    </div>
+
+    <!-- Agent header section -->
+    <div 
+      class="flex flex-col items-center py-8"
+    >
       <hgroup class="flex flex-row gap-2 mb-6">
         <IconEdit v-model:icon="icon" />
         <NameEdit v-model:name="name" />
       </hgroup>
-      <div class="flex mt-6 justify-center gap-4">
+      <div class="flex mt-6 justify-center">
         <UButton
           class="text-xl px-8 py-4"
           color="primary"
           size="xl"
-          icon="i-lucide-rocket"
-          @click="onLaunch"
-        >Launch</UButton>
-        <UButton
-          class="text-xl px-8 py-4"
-          color="error"
-          size="xl"
-          icon="i-lucide-trash-2"
-          @click="onDelete"
-        >Delete</UButton>
+          icon="i-heroicons-chat-bubble-bottom-center-text"
+          @click="onChat"
+        >Chat</UButton>
       </div>
     </div>
-    <div class="flex-1">
-      <AnimatePresence>
-        <motion.div v-if="enableLoadSession" class="flex items-center gap-2">
-          <AgentSessionList :agent-id="agent.id" />
-        </motion.div>
-      </AnimatePresence>
-    </div>
+
+    <!-- Sessions grid below -->
+    <AnimatePresence>
+      <motion.div v-if="enableLoadSession">
+        <AgentSessionList :agent-id="agent.id" />
+      </motion.div>
+    </AnimatePresence>
   </div>
 </template>
 
