@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { getChatsByAgentId, deleteChat, type Chat } from "@/db";
+import { tv } from 'tailwind-variants';
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { useRouter } from "vue-router";
 import { useTabsStore } from "@/stores/tabs";
+import { getChatsByAgentId, deleteChat, type Chat } from "@/db";
 
 const props = defineProps({
   agentId: {
@@ -14,6 +15,15 @@ const props = defineProps({
     type: String,
     required: false,
   },
+});
+
+const cardStyle = tv({
+  base: 'cursor-pointer hover:ring-primary',
+  variants: {
+    active: {
+      true: 'ring-2 ring-primary',
+    },
+  }
 });
 
 const { agentId } = props;
@@ -67,10 +77,8 @@ const emit = defineEmits(['new-session']);
       <UCard
         v-for="session in sessions"
         :key="session.id"
-        class="cursor-pointer hover:shadow-lg transition-shadow"
         :ui="{
-          body: { padding: 'p-4' },
-          ring: chatId === session.id ? 'ring-2 ring-primary' : ''
+          root: cardStyle({ active: chatId === session.id }),
         }"
         @click="() => onOpenSession(session)"
       >
