@@ -43,7 +43,7 @@ watch(
 </script>
 
 <template>
-  <div v-html="html"></div>
+  <div class="markdown-body" v-html="html"></div>
 </template>
 
 <style lang="scss">
