@@ -56,7 +56,7 @@ const launchAgent = () => {
       <div class="size-full p-6 space-y-4">
         <hgroup class="flex flex-row gap-2 items-center">
           <IconEdit v-model:icon="agent.icon" />
-          <NameEdit v-model:name="agent.name" />
+          <UInput class="flex-1" v-model="agent.name" />
         </hgroup>
         <div class="flex flex-row gap-2 items-center">
           <h2 class="text-lg">Type</h2>

@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { PropType } from "vue";
-import { Message } from "ai";
-import MessageBubble from "@/components/MessageBubble.vue";
 import Scrollbar from "@/components/Scrollbar.vue";
+import MessageBubble from "./MessageBubble.vue";
 
 const props = defineProps({
   messages: {
-    type: Array as PropType<Message[]>,
+    type: Array as PropType<any[]>,
     default: () => [],
   },
 });

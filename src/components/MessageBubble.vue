@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, PropType, inject } from "vue";
+import { computed, PropType } from "vue";
 import { tv } from "tailwind-variants";
 import { Message } from "ai";
-import { CHAT_ACTIONS } from "@/constants";
 import MarkdownText from "./MarkdownText.vue";
 import FileImage from "./FileImage.vue";
 import MessageSwitcher from "./MessageSwitcher.vue";
@@ -30,12 +29,9 @@ const props = defineProps({
     default: false,
   },
   loading: Boolean,
-  enableBranching: Boolean,
-  enableReload: Boolean,
-  enableEdit: Boolean,
 });
 
-const emit = defineEmits(["start-edit"]);
+const emit = defineEmits(["start-edit", "reload"]);
 
 const bubbleStyle = tv({
   base: "w-fit max-w-full flex flex-col",
@@ -52,8 +48,6 @@ const displayParts = computed(() => props.parts ?? []);
 function copyText() {
   navigator.clipboard.writeText(props.content);
 }
-
-const actions = inject(CHAT_ACTIONS) as any;
 </script>
 
 <template>
@@ -126,7 +120,7 @@ const actions = inject(CHAT_ACTIONS) as any;
       :url="attachment.url"
     />
     <div class="flex flex-row items-center gap-1 mt-2">
-      <MessageSwitcher v-if="enableBranching" :id="id" />
+      <MessageSwitcher :id="id" />
       <UTooltip text="Copy text">
         <UButton
           color="neutral"
@@ -135,7 +129,7 @@ const actions = inject(CHAT_ACTIONS) as any;
           @click="copyText"
         />
       </UTooltip>
-      <UTooltip v-if="enableEdit && role === 'user'" text="Edit">
+      <UTooltip v-if="role === 'user'" text="Edit">
         <UButton
           color="neutral"
           variant="soft"
@@ -143,12 +137,12 @@ const actions = inject(CHAT_ACTIONS) as any;
           @click="$emit('start-edit')"
         />
       </UTooltip>
-      <UTooltip v-if="enableReload && last && role == 'assistant'" text="Reload">
+      <UTooltip v-if="last && role == 'assistant'" text="Reload">
         <UButton
           color="neutral"
           variant="soft"
           trailing-icon="i-lucide-refresh-cw"
-          @click="actions.reload"
+          @click="$emit('reload')"
         />
       </UTooltip>
     </div>

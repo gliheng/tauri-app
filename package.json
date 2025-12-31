@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^0.2.14",
-    "@ai-sdk/openai-compatible": "^1.0.0",
+    "@ai-sdk/openai-compatible": "^0.2.14",
     "@ai-sdk/vue": "^1.2.12",
     "@iconify-json/heroicons": "^1.2.3",
     "@iconify-json/lucide": "^1.2.82",

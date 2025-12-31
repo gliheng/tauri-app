@@ -80,6 +80,7 @@ function appendFiles(newFiles: FileList) {
       <UTextarea
         class="w-full"
         v-model.trim="input"
+        :loading="status === 'loading'"
         placeholder="Start a new chat"
         :rows="3"
         :maxrows="6"

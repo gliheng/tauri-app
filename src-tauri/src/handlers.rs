@@ -107,9 +107,9 @@ pub async fn acp_send_message(agent: &str, message: serde_json::Value) -> Result
             "code": 5,
             "message": format!("Failed to flush stdin: {}", e)
         }))?;
+        println!("Message sent to agent {} {}", agent, json_str);
     }
 
-    println!("Message sent to agent {}", agent);
     Ok(serde_json::json!({
         "code": 0,
     }))
@@ -156,8 +156,8 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<s
                         }));
                         break;
                     },
-                    Ok(_n) => {
-                        // println!("Read {} bytes: {}", _n, line.trim());
+                    Ok(n) => {
+                        println!("Read {} bytes: {}", n, line.trim());
                         
                         let event_data = serde_json::json!({
                             "type": "message",

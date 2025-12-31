@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, watch, ref, PropType } from "vue";
+import { computed, watch, ref, PropType, inject } from "vue";
 import { motion } from "motion-v";
 import { Message } from "ai";
 import MessageBubble from "./MessageBubble.vue";
 import MessageEdit from "./MessageEdit.vue";
 import Scrollbar from "./Scrollbar.vue";
+import { CHAT_ACTIONS } from "@/constants";
 
 const props = defineProps({
   width: Number,
@@ -26,6 +27,8 @@ const displayMessages = computed(() => {
 
 const listRef = ref<HTMLElement | null>(null);
 const editingId = ref<string>();
+
+const actions = inject(CHAT_ACTIONS) as any;
 
 // Scroll to bottom when new message is added
 watch(
@@ -60,6 +63,7 @@ watch(
           "
           @start-edit="() => (editingId = message.id)"
           @cancel-edit="() => (editingId = '')"
+          @reload="actions.reload"
         />
         <MessageBubble
           v-if="status == 'submitted'"

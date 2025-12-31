@@ -8,6 +8,103 @@ export interface AgentMessagePayload {
   params?: any;
 }
 
+export enum ACPMethod {
+  SessionUpdate = 'session/update',
+  SessionPrompt = 'session/prompt',
+  SessionCancel = 'session/cancel',
+  SessionRequestPermission = 'session/request_permission',
+  FsReadTextFile = 'fs/read_text_file',
+  FsWriteTextFile = 'fs/write_text_file',
+  TerminalCreate = 'terminal/create',
+  TerminalWaitForExit = 'terminal/wait_for_exit',
+  TerminalKill = 'terminal/kill',
+  TerminalOutput = 'terminal/output',
+  TerminalRelease = 'terminal/release',
+}
+
+export type StopReason = 'end_turn' | 'max_tokens' | 'max_turn_requests' | 'refusal' | 'cancelled';
+
+export type ACPMethodDefinitions = {
+  [ACPMethod.SessionPrompt]: {
+    params: { sessionId: string; message: string };
+    return: {
+      stopReason: StopReason;
+    };
+  };
+  [ACPMethod.SessionUpdate]: {
+      params: {
+        update: {
+          sessionUpdate: 'plan' | 'tool_call' | 'tool_call_update' | 'agent_message_chunk';
+          [key: string]: any;
+        };
+        sessionId: string;
+      };
+    return: void;
+  };
+  [ACPMethod.SessionCancel]: {
+    params: { sessionId: string; };
+    return: void;
+  };
+  [ACPMethod.SessionRequestPermission]: {
+    params: {
+      sessionId: string;
+      toolCall: {
+        toolCallId: string;
+      };
+      options: {
+        optionId: string;
+        name: string;
+        kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always';
+      }[];
+    };
+    return: {
+      outcome: {
+        outcome: 'cancelled' | 'selected';
+        optionId?: string;
+      };
+    };
+  };
+  [ACPMethod.FsReadTextFile]: {
+    params: { path: string; line?: number; limit?: number };
+    return: { content: string };
+  };
+  [ACPMethod.FsWriteTextFile]: {
+    params: { path: string; content: string };
+    return: null;
+  };
+  [ACPMethod.TerminalCreate]: {
+    params: {
+      sessionId: string;
+      command: string;
+      args?: string[];
+      env?: { name: string; value: string; }[];
+      cwd?: string;
+      outputByteLimit?: number;
+    };
+    return: { terminalId: string };
+  };
+  [ACPMethod.TerminalWaitForExit]: {
+    params: { sessionId: string; terminalId: string };
+    return: { exitCode: number | null; signal: string | null };
+  };
+  [ACPMethod.TerminalKill]: {
+    params: { sessionId: string; terminalId: string };
+    return: void;
+  };
+  [ACPMethod.TerminalOutput]: {
+    params: { sessionId: string; terminalId: string };
+    return: {
+      output: string;
+      truncated: boolean;
+      exitStatus?: { exitCode: number | null; signal: string | null };
+    };
+  };
+  [ACPMethod.TerminalRelease]: {
+    params: { sessionId: string; terminalId: string };
+    return: void;
+  };
+};
+
 export interface ACPServiceConfig {
   program: string;
   directory: string;
@@ -25,7 +122,7 @@ export interface ACPServiceConfig {
   apiKey: string;
   onConnect?: () => void;
   onDisconnect?: () => void;
-  onInvoke?: (method: string, params: any) => void;
+  onInvoke?: (method: string, params: any) => Promise<any>;
 }
 
 export class ACPService {
@@ -71,29 +168,31 @@ export class ACPService {
   async startListening(): Promise<() => void> {
     try {
       await invoke("acp_start_listening", { agent: this.config.program });
-      this.unlistenFn = await listen("acp_message::" + this.config.program, (event) => {
+      this.unlistenFn = await listen("acp_message::" + this.config.program, async (event) => {
         const { type, message } = event.payload as { agent: string; type: string; message: string };
-        console.log('Received acp_message', event.payload);
         if (type == 'connect') {
+          console.debug('ACP connected', this.config.program);
           this.config.onConnect?.();
         } else if (type == 'message') {
+          console.debug('Received acp_message', JSON.parse(message));
           const { id, result, error, method, params } = JSON.parse(message);
-          if (typeof id == 'number') {
-            if (error) {
-              this.pendingCalls[id].reject(error);
-            } else {
-              this.pendingCalls[id].resolve(result);
-            }
-          } else if (method) {
-            const ret = this.config.onInvoke?.(method, params);
+          if (method) {
+            const ret = await this.config.onInvoke?.(method, params);
             if (ret) {
               this.send({
                 id,
                 result: ret,
               });
             }
+          } else if (typeof id == 'number') {
+            if (error) {
+              this.pendingCalls[id].reject(error);
+            } else {
+              this.pendingCalls[id].resolve(result);
+            }
           }
         } else if (type == 'disconnect') {
+          console.debug('ACP disconnected', this.config.program);
           this.config.onDisconnect?.();
         }
       });
@@ -115,7 +214,11 @@ export class ACPService {
 
   async rpc(method: string, message: Record<string, any>): Promise<any> {
     const id = this.msgId;
-    this.pendingCalls[id] = Promise.withResolvers();
+    let resolver: { resolve: (value: any) => void; reject: (reason: any) => void; };
+    const promise = new Promise<any>((resolve, reject) => {
+      resolver = { resolve, reject };
+    });
+    this.pendingCalls[id] = { resolve: resolver!.resolve, reject: resolver!.reject, promise };
     const messagePayload: AgentMessagePayload = {
       jsonrpc: "2.0",
       id,

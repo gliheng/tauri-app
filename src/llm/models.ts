@@ -23,4 +23,12 @@ export const modelList = [
     label: "QwQ",
     value: "silliconflow::Qwen/QwQ-32B"
   },
+  {
+    label: "MiniMax-M2",
+    value: "silliconflow::MiniMaxAI/MiniMax-M2"
+  },
+  {
+    label: "GLM-4.7",
+    value: "silliconflow::Pro/zai-org/GLM-4.7"
+  },
 ];
