@@ -106,7 +106,7 @@ onMounted(async () => {
     onDisconnect() {
       console.log('onDisconnect');
     },
-    onInvoke(method, params) {
+    async onInvoke(method, params) {
       console.log("Method", method, "invoked with params", params);
     },
   });
@@ -117,7 +117,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="size-full p-4 flex flex-col relative"
+  <div class="size-full p-4 flex flex-col relative overflow-y-auto"
     :class="enableLoadSession ? 'justify-start' : 'justify-center'"
   >
     <!-- Hover menu in top-right corner -->
@@ -140,7 +140,7 @@ onMounted(async () => {
     </div>
 
     <!-- Agent header section -->
-    <div class="flex flex-row gap-2">
+    <div class="flex flex-row gap-2 px-4 sticky top-0 rounded bg-zinc-100">
       <div
         class="flex flex-col items-center justify-center py-8 flex-1"
       >
@@ -178,7 +178,7 @@ onMounted(async () => {
             <div v-if="agent.directory" class="flex items-start">
               <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Directory:</span>
               <div class="flex items-center gap-2">
-                <span class="font-mono text-sm break-all">{{ agent.directory }}</span>
+                <span class="font-medium break-all">{{ agent.directory }}</span>
                 <UButton
                   icon="i-lucide-folder-open"
                   size="xs"
@@ -197,12 +197,12 @@ onMounted(async () => {
             
             <div class="flex items-start">
               <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Created:</span>
-              <span class="text-sm">{{ new Date(agent.createdAt).toLocaleString() }}</span>
+              <span class="font-medium">{{ new Date(agent.createdAt).toLocaleString() }}</span>
             </div>
             
             <div class="flex items-start">
               <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Updated:</span>
-              <span class="text-sm">{{ new Date(agent.updatedAt).toLocaleString() }}</span>
+              <span class="font-medium">{{ new Date(agent.updatedAt).toLocaleString() }}</span>
             </div>
           </div>
         </UCard>
