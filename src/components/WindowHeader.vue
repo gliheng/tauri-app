@@ -4,6 +4,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import Tabs from "@/components/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
 import { storeToRefs } from "pinia";
+import { isAppleDevice } from "@/utils/device";
 
 const tauri = isTauri();
 const platform = navigator.platform;
@@ -21,6 +22,10 @@ defineShortcuts({
 });
 
 const { showArtifactView } = storeToRefs(tabsStore);
+
+function toggleArtifactView() {
+  showArtifactView.value = !showArtifactView.value;
+}
 </script>
 
 <template>
@@ -48,11 +53,23 @@ const { showArtifactView } = storeToRefs(tabsStore);
           </UModal>
           <ThemeSwitcher />
           <UButton
+            v-if="isAppleDevice"
             :icon="showArtifactView ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
             color="neutral"
             variant="ghost"
-            @click="tabsStore.toggleArtifactView()"
+            @click="toggleArtifactView"
           />
+          <UDrawer v-else v-model:open="showArtifactView" direction="right">
+            <UButton
+              :icon="showArtifactView ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
+              color="neutral"
+              variant="ghost"
+            />
+
+            <template #body>
+              <div class="p-4">Artifact View Content</div>
+            </template>
+          </UDrawer>
         </slot>
       </template>
     </Tabs>

@@ -32,7 +32,7 @@ watch(showArtifactView, (show) => {
       <SplitterPanel>
         <div class="h-full flex flex-col">
           <WindowHeader />
-          <main class="size-full flex-1 flex flex-col min-h-0">
+          <main class="size-full flex-1 flex flex-col min-h-0 z-[0]">
             <RouterView v-slot="{ Component, route }">
               <KeepAlive>
                 <Suspense>

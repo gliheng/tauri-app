@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { isAppleDevice } from "@/utils/device";
 
 const appWindow = getCurrentWindow();
 
@@ -27,8 +28,6 @@ function unmaximize() {
 function minimize() {
   appWindow.minimize();
 }
-
-const isAppleDevice = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
 </script>
 
 <template>
