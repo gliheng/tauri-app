@@ -18,11 +18,12 @@ static LISTENING_TASKS: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::tas
 
 #[tauri::command]
 pub async fn acp_initialize(agent: &str, api_key: &str, base_url: &str, model: &str) -> Result<serde_json::Value, serde_json::Value> {
-    
     let agent_parts: Vec<&str> = agent.split("::").collect();
     let agent_name = agent_parts.first().unwrap_or(&agent);
     
     let mut args = vec!["x"];
+    // Create environment variables map based on agent type
+    let mut env_vars = HashMap::new();
     let provider_base_url = format!("model_providers.x.base_url={}", base_url);
 
     if *agent_name == "qwen" {
@@ -46,28 +47,35 @@ pub async fn acp_initialize(agent: &str, api_key: &str, base_url: &str, model: &
         args.push("model_providers.x.env_key=X_API_KEY");
         args.push("-m");
         args.push(model);
-    } else {
-        // args.push("@zed-industries/claude-code-acp");
-        // Claude Code need to set these env variables
-        // ANTHROPIC_BASE_URL=""
-        // ANTHROPIC_MODEL=""
-        // ANTHROPIC_AUTH_TOKEN=""
+        env_vars.insert("X_API_KEY", api_key);
+    } else if *agent_name == "claude" {
+        args.push("@zed-industries/claude-code-acp");
+        env_vars.insert("ANTHROPIC_BASE_URL", base_url);
+        env_vars.insert("ANTHROPIC_MODEL", model);
+        env_vars.insert("ANTHROPIC_AUTH_TOKEN", api_key);
+    } else {   
         return Err(serde_json::json!({
             "code": 9,
             "message": format!("Unknown agent type: {}", agent_name)
         }));
     }
     
-    let child = TokioCommand::new("bun")
+    let mut command = TokioCommand::new("bun");
+    
+    // Apply environment variables from the map
+    for (key, value) in env_vars {
+        command.env(key, value);
+    }
+    
+    let child = command
         .args(&args)
-        .env("X_API_KEY", api_key)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
         .map_err(|e| serde_json::json!({
             "code": 1,
-            "message": format!("Failed to start qwen process: {}", e)
+            "message": format!("Failed to start {} process: {}", agent_name, e)
         }))?;
 
     // Store the process for later communication

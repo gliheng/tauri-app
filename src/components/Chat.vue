@@ -7,6 +7,7 @@ import MessageList from "@/components/MessageList.vue";
 import { useChat } from "@/hooks/useChat";
 import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db";
 import { CHAT_ACTIONS, MESSAGE_GRAPH, ROOT_NODE_ID } from "@/constants";
+import { useSettingsStore } from "@/stores/settings";
 
 const props = defineProps({
   chat: {
@@ -103,15 +104,25 @@ const showMessageList = computed(() => {
   return messages.value.length || status.value != "ready";
 });
 
+const settingsStore = useSettingsStore();
+
 provide(CHAT_ACTIONS, {
   messages,
-  reload,
-  stop,
-  append,
+  reload: () => {
+    return reload({
+      data: {
+        model: settingsStore.chatSettings.chatModel,
+      }
+    });
+  },
+  append(message: any, options: any) {
+    return append(message, options);
+  },
   input,
   status,
   setMessages,
   handleSubmit,
+  stop,
 });
 
 provide(MESSAGE_GRAPH, {

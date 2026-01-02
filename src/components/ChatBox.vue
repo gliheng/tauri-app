@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { modelList } from "@/llm/models";
 import { Attachment } from "ai";
 import { file2DataUrl } from "@/utils/file";
+import { useSettingsStore } from "@/stores/settings";
 import FileImage from "./FileImage.vue";
 
 const props = defineProps({
@@ -16,7 +16,7 @@ const emit = defineEmits<{
   stop: [];
 }>();
 
-const model = ref(modelList[0]);
+const settingsStore = useSettingsStore();
 
 const streaming = computed(
   () => props.status == "submitted" || props.status == "streaming",
@@ -25,6 +25,7 @@ const streaming = computed(
 async function send(evt: KeyboardEvent) {
   if (evt.key == "Enter" && evt.shiftKey) return;
   evt.preventDefault();
+
   let attachments: Attachment[] = [];
   if (files.value.length) {
     attachments = await Promise.all(files.value.map(file2DataUrl));
@@ -32,7 +33,7 @@ async function send(evt: KeyboardEvent) {
   files.value = [];
   emit('submit', {
     data: {
-      model: model.value.value,
+      model: settingsStore.chatSettings.chatModel,
     },
     experimental_attachments: attachments,
   });
@@ -96,7 +97,7 @@ function appendFiles(newFiles: FileList) {
         @mousedown.prevent
       >
         <UploadButton @select-file="appendFiles" />
-        <ModelSelector v-model="model" />
+        <ModelSelector />
         <div class="flex-1"></div>
         <UButton
           v-if="streaming"

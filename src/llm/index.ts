@@ -40,5 +40,7 @@ export function getProviderBaseUrl(provider: string) {
   if (provider === 'openrouter') return 'https://openrouter.ai/api/v1';
   if (provider === 'deepseek') return 'https://api.deepseek.com';
   if (provider === 'silliconflow') return 'https://api.siliconflow.cn/v1';
+  if (provider === 'minimax') return 'https://api.minimaxi.com/v1';
+  if (provider === 'zai') return 'https://open.bigmodel.cn/api/paas/v4';
   return '';
 }

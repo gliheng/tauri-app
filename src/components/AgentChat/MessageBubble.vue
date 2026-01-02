@@ -45,7 +45,7 @@ function copyText() {
 <template>
   <section :class="bubbleStyle({ role })">
     <template v-if="role == 'assistant'">
-      <h1 class="flex items-center gap-2 mb-2">
+      <h1 class="flex items-center gap-2 mb-2 hidden">
         <UAvatar
           :class="{ 'animate-bounce': loading }"
           icon="i-lucide-bot"
@@ -59,10 +59,10 @@ function copyText() {
           :key="i"
           class="empty:hidden"
         >
-          <div v-if="part.type == 'text'">
+          <div v-if="part.type == 'text'" :data-part-type="part.type">
             <MarkdownText :markdown="part.text ?? ''" />
           </div>
-          <div v-else-if="part.type == 'thought'" class="text-zinc-400">
+          <div v-else-if="part.type == 'thought'" class="text-zinc-600 dark:text-zinc-400" :data-part-type="part.type">
             <MarkdownText :markdown="part.thought ?? ''" />
           </div>
           <UCollapsible
@@ -75,11 +75,14 @@ function copyText() {
               :label="(() => {
                 const planPart = part as PlanPart;
                 const lastCompleted = planPart.plan.filter(t => t.status === 'completed').pop();
-                const allPending = planPart.plan.every(t => t.status === 'pending');
-                if (allPending) {
-                  return `Created TODO list with ${planPart.plan.length} tasks`;
+                const lastInProgress = planPart.plan.filter(t => t.status === 'in_progress').pop();
+                if (lastCompleted) {
+                  return lastCompleted.content;
                 }
-                return lastCompleted ? lastCompleted.content : 'Running tasks...';
+                if (lastInProgress) {
+                  return lastInProgress.content;
+                }
+                return `Created TODO list with ${planPart.plan.length} tasks`;
               })()"
               color="neutral"
               variant="subtle"
@@ -140,16 +143,16 @@ function copyText() {
             v-else-if="part.type == 'tool_call'"
             class="flex flex-col gap-2 w-full"
             :unmount-on-hide="false"
+            :data-part-type="part.type"
           >
             <UButton
               class="self-start group min-w-[200px] max-w-full"
-              :class="{ 'animate-spin': part.status === 'in_progress' }"
               :label="part.title"
               :color="(() => {
                 const toolPart = part as ToolCallPart;
                 if (toolPart.status === 'completed') return 'success';
                 if (toolPart.status === 'failed') return 'error';
-                if (toolPart.status === 'in_progress') return 'blue';
+                if (toolPart.status === 'in_progress') return 'info';
                 return 'neutral';
               })()"
               variant="subtle"
@@ -227,10 +230,12 @@ function copyText() {
             v-else-if="part.type == 'image'"
             class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 max-w-md"
             :url="part.uri || `data:${part.mimeType};base64,${part.data}`"
+            :data-part-type="part.type"
           />
           <div
             v-else-if="part.type == 'audio'"
             class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50"
+            :data-part-type="part.type"
           >
             <audio
               controls
@@ -243,6 +248,7 @@ function copyText() {
           <div
             v-else-if="part.type == 'resource'"
             class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50"
+            :data-part-type="part.type"
           >
             <div class="space-y-2">
               <div class="flex items-center gap-2">
@@ -263,6 +269,7 @@ function copyText() {
           <div
             v-else-if="part.type == 'resource_link'"
             class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+            :data-part-type="part.type"
           >
             <a
               :href="part.uri"
@@ -310,7 +317,7 @@ function copyText() {
         </template>
       </div>
     </template>
-    <div class="flex flex-row items-center gap-1 mt-2">
+    <div class="flex flex-row items-center gap-1 hidden">
       <UTooltip text="Copy text">
         <UButton
           color="neutral"

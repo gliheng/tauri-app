@@ -24,6 +24,17 @@ export enum ACPMethod {
 
 export type StopReason = 'end_turn' | 'max_tokens' | 'max_turn_requests' | 'refusal' | 'cancelled';
 
+export interface ToolCallUpdate {
+  toolCallId: string;
+  title: string;
+  kind: 'read' | 'edit' | 'delete' | 'move' | 'search' | 'execute' | 'think' | 'fetch' | 'other';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  content?: any[];
+  locations?: any[];
+  rawInput?: object;
+  rawOutput?: object;  
+}
+
 export type ACPMethodDefinitions = {
   [ACPMethod.SessionPrompt]: {
     params: { sessionId: string; message: string };
@@ -48,9 +59,7 @@ export type ACPMethodDefinitions = {
   [ACPMethod.SessionRequestPermission]: {
     params: {
       sessionId: string;
-      toolCall: {
-        toolCallId: string;
-      };
+      toolCall: ToolCallUpdate;
       options: {
         optionId: string;
         name: string;

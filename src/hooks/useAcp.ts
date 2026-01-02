@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { ACPService, ACPMethod } from "@/services/acp";
+import { ACPService, ACPMethod, ToolCallUpdate } from "@/services/acp";
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { getModelConfig } from "@/llm";
 import { Agent } from "@/db";
@@ -65,16 +65,8 @@ export interface ThoughtPart {
   thought?: string;
 }
 
-export interface ToolCallPart {
+export interface ToolCallPart extends ToolCallUpdate {
   type: 'tool_call';
-  toolCallId: string;
-  title: string;
-  kind: 'read' | 'edit' | 'delete' | 'move' | 'search' | 'execute' | 'think' | 'fetch' | 'other';
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  content?: any[];
-  locations?: any[];
-  rawInput?: object;
-  rawOutput?: object;
 }
 
 export type ContentBlock = TextBlock | ImageBlock | AudioBlock | ResourceBlock | ResourceLinkBlock;
@@ -115,6 +107,10 @@ export function useAcp(chatId: string, agent: Agent) {
         const { update } = params as { update: any; sessionId: string };
         appendSessionUpdate(update, messages.value, toolCallMap);
       } else if (method === ACPMethod.SessionRequestPermission) {
+        appendSessionUpdate({
+          sessionUpdate: 'tool_call',
+          ...params.toolCall,
+        }, messages.value, toolCallMap);
         const optionId = await permissionModal.open({
           options: params.options,
         });

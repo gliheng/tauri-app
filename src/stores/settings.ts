@@ -1,38 +1,65 @@
 import { ref, watch } from "vue";
 import { defineStore } from "pinia";
+import { defaultsDeep } from 'lodash-es';
+
+const defaultSettings = {
+  deepseek: {
+    apiKey: "",
+    models: [],
+  },
+  minimax: {
+    apiKey: "",
+    models: [],
+  },
+  zai: {
+    apiKey: "",
+    models: [],
+  },
+  openrouter: {
+    apiKey: "",
+    models: [],
+  },
+  silliconflow: {
+    apiKey: "",
+    models: [],
+  },
+};
+
+const defaultChatSettings = {
+  chatModel: 'deepseek::deepseek-chat',
+};
 
 export function loadModelSettings() {
-  const storedSettings = localStorage.getItem("modelSettings");
-  if (storedSettings) {
-    return JSON.parse(storedSettings);
-  }
+  const stored = localStorage.getItem("modelSettings");
+  const storedSettings = stored ? JSON.parse(stored) : {};
+  
+  return defaultsDeep({}, defaultSettings, storedSettings);
+}
 
-  return {
-    openrouter: {
-      apiKey: "",
-      enabled: true,
-    },
-    deepseek: {
-      apiKey: "",
-      enabled: true,
-    },
-    silliconflow: {
-      apiKey: "",
-      enabled: true,
-    },
-  };
+export function loadChatSettings() {
+  const stored = localStorage.getItem("chatSettings");
+  const storedSettings = stored ? JSON.parse(stored) : {};
+  return defaultsDeep({}, defaultChatSettings, storedSettings);
 }
 
 export const useSettingsStore = defineStore("settings", () => {
   const modelSettings = ref(loadModelSettings());
-
+  const chatSettings = ref(loadChatSettings());
+  
   watch(modelSettings, (v) => {
     localStorage.setItem("modelSettings", JSON.stringify(v));
+  }, {
+    deep: true,
+  });
+  
+  watch(chatSettings, (v) => {
+    localStorage.setItem("chatSettings", JSON.stringify(v));
   }, {
     deep: true,
   });
 
   return {
     modelSettings,
+    chatSettings,
   };
 });
