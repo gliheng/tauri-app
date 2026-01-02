@@ -16,44 +16,58 @@ static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::pro
 static LISTENING_TASKS: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>> = 
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
+#[derive(Deserialize)]
+pub struct ModelSettings {
+    api_key: String,
+    base_url: String,
+    model: String,
+}
+
 #[tauri::command]
-pub async fn acp_initialize(agent: &str, api_key: &str, base_url: &str, model: &str) -> Result<serde_json::Value, serde_json::Value> {
+pub async fn acp_initialize(
+    agent: &str,
+    settings: Option<ModelSettings>,
+) -> Result<serde_json::Value, serde_json::Value> {
     let agent_parts: Vec<&str> = agent.split("::").collect();
     let agent_name = agent_parts.first().unwrap_or(&agent);
     
-    let mut args = vec!["x"];
+    let mut args = vec!["x".into()];
     // Create environment variables map based on agent type
-    let mut env_vars = HashMap::new();
-    let provider_base_url = format!("model_providers.x.base_url={}", base_url);
-
+    let mut env_vars: HashMap<String, String> = HashMap::new();
     if *agent_name == "qwen" {
-        args.push("@qwen-code/qwen-code");
-        args.push("--auth-type");
-        args.push("openai");
-        args.push("--openai-api-key");
-        args.push(api_key);
-        args.push("--openai-base-url");
-        args.push(base_url);
-        args.push("--model");
-        args.push(model);
-        args.push("--experimental-acp");
+        args.push("@qwen-code/qwen-code".into());
+        if let Some(ms) = settings {
+            args.extend(["--auth-type".into(), "openai".into(),
+                "--openai-api-key".into(), ms.api_key,
+                "--openai-base-url".into(), ms.base_url,
+                "--model".into(), ms.model]);
+        }
+        args.push("--experimental-acp".into());
     } else if *agent_name == "codex" {
-        args.push("@zed-industries/codex-acp");
-        args.push("-c");
-        args.push("model_provider=x");
-        args.push("-c");
-        args.push(&provider_base_url);
-        args.push("-c");
-        args.push("model_providers.x.env_key=X_API_KEY");
-        args.push("-m");
-        args.push(model);
-        env_vars.insert("X_API_KEY", api_key);
+        args.push("@zed-industries/codex-acp".into());
+        if let Some(ms) = settings {
+            args.extend(["-c".into(), "model_provider=x".into(),
+                "-c".into(), format!("model_providers.x.base_url={}", ms.base_url),
+                "-c".into(), "model_providers.x.env_key=X_API_KEY".into(),
+                "-m".into(), ms.model]);
+            env_vars.insert("X_API_KEY".into(), ms.api_key);
+        }
     } else if *agent_name == "claude" {
-        args.push("@zed-industries/claude-code-acp");
-        env_vars.insert("ANTHROPIC_BASE_URL", base_url);
-        env_vars.insert("ANTHROPIC_MODEL", model);
-        env_vars.insert("ANTHROPIC_AUTH_TOKEN", api_key);
-    } else {   
+        args.push("@zed-industries/claude-code-acp".into());
+        if let Some(ms) = settings {
+            env_vars.insert("ANTHROPIC_BASE_URL".into(), ms.base_url);
+            env_vars.insert("ANTHROPIC_MODEL".into(), ms.model);
+            env_vars.insert("ANTHROPIC_AUTH_TOKEN".into(), ms.api_key);
+        }
+    } else if *agent_name == "gemini" {
+        args.push("@google/gemini-cli".into());
+        if let Some(ms) = settings {
+            env_vars.insert("GEMINI_MODEL".into(), ms.model);
+            env_vars.insert("GOOGLE_GEMINI_BASE_URL".into(), ms.base_url);
+            env_vars.insert("GEMINI_API_KEY".into(), ms.api_key);
+        }
+        args.push("--experimental-acp".into());
+    } else {
         return Err(serde_json::json!({
             "code": 9,
             "message": format!("Unknown agent type: {}", agent_name)

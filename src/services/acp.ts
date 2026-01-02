@@ -150,10 +150,11 @@ export class ACPService {
   async initialize(): Promise<void> {
     await invoke("acp_initialize", {
       agent: this.config.program,
-      directory: this.config.directory,
-      model: this.config.model,
-      apiKey: this.config.apiKey,
-      baseUrl: this.config.baseUrl,
+      settings: {
+        model: this.config.model,
+        apiKey: this.config.apiKey,
+        baseUrl: this.config.baseUrl,
+      },
     });
     this.startListening();
     const ret = await this.rpc("initialize", {
