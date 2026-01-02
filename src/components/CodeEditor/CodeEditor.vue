@@ -53,7 +53,7 @@ async function onToggle(path: string) {
 
 <template>
   <SplitterGroup class="flex-1" direction="horizontal">
-    <SplitterPanel :default-size="20">
+    <SplitterPanel :default-size="40">
       <FileTree :files="fileSystem" @toggle="onToggle" />
     </SplitterPanel>
     <SplitterResizeHandle class="w-0.5 splitter-handle" />

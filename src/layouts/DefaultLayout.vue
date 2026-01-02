@@ -60,7 +60,7 @@ if (isAppleDevice) {
         <SplitterPanel
           ref="artifactViewPanel"
           collapsible
-          :default-size="40"
+          :default-size="50"
           :min-size="10"
           :collapsed-size="0"
           @collapse="showArtifactView = false"

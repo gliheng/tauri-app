@@ -32,14 +32,13 @@ const defaultChatSettings = {
 export function loadModelSettings() {
   const stored = localStorage.getItem("modelSettings");
   const storedSettings = stored ? JSON.parse(stored) : {};
-  
-  return defaultsDeep({}, defaultSettings, storedSettings);
+  return defaultsDeep({}, storedSettings, defaultSettings);
 }
 
 export function loadChatSettings() {
   const stored = localStorage.getItem("chatSettings");
   const storedSettings = stored ? JSON.parse(stored) : {};
-  return defaultsDeep({}, defaultChatSettings, storedSettings);
+  return defaultsDeep({}, storedSettings, defaultChatSettings);
 }
 
 export const useSettingsStore = defineStore("settings", () => {

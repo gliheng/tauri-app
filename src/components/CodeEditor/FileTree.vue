@@ -65,7 +65,7 @@ function onToggle(e: Event, item: any) {
 
 <template>
   <div class="h-full">
-    <header class="flex gap-1 p-1">
+    <header class="flex items-center gap-1 p-1 h-10">
       <h1 class="text-lg font-semibold truncate">My Project</h1>
       <div class="flex-1"></div>
       <UButton size="sm" icon="i-lucide-file-plus" />

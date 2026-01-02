@@ -100,6 +100,7 @@ export function useAcp(chatId: string, agent: Agent) {
     availableCommands: [] as AvailableCommand[],
   };
   const { model, apiKey, baseUrl } = getModelConfig('silliconflow::Pro/zai-org/GLM-4.7');
+  console.log('Creating ACP service for agent:', agent.program, 'chatId:', chatId, 'model:', model, 'apiKey:', apiKey, 'baseUrl:', baseUrl);
   const acpService = new ACPService({
     program: agent.program! + "::" + chatId, // Start a new process for each chat
     directory: agent.directory!,

@@ -120,6 +120,46 @@ export type ACPMethodDefinitions = {
   };
 };
 
+export interface AgentInfo {
+  name: string;
+  title: string;
+  version: string;
+}
+
+export interface AuthMethod {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface Mode {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface PromptCapabilities {
+  image: boolean;
+  audio: boolean;
+  embeddedContext: boolean;
+}
+
+export interface AgentCapabilities {
+  loadSession: boolean;
+  promptCapabilities: PromptCapabilities;
+}
+
+export interface InitializeResult {
+  protocolVersion: number;
+  agentInfo: AgentInfo;
+  authMethods: AuthMethod[];
+  modes: {
+    currentModeId: string;
+    availableModes: Mode[];
+  };
+  agentCapabilities: AgentCapabilities;
+}
+
 export interface ACPServiceConfig {
   program: string;
   directory: string;
@@ -142,8 +182,8 @@ export interface ACPServiceConfig {
 
 export class ACPService {
   private unlistenFn?: (() => void) | null;
-  private agentCapabilities?: Record<string, boolean>;
   private sessionId?: string;
+  private initializeResult?: InitializeResult;
   private pendingCalls: Record<number, {
     resolve: (value: any) => void;
     reject: (reason: any) => void;
@@ -156,11 +196,11 @@ export class ACPService {
   async initialize(): Promise<void> {
     await invoke("acp_initialize", {
       agent: this.config.program,
-      settings: {
-        model: this.config.model,
-        apiKey: this.config.apiKey,
-        baseUrl: this.config.baseUrl,
-      },
+      // settings: {
+      //   model: this.config.model,
+      //   apiKey: this.config.apiKey,
+      //   baseUrl: this.config.baseUrl,
+      // },
     });
     this.startListening();
     const ret = await this.rpc("initialize", {
@@ -177,8 +217,8 @@ export class ACPService {
         "title": "Raven",
         "version": "1.0.0"
       }
-    });
-    this.agentCapabilities = ret.agentCapabilities;
+    }) as InitializeResult;
+    this.initializeResult = ret;
   }
 
   async startListening(): Promise<() => void> {
@@ -313,6 +353,36 @@ export class ACPService {
   }
 
   hasCapability(capability: string): boolean {
-    return this.agentCapabilities?.[capability] ?? false;
+    if (!this.initializeResult?.agentCapabilities) return false;
+    
+    const agentCapabilities = this.initializeResult.agentCapabilities;
+    
+    // Check top-level capabilities like loadSession
+    if (capability in agentCapabilities) {
+      return (agentCapabilities as any)[capability];
+    }
+    
+    // Check nested promptCapabilities
+    if (agentCapabilities.promptCapabilities && capability in agentCapabilities.promptCapabilities) {
+      return agentCapabilities.promptCapabilities[capability as keyof PromptCapabilities];
+    }
+    
+    return false;
+  }
+
+  getInitializeResult(): InitializeResult | undefined {
+    return this.initializeResult;
+  }
+
+  getAgentInfo(): AgentInfo | undefined {
+    return this.initializeResult?.agentInfo;
+  }
+
+  getAuthMethods(): AuthMethod[] {
+    return this.initializeResult?.authMethods ?? [];
+  }
+
+  getModes(): Modes | undefined {
+    return this.initializeResult?.modes;
   }
 }
