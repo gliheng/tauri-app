@@ -7,22 +7,25 @@ import WindowHeader from "@/components/WindowHeader.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import Spinner from "@/components/Spinner.vue";
 import WorkspaceEditor from "@/components/CodeEditor/WorkspaceEditor.vue";
+import { isAppleDevice } from "@/utils/device";
 
 const tabsStore = useTabsStore();
 const { showArtifactView } = storeToRefs(tabsStore);
 const artifactViewPanel = useTemplateRef("artifactViewPanel");
 const mountArtifactView = ref(false);
-watch(showArtifactView, (show) => {
-  if (show) {
-    if (!mountArtifactView.value) {
-      mountArtifactView.value = true;
-    } else if (artifactViewPanel.value!.isCollapsed) {
-      artifactViewPanel.value?.expand();
+if (isAppleDevice) {
+  watch(showArtifactView, (show) => {
+    if (show) {
+      if (!mountArtifactView.value) {
+        mountArtifactView.value = true;
+      } else if (artifactViewPanel.value!.isCollapsed) {
+        artifactViewPanel.value?.expand();
+      }
+    } else if (!artifactViewPanel.value!.isCollapsed) {
+      artifactViewPanel.value!.collapse();
     }
-  } else if (!artifactViewPanel.value!.isCollapsed) {
-    artifactViewPanel.value!.collapse();
-  }
-});
+  });
+}
 </script>
 
 <template>

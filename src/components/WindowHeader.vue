@@ -59,13 +59,12 @@ function toggleArtifactView() {
             variant="ghost"
             @click="toggleArtifactView"
           />
-          <UDrawer v-else v-model:open="showArtifactView" direction="right">
+          <UDrawer v-else inset direction="right" :overlay="false" v-model:open="showArtifactView">
             <UButton
               :icon="showArtifactView ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
               color="neutral"
               variant="ghost"
             />
-
             <template #body>
               <div class="p-4">Artifact View Content</div>
             </template>
