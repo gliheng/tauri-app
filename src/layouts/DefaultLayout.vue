@@ -6,7 +6,7 @@ import { storeToRefs } from "pinia";
 import WindowHeader from "@/components/WindowHeader.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import Spinner from "@/components/Spinner.vue";
-import WorkspaceEditor from "@/components/CodeEditor/WorkspaceEditor.vue";
+import CodeEditor from "@/components/CodeEditor/CodeEditor.vue";
 import { isAppleDevice } from "@/utils/device";
 
 const tabsStore = useTabsStore();
@@ -66,7 +66,7 @@ if (isAppleDevice) {
           @collapse="showArtifactView = false"
           @expand="showArtifactView = true"
         >
-          <WorkspaceEditor />
+          <CodeEditor />
         </SplitterPanel>
       </template>
     </SplitterGroup>

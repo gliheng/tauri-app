@@ -4,7 +4,7 @@
 
 <template>
   <div class="h-screen">
-    <WorkspaceEditor />
+    <CodeEditor />
   </div>
 </template>
 
