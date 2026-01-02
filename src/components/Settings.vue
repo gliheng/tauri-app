@@ -41,12 +41,12 @@ const providerItems = [
   },
 ] satisfies TabsItem[];
 
+const defaultProvider = "deepseek";
+
 const { modelSettings } = storeToRefs(useSettingsStore());
 
 const toggleModel = (provider: string, modelValue: string) => {
   if (!modelSettings.value[provider]?.models) {
-    // TODO: remove later
-    modelSettings.value[provider].models = [];
     return;
   }
   const models = modelSettings.value[provider].models;
@@ -67,7 +67,7 @@ const toggleModel = (provider: string, modelValue: string) => {
           orientation="vertical"
           variant="link"
           class="w-full"
-          default-value="openrouter"
+          :default-value="defaultProvider"
           :items="providerItems"
         >
           <template #content="{ item }">

@@ -45,7 +45,13 @@ export type ACPMethodDefinitions = {
   [ACPMethod.SessionUpdate]: {
       params: {
         update: {
-          sessionUpdate: 'plan' | 'tool_call' | 'tool_call_update' | 'agent_message_chunk';
+          sessionUpdate:
+           | 'plan'
+           | 'tool_call'
+           | 'tool_call_update'
+           | 'agent_message_chunk'
+           | 'agent_thought_chunk'
+           | 'available_commands_update';
           [key: string]: any;
         };
         sessionId: string;

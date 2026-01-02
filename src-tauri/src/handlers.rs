@@ -37,10 +37,10 @@ pub async fn acp_initialize(
     if *agent_name == "qwen" {
         args.push("@qwen-code/qwen-code".into());
         if let Some(ms) = settings {
-            args.extend(["--auth-type".into(), "openai".into(),
-                "--openai-api-key".into(), ms.api_key,
-                "--openai-base-url".into(), ms.base_url,
-                "--model".into(), ms.model]);
+            args.extend(["--auth-type".into(), "openai".into()]);
+            env_vars.insert("OPENAI_API_KEY".into(), ms.api_key);
+            env_vars.insert("OPENAI_BASE_URL".into(), ms.base_url);
+            env_vars.insert("OPENAI_MODEL".into(), ms.model);
         }
         args.push("--experimental-acp".into());
     } else if *agent_name == "codex" {

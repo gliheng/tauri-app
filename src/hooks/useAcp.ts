@@ -69,6 +69,16 @@ export interface ToolCallPart extends ToolCallUpdate {
   type: 'tool_call';
 }
 
+export interface AvailableCommandInput {
+  hint: string;
+}
+
+export interface AvailableCommand {
+  name: string;
+  description: string;
+  input?: AvailableCommandInput;
+}
+
 export type ContentBlock = TextBlock | ImageBlock | AudioBlock | ResourceBlock | ResourceLinkBlock;
 
 export type MessagePart = ContentBlock | ThoughtPart | PlanPart | ToolCallPart
@@ -85,7 +95,10 @@ export function useAcp(chatId: string, agent: Agent) {
   const permissionModal = overlay.create(PermissionModal);
   const messages = ref<Message[]>([]);
   const status = ref<'submitted' | 'streaming' | 'ready' | 'error'>("ready");
-  const toolCallMap = new Map<string, Message>();
+  const context = {
+    toolCallMap: new Map<string, Message>(),
+    availableCommands: [] as AvailableCommand[],
+  };
   const { model, apiKey, baseUrl } = getModelConfig('silliconflow::Pro/zai-org/GLM-4.7');
   const acpService = new ACPService({
     program: agent.program! + "::" + chatId, // Start a new process for each chat
@@ -105,12 +118,12 @@ export function useAcp(chatId: string, agent: Agent) {
       if (method === ACPMethod.SessionUpdate) {
         status.value = 'streaming';
         const { update } = params as { update: any; sessionId: string };
-        appendSessionUpdate(update, messages.value, toolCallMap);
+        appendSessionUpdate(update, messages.value, context);
       } else if (method === ACPMethod.SessionRequestPermission) {
         appendSessionUpdate({
           sessionUpdate: 'tool_call',
           ...params.toolCall,
-        }, messages.value, toolCallMap);
+        }, messages.value, context);
         const optionId = await permissionModal.open({
           options: params.options,
         });
@@ -185,7 +198,10 @@ function appendSessionUpdate(
     sessionUpdate: string;
   } & Record<string, any>,
   messages: Message[],
-  toolCallMap: Map<string, Message>,
+  context: {
+    toolCallMap: Map<string, Message>;
+    availableCommands: AvailableCommand[];
+  },
 ) {
   const { sessionUpdate, ...rest } = params;
   const lastMessage = messages[messages.length - 1];
@@ -268,17 +284,19 @@ function appendSessionUpdate(
         } as ToolCallPart,
       ],
     };
-    toolCallMap.set(rest.toolCallId, msg);
+    context.toolCallMap.set(rest.toolCallId, msg);
     messages.push(msg);
   } else if (sessionUpdate == 'tool_call_update') {
     // update previous tool call message
-    const existingMsg = toolCallMap.get(rest.toolCallId);
+    const existingMsg = context.toolCallMap.get(rest.toolCallId);
     if (existingMsg) {
       // Update existing tool call message
       existingMsg.content = rest.title;
       const part = existingMsg.parts[0] as ToolCallPart;
       Object.assign(part, rest);
     }
+  } else if (sessionUpdate == 'available_commands_update') {
+    context.availableCommands = rest.availableCommands;
   } else if (sessionUpdate == 'user_message_chunk') {
     const content = rest.content;
     messages.push({
