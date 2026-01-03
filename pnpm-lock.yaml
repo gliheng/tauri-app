@@ -58,7 +58,7 @@ importers:
         version: 1.7.0
       '@nuxt/ui':
         specifier: ^4.3.0
-        version: 4.3.0(@babel/parser@7.28.0)(@floating-ui/dom@1.7.2)(@tiptap/extension-drag-handle@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/extension-collaboration@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.2)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28))(yjs@13.6.28))(@tiptap/extension-node-range@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.2)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28)))(@tiptap/extensions@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0))(embla-carousel@8.6.0)(react@19.1.1)(typescript@5.6.3)(vite@6.3.5(jiti@2.6.1)(lightningcss@1.30.2)(sass-embedded@1.89.2))(vue-router@4.5.1(vue@3.5.18(typescript@5.6.3)))(vue@3.5.18(typescript@5.6.3))(zod@3.25.76)
+        version: 4.3.0(@babel/parser@7.28.0)(@floating-ui/dom@1.7.2)(@tiptap/extension-drag-handle@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/extension-collaboration@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.2)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28))(yjs@13.6.28))(@tiptap/extension-node-range@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.2)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28)))(@tiptap/extensions@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0))(embla-carousel@8.6.0)(react@19.1.1)(sortablejs@1.15.6)(typescript@5.6.3)(vite@6.3.5(jiti@2.6.1)(lightningcss@1.30.2)(sass-embedded@1.89.2))(vue-router@4.5.1(vue@3.5.18(typescript@5.6.3)))(vue@3.5.18(typescript@5.6.3))(zod@3.25.76)
       '@openrouter/ai-sdk-provider':
         specifier: ^0.7.0
         version: 0.7.3(ai@4.3.19(react@19.1.1)(zod@3.25.76))(zod@3.25.76)
@@ -77,9 +77,6 @@ importers:
       '@vueuse/core':
         specifier: ^13.3.0
         version: 13.6.0(vue@3.5.18(typescript@5.6.3))
-      '@vueuse/integrations':
-        specifier: ^14.1.0
-        version: 14.1.0(fuse.js@7.1.0)(vue@3.5.18(typescript@5.6.3))
       ai:
         specifier: ^4.3.16
         version: 4.3.19(react@19.1.1)(zod@3.25.76)
@@ -3107,6 +3104,9 @@ packages:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
 
+  sortablejs@1.15.6:
+    resolution: {integrity: sha512-aNfiuwMEpfBM/CN6LY0ibyhxPfPbyFeBTYJKCvzkJ2GkUpazIt3H+QIPAMHwqQ7tMKaHz1Qj+rJJCqljnf4p3A==}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -4676,7 +4676,7 @@ snapshots:
       pkg-types: 2.3.0
       std-env: 3.10.0
 
-  '@nuxt/ui@4.3.0(@babel/parser@7.28.0)(@floating-ui/dom@1.7.2)(@tiptap/extension-drag-handle@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/extension-collaboration@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.2)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28))(yjs@13.6.28))(@tiptap/extension-node-range@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.2)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28)))(@tiptap/extensions@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0))(embla-carousel@8.6.0)(react@19.1.1)(typescript@5.6.3)(vite@6.3.5(jiti@2.6.1)(lightningcss@1.30.2)(sass-embedded@1.89.2))(vue-router@4.5.1(vue@3.5.18(typescript@5.6.3)))(vue@3.5.18(typescript@5.6.3))(zod@3.25.76)':
+  '@nuxt/ui@4.3.0(@babel/parser@7.28.0)(@floating-ui/dom@1.7.2)(@tiptap/extension-drag-handle@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/extension-collaboration@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.2)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28))(yjs@13.6.28))(@tiptap/extension-node-range@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.2)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28)))(@tiptap/extensions@3.14.0(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0))(embla-carousel@8.6.0)(react@19.1.1)(sortablejs@1.15.6)(typescript@5.6.3)(vite@6.3.5(jiti@2.6.1)(lightningcss@1.30.2)(sass-embedded@1.89.2))(vue-router@4.5.1(vue@3.5.18(typescript@5.6.3)))(vue@3.5.18(typescript@5.6.3))(zod@3.25.76)':
     dependencies:
       '@iconify/vue': 5.0.0(vue@3.5.18(typescript@5.6.3))
       '@internationalized/date': 3.10.1
@@ -4706,7 +4706,7 @@ snapshots:
       '@tiptap/vue-3': 3.13.0(@floating-ui/dom@1.7.2)(@tiptap/core@3.13.0(@tiptap/pm@3.13.0))(@tiptap/pm@3.13.0)(vue@3.5.18(typescript@5.6.3))
       '@unhead/vue': 2.1.1(vue@3.5.18(typescript@5.6.3))
       '@vueuse/core': 14.1.0(vue@3.5.18(typescript@5.6.3))
-      '@vueuse/integrations': 14.1.0(fuse.js@7.1.0)(vue@3.5.18(typescript@5.6.3))
+      '@vueuse/integrations': 14.1.0(fuse.js@7.1.0)(sortablejs@1.15.6)(vue@3.5.18(typescript@5.6.3))
       colortranslator: 5.0.0
       consola: 3.4.2
       defu: 6.1.4
@@ -5570,13 +5570,14 @@ snapshots:
       '@vueuse/shared': 14.1.0(vue@3.5.18(typescript@5.6.3))
       vue: 3.5.18(typescript@5.6.3)
 
-  '@vueuse/integrations@14.1.0(fuse.js@7.1.0)(vue@3.5.18(typescript@5.6.3))':
+  '@vueuse/integrations@14.1.0(fuse.js@7.1.0)(sortablejs@1.15.6)(vue@3.5.18(typescript@5.6.3))':
     dependencies:
       '@vueuse/core': 14.1.0(vue@3.5.18(typescript@5.6.3))
       '@vueuse/shared': 14.1.0(vue@3.5.18(typescript@5.6.3))
       vue: 3.5.18(typescript@5.6.3)
     optionalDependencies:
       fuse.js: 7.1.0
+      sortablejs: 1.15.6
 
   '@vueuse/metadata@10.11.1': {}
 
@@ -7178,6 +7179,9 @@ snapshots:
       '@polka/url': 1.0.0-next.29
       mrmime: 2.0.1
       totalist: 3.0.1
+
+  sortablejs@1.15.6:
+    optional: true
 
   source-map-js@1.2.1: {}
 
