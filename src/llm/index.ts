@@ -1,7 +1,7 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { loadModelSettings } from "@/stores/settings";
+import { CodeAgent, loadCodeAgentSettings, loadModelSettings } from "@/stores/settings";
 
 export function getModel(model?: string) {
   model = model ?? "deepseek::deepseek-chat";
@@ -35,6 +35,11 @@ export function getModelConfig(model?: string) {
     baseUrl: getProviderBaseUrl(provider),
   };
 };
+
+export function getCodeAgentConfig(type: CodeAgent) {
+  const settings = loadCodeAgentSettings();
+  return settings[type];
+}
 
 export function getProviderBaseUrl(provider: string) {
   if (provider === 'openrouter') return 'https://openrouter.ai/api/v1';

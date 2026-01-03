@@ -172,9 +172,11 @@ export interface ACPServiceConfig {
       value: string;
     }[];
   }[];
-  model: string;
-  baseUrl: string;
-  apiKey: string;
+  model?: {
+    model: string;
+    baseUrl: string;
+    apiKey: string;
+  };
   onConnect?: () => void;
   onDisconnect?: () => void;
   onInvoke?: (method: string, params: any) => Promise<any>;
@@ -196,11 +198,7 @@ export class ACPService {
   async initialize(): Promise<void> {
     await invoke("acp_initialize", {
       agent: this.config.program,
-      // settings: {
-      //   model: this.config.model,
-      //   apiKey: this.config.apiKey,
-      //   baseUrl: this.config.baseUrl,
-      // },
+      settings: this.config.model,
     });
     this.startListening();
     const ret = await this.rpc("initialize", {
@@ -382,7 +380,10 @@ export class ACPService {
     return this.initializeResult?.authMethods ?? [];
   }
 
-  getModes(): Modes | undefined {
+  getModes(): {
+    currentModeId: string;
+    availableModes: Mode[];
+  } | undefined {
     return this.initializeResult?.modes;
   }
 }

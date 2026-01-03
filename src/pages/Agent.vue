@@ -97,9 +97,11 @@ onMounted(async () => {
     program: agent.program!,
     directory: agent.directory!,
     mcpServers: [],
-    model,
-    baseUrl,
-    apiKey,
+    model: {
+      model,
+      baseUrl,
+      apiKey,
+    },
     onConnect() {
       console.log('onConnect');
     },

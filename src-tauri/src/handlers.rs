@@ -18,11 +18,12 @@ static LISTENING_TASKS: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::tas
 
 #[derive(Deserialize)]
 pub struct ModelSettings {
-    #[serde(alias = "apiKey")]
-    api_key: String,
+    #[serde(alias = "model")]
+    model: String,
     #[serde(alias = "baseUrl")]
     base_url: String,
-    model: String,
+    #[serde(alias = "apiKey")]
+    api_key: String,
 }
 
 #[tauri::command]

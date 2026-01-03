@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { ACPService, ACPMethod, ToolCallUpdate } from "@/services/acp";
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-import { getModelConfig } from "@/llm";
+import { getCodeAgentConfig, getModelConfig } from "@/llm";
 import { Agent } from "@/db";
 import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
 
@@ -99,15 +99,15 @@ export function useAcp(chatId: string, agent: Agent) {
     toolCallMap: new Map<string, Message>(),
     availableCommands: [] as AvailableCommand[],
   };
-  const { model, apiKey, baseUrl } = getModelConfig('silliconflow::Pro/zai-org/GLM-4.7');
-  console.log('Creating ACP service for agent:', agent.program, 'chatId:', chatId, 'model:', model, 'apiKey:', apiKey, 'baseUrl:', baseUrl);
+
+  const { useCustomModel, ...modelConfig } = getCodeAgentConfig(agent.program!);
+  const model = useCustomModel ? modelConfig : undefined;
+  console.log('Creating ACP service for agent:', agent.program, 'chatId:', chatId, 'model:', model);
   const acpService = new ACPService({
     program: agent.program! + "::" + chatId, // Start a new process for each chat
     directory: agent.directory!,
-    mcpServers: [],
     model,
-    baseUrl,
-    apiKey,
+    mcpServers: [],
     onConnect() {
       console.log('onConnect');
     },

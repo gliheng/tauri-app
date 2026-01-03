@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
-import { useSettingsStore } from "@/stores/settings";
+import { CodeAgent, useSettingsStore } from "@/stores/settings";
 import { modelRepo } from "@/llm/models";
 
 const tabItems = [
@@ -41,9 +41,30 @@ const providerItems = [
   },
 ] satisfies TabsItem[];
 
-const defaultProvider = "deepseek";
+const defaultProvider = 'deepseek';
 
-const { modelSettings } = storeToRefs(useSettingsStore());
+const codeAgentItems = [
+  {
+    label: 'Codex',
+    value: 'codex',
+  },
+  {
+    label: 'Gemini',
+    value: 'gemini',
+  },
+  {
+    label: 'Claude',
+    value: 'claude',
+  },
+  {
+    label: 'Qwen',
+    value: 'qwen',
+  },
+] satisfies TabsItem[];
+
+const defaultCodeAgent = 'codex';
+
+const { modelSettings, codeAgentSettings } = storeToRefs(useSettingsStore());
 
 const toggleModel = (provider: string, modelValue: string) => {
   if (!modelSettings.value[provider]?.models) {
@@ -63,10 +84,11 @@ const toggleModel = (provider: string, modelValue: string) => {
   <UTabs :items="tabItems" class="gap-4 w-full">
     <template #models>
       <div class="mx-4 mb-4 flex flex-col gap-2">
+        <h1 class="text-lg font-semibold">Chat Models</h1>
         <UTabs
           orientation="vertical"
           variant="link"
-          class="w-full"
+          class="w-full items-start"
           :default-value="defaultProvider"
           :items="providerItems"
         >
@@ -75,7 +97,7 @@ const toggleModel = (provider: string, modelValue: string) => {
               <p class="text-center">{{ item.label }}</p>
               <UFormField label="Api Key" name="apiKey">
                 <UInput
-                  v-model.trim="modelSettings[item.value].apiKey"
+                  v-model.trim="modelSettings[item.value as keyof typeof modelSettings].apiKey"
                   class="w-full"
                 />
               </UFormField>
@@ -83,9 +105,9 @@ const toggleModel = (provider: string, modelValue: string) => {
               <!-- Selected Models -->
               <div class="mt-4">
                 <h3 class="text-sm font-semibold mb-2">Selected Models</h3>
-                <div v-if="modelSettings[item.value]?.models?.length > 0" class="flex flex-wrap gap-2">
+                <div v-if="modelSettings[item.value as keyof typeof modelSettings]?.models?.length > 0" class="flex flex-wrap gap-2">
                   <UBadge
-                    v-for="modelValue in modelSettings[item.value].models"
+                    v-for="modelValue in modelSettings[item.value as keyof typeof modelSettings].models"
                     :key="modelValue"
                     :label="modelRepo[item.value as keyof typeof modelRepo]?.find((m: any) => m.value === modelValue)?.label || modelValue"
                     color="primary"
@@ -104,11 +126,56 @@ const toggleModel = (provider: string, modelValue: string) => {
                     :key="model.value"
                     :label="model.label"
                     size="sm"
-                    :variant="modelSettings[item.value]?.models?.includes(model.value) ? 'solid' : 'outline'"
-                    @click="toggleModel(item.value, model.value)"
+                    :variant="modelSettings[item.value as keyof typeof modelSettings]?.models?.includes(model.value) ? 'solid' : 'outline'"
+                    @click="toggleModel(item.value as string, model.value)"
                   />
                 </div>
               </div>
+            </UForm>
+          </template>
+        </UTabs>
+        <h1 class="text-lg font-semibold">Code Agents</h1>
+        <UTabs
+          orientation="vertical"
+          variant="link"
+          class="w-full items-start"
+          :default-value="defaultCodeAgent"
+          :items="codeAgentItems"
+        >
+          <template #content="{ item }">
+            <UForm :state="codeAgentSettings" class="flex flex-col relative gap-4">
+              <div class="flex items-center justify-between">
+                <p class="text-center font-medium">{{ item.label }}</p>
+                <USwitch v-model="codeAgentSettings[item.value as CodeAgent].useCustomModel" label="Use custom model" />
+              </div>
+              
+              <UFormField label="Base URL" name="baseUrl">
+                <UInput
+                  v-model.trim="codeAgentSettings[item.value as CodeAgent].baseUrl"
+                  placeholder="https://api.example.com"
+                  class="w-full"
+                  :disabled="!codeAgentSettings[item.value as CodeAgent].useCustomModel"
+                />
+              </UFormField>
+              
+              <UFormField label="Model" name="model">
+                <UInput
+                  v-model.trim="codeAgentSettings[item.value as CodeAgent].model"
+                  placeholder="gpt-4, claude-3, etc."
+                  class="w-full"
+                  :disabled="!codeAgentSettings[item.value as CodeAgent].useCustomModel"
+                />
+              </UFormField>
+              
+              <UFormField label="API Key" name="apiKey">
+                <UInput
+                  v-model.trim="codeAgentSettings[item.value as CodeAgent].apiKey"
+                  type="password"
+                  placeholder="Your API key"
+                  class="w-full"
+                  :disabled="!codeAgentSettings[item.value as CodeAgent].useCustomModel"
+                />
+              </UFormField>
             </UForm>
           </template>
         </UTabs>
