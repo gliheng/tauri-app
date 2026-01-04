@@ -4,7 +4,14 @@
 
 <template>
   <div class="h-screen">
-    <CodeEditor />
+    <Suspense>
+      <CodeEditor cwd="/Users/juju/Develop/tauri-app" />
+      <template #fallback>
+        <div class="h-30 flex items-center justify-center">
+          <Spinner />
+        </div>
+      </template>
+    </Suspense>
   </div>
 </template>
 

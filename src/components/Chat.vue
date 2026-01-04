@@ -201,6 +201,7 @@ provide(MESSAGE_GRAPH, {
         v-model="input"
         :status="status"
         :style="{ width: viewWidth ? `${viewWidth}px` : '100%' }"
+        :addons="['model-select']"
         @submit="(data) => handleSubmit(undefined, data)"
         @stop="stop"
       />

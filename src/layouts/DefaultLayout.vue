@@ -7,25 +7,33 @@ import WindowHeader from "@/components/WindowHeader.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import Spinner from "@/components/Spinner.vue";
 import CodeEditor from "@/components/CodeEditor/CodeEditor.vue";
-import { isAppleDevice } from "@/utils/device";
+import { eventBus } from "@/utils/eventBus";
 
 const tabsStore = useTabsStore();
 const { showArtifactView } = storeToRefs(tabsStore);
 const artifactViewPanel = useTemplateRef("artifactViewPanel");
 const mountArtifactView = ref(false);
-if (isAppleDevice) {
-  watch(showArtifactView, (show) => {
-    if (show) {
-      if (!mountArtifactView.value) {
-        mountArtifactView.value = true;
-      } else if (artifactViewPanel.value!.isCollapsed) {
-        artifactViewPanel.value?.expand();
-      }
-    } else if (!artifactViewPanel.value!.isCollapsed) {
-      artifactViewPanel.value!.collapse();
+watch(showArtifactView, (show) => {
+  if (show) {
+    if (!mountArtifactView.value) {
+      mountArtifactView.value = true;
+    } else if (artifactViewPanel.value!.isCollapsed) {
+      artifactViewPanel.value?.expand();
     }
-  });
-}
+  } else if (!artifactViewPanel.value!.isCollapsed) {
+    artifactViewPanel.value!.collapse();
+  }
+});
+
+const currentArtifact = ref<{
+  type: string;
+  id: string;
+}>();
+eventBus.on('artifact', (msg: string) => {
+  const [type, id] = msg.split('::');
+  currentArtifact.value = { type, id };
+});
+
 </script>
 
 <template>
@@ -66,7 +74,17 @@ if (isAppleDevice) {
           @collapse="showArtifactView = false"
           @expand="showArtifactView = true"
         >
-          <CodeEditor />
+          <Suspense>
+            <CodeEditor
+              v-if="currentArtifact?.type === 'workspace'"
+              :cwd="currentArtifact.id"
+            />
+            <template #fallback>
+              <div class="h-30 flex items-center justify-center">
+                <Spinner />
+              </div>
+            </template>
+          </Suspense>
         </SplitterPanel>
       </template>
     </SplitterGroup>

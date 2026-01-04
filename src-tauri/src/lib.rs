@@ -31,6 +31,9 @@ pub fn run() {
             handlers::rename_file,
             handlers::delete_file,
             handlers::move_file,
+            handlers::terminal_create_session,
+            handlers::terminal_send_input,
+            handlers::terminal_kill_session,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

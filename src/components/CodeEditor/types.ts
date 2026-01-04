@@ -6,6 +6,7 @@ export enum FileEntryType {
 export interface FileEntry {
   name: string;
   type: FileEntryType;
+  path: string;
   content?: string;
   children?: FileEntry[];
 }

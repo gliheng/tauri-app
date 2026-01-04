@@ -152,12 +152,12 @@ export interface AgentCapabilities {
 export interface InitializeResult {
   protocolVersion: number;
   agentInfo: AgentInfo;
-  authMethods: AuthMethod[];
-  modes: {
+  agentCapabilities: AgentCapabilities;
+  authMethods?: AuthMethod[];
+  modes?: {
     currentModeId: string;
     availableModes: Mode[];
   };
-  agentCapabilities: AgentCapabilities;
 }
 
 export interface ACPServiceConfig {

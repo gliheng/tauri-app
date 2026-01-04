@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, inject, ref } from 'vue';
 import { FileEntryType, type FileEntry } from './types';
 import { TreeItem } from '@nuxt/ui';
+import { EDITOR_ACTIONS } from '@/constants';
 
 const model = defineModel<FileEntry[]>({ required: true });
 
@@ -19,6 +20,7 @@ function getIcon(name: string, isFolder: boolean, isLoading: boolean = false): s
   switch (ext) {
     case 'vue': return 'i-vscode-icons:file-type-vue';
     case 'ts': return 'i-vscode-icons:file-type-typescript';
+    case 'tsx': return 'i-vscode-icons:file-type-typescript';
     case 'js': return 'i-vscode-icons:file-type-js';
     case 'json': return 'i-vscode-icons:file-type-json';
     case 'md': return 'i-vscode-icons:file-type-markdown';
@@ -58,18 +60,7 @@ function findFileByPath(files: FileEntry[], segments: string[]): FileEntry | nul
   return found.children ? findFileByPath(found.children, rest) : null;
 }
 
-const defer = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function listFiles(path: string): Promise<FileEntry[]> {
-  // Mock API - replace with actual API call
-  console.log('Fetching files for:', path);
-  await defer(1000);
-  return [
-    { name: 'index.ts', content: '// index file', type: FileEntryType.File },
-    { name: 'utils.ts', content: '// utils file', type: FileEntryType.File },
-    { name: 'nested', type: FileEntryType.Folder },
-  ];
-}
+const { listFiles } = inject(EDITOR_ACTIONS);
 
 const items = computed(() => toTreeItems(model.value));
 
@@ -109,12 +100,14 @@ async function onToggle(e: Event, item: any) {
       <UButton size="sm" icon="i-lucide-file-plus" />
       <UButton size="sm" icon="i-lucide-folder-plus" />
     </header>
-    <UTree
-      class="flex-1 min-h-0"
-      v-model:expanded="expanded"
-      :get-key="e => e.value!"
-      :items="items"
-      @toggle="onToggle"
-    />
+    <div class="flex-1 min-h-0 overflow-auto">
+      <UTree
+        class="min-w-full w-fit"
+        v-model:expanded="expanded"
+        :get-key="e => e.value!"
+        :items="items"
+        @toggle="onToggle"
+      />
+    </div>
   </div>
 </template>

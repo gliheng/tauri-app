@@ -1,6 +1,6 @@
 use tauri::Emitter;
 use std::process::Stdio;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::sync::Mutex;
 use std::sync::Arc;
@@ -8,6 +8,8 @@ use std::collections::HashMap;
 use std::path::{Path};
 use std::fs;
 use serde::{Deserialize, Serialize};
+use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+use std::io::{Read, Write};
 
 // Global state to manage agent processes and callbacks
 static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::process::Child>>>> = 
@@ -16,7 +18,7 @@ static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::pro
 static LISTENING_TASKS: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>> = 
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct ModelSettings {
     #[serde(alias = "model")]
     model: String,
@@ -31,6 +33,7 @@ pub async fn acp_initialize(
     agent: &str,
     settings: Option<ModelSettings>,
 ) -> Result<serde_json::Value, serde_json::Value> {
+    println!("acp_initialize called with agent: {}, settings: {:?}", agent, settings);
     let agent_parts: Vec<&str> = agent.split("::").collect();
     let agent_name = agent_parts.first().unwrap_or(&agent);
     
@@ -50,9 +53,12 @@ pub async fn acp_initialize(
         args.push("@zed-industries/codex-acp".into());
         if let Some(ms) = settings {
             args.extend(["-c".into(), "model_provider=x".into(),
+                "-c".into(), "model_providers.x.name=x".into(),
                 "-c".into(), format!("model_providers.x.base_url={}", ms.base_url),
                 "-c".into(), "model_providers.x.env_key=X_API_KEY".into(),
-                "-m".into(), ms.model]);
+                "-c".into(), "model_provider=x".into(),
+                "-c".into(), format!("model={}", ms.model),
+            ]);
             env_vars.insert("X_API_KEY".into(), ms.api_key);
         }
     } else if *agent_name == "claude" {
@@ -77,6 +83,8 @@ pub async fn acp_initialize(
         }));
     }
     
+    // println!("Command args: {:?}", args);
+    // println!("Environment vars: {:?}", env_vars);
     let mut command = TokioCommand::new("bun");
     
     // Apply environment variables from the map
@@ -442,4 +450,117 @@ pub async fn move_file(from_path: &str, to_path: &str) -> Result<(), String> {
     
     fs::rename(from_path, to_path)
         .map_err(|e| format!("Failed to move file: {}", e))
+}
+
+struct TerminalSession {
+    writer: Box<dyn Write + Send>,
+}
+
+static TERMINAL_SESSIONS: std::sync::LazyLock<Arc<Mutex<HashMap<String, TerminalSession>>>> = 
+    std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
+
+#[tauri::command]
+pub async fn terminal_create_session(
+    terminal_id: String,
+    cwd: Option<String>,
+    window: tauri::Window,
+) -> Result<serde_json::Value, String> {
+    let pty_system = native_pty_system();
+    
+    let pair = pty_system
+        .openpty(PtySize {
+            rows: 24,
+            cols: 80,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .map_err(|e| format!("Failed to open pty: {}", e))?;
+
+    let shell = if cfg!(target_os = "windows") {
+        "cmd.exe".to_string()
+    } else {
+        std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string())
+    };
+
+    let mut cmd = CommandBuilder::new(&shell);
+    
+    if let Some(working_dir) = cwd {
+        cmd.cwd(working_dir);
+    }
+
+    let _child = pair.slave.spawn_command(cmd)
+        .map_err(|e| format!("Failed to spawn shell: {}", e))?;
+
+    let mut reader = pair.master.try_clone_reader()
+        .map_err(|e| format!("Failed to clone reader: {}", e))?;
+    
+    let writer = pair.master.take_writer()
+        .map_err(|e| format!("Failed to take writer: {}", e))?;
+
+    let terminal_id_clone = terminal_id.clone();
+    let window_clone = window;
+    
+    tokio::task::spawn_blocking(move || {
+        let event_name = format!("terminal_output::{}", terminal_id_clone);
+        let mut buffer = vec![0u8; 8192];
+        
+        loop {
+            match reader.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(n) => {
+                    let data = String::from_utf8_lossy(&buffer[..n]).to_string();
+                    let _ = window_clone.emit(&event_name, serde_json::json!({
+                        "type": "stdout",
+                        "data": data
+                    }));
+                }
+                Err(e) => {
+                    let _ = window_clone.emit(&event_name, serde_json::json!({
+                        "type": "error",
+                        "data": format!("Error reading output: {}", e)
+                    }));
+                    break;
+                }
+            }
+        }
+    });
+
+    let session = TerminalSession {
+        writer,
+    };
+
+    let mut sessions = TERMINAL_SESSIONS.lock().await;
+    sessions.insert(terminal_id, session);
+
+    Ok(serde_json::json!({
+        "success": true
+    }))
+}
+
+#[tauri::command]
+pub async fn terminal_send_input(
+    terminal_id: String,
+    input: String,
+) -> Result<serde_json::Value, String> {
+    let mut sessions = TERMINAL_SESSIONS.lock().await;
+    
+    let session = sessions.get_mut(&terminal_id)
+        .ok_or_else(|| format!("Terminal session {} not found", terminal_id))?;
+
+    session.writer.write_all(input.as_bytes())
+        .map_err(|e| format!("Failed to write to pty: {}", e))?;
+    
+    session.writer.flush()
+        .map_err(|e| format!("Failed to flush pty: {}", e))?;
+
+    Ok(serde_json::json!({
+        "success": true
+    }))
+}
+
+#[tauri::command]
+pub async fn terminal_kill_session(terminal_id: String) -> Result<(), String> {
+    let mut sessions = TERMINAL_SESSIONS.lock().await;
+    sessions.remove(&terminal_id);
+    Ok(())
 }

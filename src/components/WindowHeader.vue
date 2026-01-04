@@ -4,7 +4,6 @@ import { isTauri } from "@tauri-apps/api/core";
 import Tabs from "@/components/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
 import { storeToRefs } from "pinia";
-import { isAppleDevice } from "@/utils/device";
 
 const tauri = isTauri();
 const platform = navigator.platform;
@@ -53,22 +52,11 @@ function toggleArtifactView() {
           </UModal>
           <ThemeSwitcher />
           <UButton
-            v-if="isAppleDevice"
             :icon="showArtifactView ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
             color="neutral"
             variant="ghost"
             @click="toggleArtifactView"
           />
-          <UDrawer v-else inset direction="right" :overlay="false" v-model:open="showArtifactView">
-            <UButton
-              :icon="showArtifactView ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
-              color="neutral"
-              variant="ghost"
-            />
-            <template #body>
-              <div class="p-4">Artifact View Content</div>
-            </template>
-          </UDrawer>
         </slot>
       </template>
     </Tabs>

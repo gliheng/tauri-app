@@ -1,21 +1,29 @@
 <script setup lang="ts">
+import { onActivated } from "vue";
 import { useRoute } from "vue-router";
-import { getChat, getAgent } from "@/db";
+import { getChat, getAgent, Agent } from "@/db";
 import ChatView from "@/components/Chat.vue";
 import AgentChat from "@/components/AgentChat/AgentChat.vue";
+import { eventBus } from "@/utils/eventBus";
 
 const route = useRoute();
 const chatId = route.params.id as string;
 const chat = await getChat(chatId);
 
 const agentId = chat?.agentId ?? sessionStorage.getItem('chat-agent::' + chatId);
-let agent;
+let agent: Agent | null;
 if (agentId) {
   agent = await getAgent(agentId);
   if (!agent) {
     throw new Error("Agent not found");
   }
 }
+
+onActivated(() => {
+  if (agent) {
+    eventBus.emit('artifact', 'workspace::' + agent.directory);
+  }
+});
 
 </script>
 

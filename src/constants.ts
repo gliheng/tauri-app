@@ -6,3 +6,5 @@ export const MESSAGE_GRAPH = Symbol("message-graph") as InjectionKey<{
   select: (id: string, i: number) => void;
 }>;
 export const ROOT_NODE_ID = "__root";
+
+export const EDITOR_ACTIONS = Symbol("editor-actions");

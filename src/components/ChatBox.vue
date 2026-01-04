@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, PropType } from "vue";
 import { Attachment } from "ai";
 import { file2DataUrl } from "@/utils/file";
 import { useSettingsStore } from "@/stores/settings";
@@ -7,6 +7,10 @@ import FileImage from "./FileImage.vue";
 
 const props = defineProps({
   status: String,
+  addons: {
+    type: Array as PropType<string[]>,
+    required: false,
+  },
 });
 
 const input = defineModel<string>();
@@ -97,7 +101,9 @@ function appendFiles(newFiles: FileList) {
         @mousedown.prevent
       >
         <UploadButton @select-file="appendFiles" />
-        <ModelSelector />
+        <template v-for="addon of addons">
+          <ModelSelector v-if="addon == 'model-select'" key="model-select" />
+        </template>
         <div class="flex-1"></div>
         <UButton
           v-if="streaming"

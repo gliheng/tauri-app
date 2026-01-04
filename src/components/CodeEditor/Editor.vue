@@ -6,7 +6,7 @@ import { EditorState } from '@codemirror/state'
 
 interface Props {
   modelValue: string
-  language?: 'py' | 'js' | 'json'
+  language?: 'py' | 'js' | 'ts' | 'tsx' | 'json'
   theme?: 'light' | 'dark'
   height?: string
   readonly?: boolean
@@ -34,6 +34,12 @@ const getLanguageExtension = async () => {
     case 'js':
       const jsLang = await import('@codemirror/lang-javascript')
       return jsLang.javascript({ typescript: false })
+    case 'ts':
+      const tsLang = await import('@codemirror/lang-javascript')
+      return tsLang.javascript({ typescript: true })
+    case 'tsx':
+      const tsxLang = await import('@codemirror/lang-javascript')
+      return tsxLang.javascript({ typescript: true, jsx: true })
     case 'json':
       const jsonLang = await import('@codemirror/lang-json')
       return jsonLang.json()
