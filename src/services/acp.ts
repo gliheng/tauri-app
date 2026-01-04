@@ -230,13 +230,17 @@ export class ACPService {
         } else if (type == 'message') {
           console.debug('Received acp_message', JSON.parse(message));
           const { id, result, error, method, params } = JSON.parse(message);
+          // Remote initiated rpc call
           if (method) {
             const ret = await this.config.onInvoke?.(method, params);
-            this.send({
-              id,
-              result: ret,
-            });
+            if (id !== undefined) {
+              this.send({
+                id,
+                result: ret,
+              });
+            }
           } else if (typeof id == 'number') {
+            // Local initiated rpc call response
             if (error) {
               this.pendingCalls[id].reject(error);
             } else {
@@ -287,6 +291,10 @@ export class ACPService {
   }
 
   async send(payload: Record<string, any>): Promise<any> {
+    if (Object.keys(payload).length == 2 && payload.id === undefined) {
+      debugger;
+    }
+    console.log('Send message', payload);
     await invoke("acp_send_message", {
       agent: this.config.program,
       message: {
