@@ -17,10 +17,6 @@
       ]
     },
     "fs:default",
-    {
-      "identifier": "fs:scope",
-      "allow": [{ "path": "**/*" }]
-    },
     "core:window:default",
     "core:window:allow-minimize",
     "core:window:allow-maximize",

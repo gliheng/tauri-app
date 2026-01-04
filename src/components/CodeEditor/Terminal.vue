@@ -66,14 +66,11 @@ onMounted(async () => {
   terminal.open(terminalRef.value);
   fitAddon.fit();
 
-  terminal.writeln('\x1b[1;36mWelcome to Raven Terminal\x1b[0m');
-  terminal.writeln('');
-
+  // terminal.writeln('\x1b[1;36mWelcome to Raven Terminal\x1b[0m');
   unlisten = await listen(`terminal_output::${terminalId}`, (event: any) => {
     if (!terminal) return;
     
     const { type, data } = event.payload;
-    
     if (type === 'stdout' || type === 'stderr') {
       terminal.write(data);
     } else if (type === 'error') {

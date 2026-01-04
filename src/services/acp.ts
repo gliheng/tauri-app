@@ -232,12 +232,10 @@ export class ACPService {
           const { id, result, error, method, params } = JSON.parse(message);
           if (method) {
             const ret = await this.config.onInvoke?.(method, params);
-            if (ret) {
-              this.send({
-                id,
-                result: ret,
-              });
-            }
+            this.send({
+              id,
+              result: ret,
+            });
           } else if (typeof id == 'number') {
             if (error) {
               this.pendingCalls[id].reject(error);

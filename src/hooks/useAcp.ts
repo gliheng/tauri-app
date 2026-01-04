@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { ACPService, ACPMethod, ToolCallUpdate } from "@/services/acp";
-import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-import { getCodeAgentConfig, getModelConfig } from "@/llm";
+import { invoke } from '@tauri-apps/api/core';
+import { getCodeAgentConfig } from "@/llm";
 import { Agent } from "@/db";
 import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
 
@@ -158,7 +158,7 @@ export function useAcp(chatId: string, agent: Agent) {
       } else if (method === ACPMethod.FsReadTextFile) {
         const { path, line, limit } = params as { path: string; line?: number; limit?: number };
         try {
-          let content = await readTextFile(path);
+          let content = await invoke<string>('read_file', { path });
           // If line and limit are specified, extract the specific lines
           if (line !== undefined) {
             const lines = content.split('\n');
@@ -179,7 +179,7 @@ export function useAcp(chatId: string, agent: Agent) {
       } else if (method === ACPMethod.FsWriteTextFile) {
         const { path, content } = params as { path: string; content: string };
         try {
-          await writeTextFile(path, content);
+          await invoke('write_file', { path, content });
         } catch(e) {
           console.error(e);
         }
