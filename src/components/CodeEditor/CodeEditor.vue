@@ -103,8 +103,8 @@ const showTerminal = ref(false);
       <div class="flex flex-col h-full">
         <SplitterGroup direction="vertical" class="flex-1">
           <SplitterPanel :default-size="60">
-            <header class="p-1 border-b border-gray-200 h-10 flex items-center">
-              <h2 class="text-sm font-medium">{{ file?.name }}</h2>
+            <header class="p-1 border-b border-gray-200 h-10 flex items-center" data-tauri-drag-region>
+              <h2 class="text-sm font-medium truncate">{{ file?.name }}</h2>
               <div class="flex-1"></div>
               <UButton size="sm" icon="i-lucide-square-terminal" @click="showTerminal = !showTerminal" />
             </header>
