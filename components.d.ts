@@ -11,7 +11,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    Agent: typeof import('./src/components/Agent.vue')['default']
     AgentChat: typeof import('./src/components/AgentChat/AgentChat.vue')['default']
     AgentConfig: typeof import('./src/components/AgentChat/AgentConfig.vue')['default']
     AgentSessionList: typeof import('./src/components/AgentSessionList.vue')['default']
@@ -22,7 +21,6 @@ declare module 'vue' {
     Editor: typeof import('./src/components/CodeEditor/Editor.vue')['default']
     FileImage: typeof import('./src/components/FileImage.vue')['default']
     FileTree: typeof import('./src/components/CodeEditor/FileTree.vue')['default']
-    Hello: typeof import('./src/components/Hello.vue')['default']
     IconEdit: typeof import('./src/components/IconEdit.vue')['default']
     MarkdownText: typeof import('./src/components/MarkdownText.vue')['default']
     MessageBubble: typeof import('./src/components/AgentChat/MessageBubble.vue')['default']
@@ -36,7 +34,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Scrollbar: typeof import('./src/components/Scrollbar.vue')['default']
-    SessionList: typeof import('./src/components/SessionList.vue')['default']
     Settings: typeof import('./src/components/Settings.vue')['default']
     Sidebar: typeof import('./src/components/Sidebar.vue')['default']
     Spinner: typeof import('./src/components/Spinner.vue')['default']
@@ -52,7 +49,6 @@ declare module 'vue' {
     UCard: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_c36bb5c124a7c6c156698acedee7aac4/node_modules/@nuxt/ui/dist/runtime/components/Card.vue')['default']
     UCollapsible: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_c36bb5c124a7c6c156698acedee7aac4/node_modules/@nuxt/ui/dist/runtime/components/Collapsible.vue')['default']
     UCommandPalette: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_c36bb5c124a7c6c156698acedee7aac4/node_modules/@nuxt/ui/dist/runtime/components/CommandPalette.vue')['default']
-    UDrawer: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_c36bb5c124a7c6c156698acedee7aac4/node_modules/@nuxt/ui/dist/runtime/components/Drawer.vue')['default']
     UDropdownMenu: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_c36bb5c124a7c6c156698acedee7aac4/node_modules/@nuxt/ui/dist/runtime/components/DropdownMenu.vue')['default']
     UFieldGroup: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_c36bb5c124a7c6c156698acedee7aac4/node_modules/@nuxt/ui/dist/runtime/components/FieldGroup.vue')['default']
     UForm: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_c36bb5c124a7c6c156698acedee7aac4/node_modules/@nuxt/ui/dist/runtime/components/Form.vue')['default']
@@ -71,6 +67,5 @@ declare module 'vue' {
     UTree: typeof import('./node_modules/.pnpm/@nuxt+ui@4.3.0_@babel+parser@7.28.0_@floating-ui+dom@1.7.2_@tiptap+extension-drag-handl_c36bb5c124a7c6c156698acedee7aac4/node_modules/@nuxt/ui/dist/runtime/components/Tree.vue')['default']
     WindowControls: typeof import('./src/components/WindowControls.vue')['default']
     WindowHeader: typeof import('./src/components/WindowHeader.vue')['default']
-    WorkspaceEditor: typeof import('./src/components/CodeEditor/WorkspaceEditor.vue')['default']
   }
 }
