@@ -18,7 +18,19 @@ export function getModel(model?: string) {
     return createOpenAICompatible({
       name: 'silliconflow',
       apiKey,
-      baseURL: 'https://api.siliconflow.cn/v1',
+      baseURL: getProviderBaseUrl('silliconflow'),
+    })(name);
+  } else if (provider == "zai") {
+    return createOpenAICompatible({
+      name: 'zai',
+      apiKey,
+      baseURL: getProviderBaseUrl('zai'),
+    })(name);
+  } else if (provider == "minimax") {
+    return createOpenAICompatible({
+      name: 'minimax',
+      apiKey,
+      baseURL: getProviderBaseUrl('minimax'),
     })(name);
   }
 

@@ -34,6 +34,11 @@ pub fn run() {
             handlers::terminal_create_session,
             handlers::terminal_send_input,
             handlers::terminal_kill_session,
+            handlers::acp_terminal_create,
+            handlers::acp_terminal_output,
+            handlers::acp_terminal_wait_for_exit,
+            handlers::acp_terminal_kill,
+            handlers::acp_terminal_release,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

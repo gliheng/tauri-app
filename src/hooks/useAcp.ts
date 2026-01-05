@@ -143,18 +143,57 @@ export function useAcp(chatId: string, agent: Agent) {
           }
         }
       } else if (method === ACPMethod.TerminalCreate) {
-        return {
-          terminalId: '',
+        const { sessionId, command, args, env, cwd, outputByteLimit } = params as {
+          sessionId: string;
+          command: string;
+          args?: string[];
+          env?: { name: string; value: string; }[];
+          cwd?: string;
+          outputByteLimit?: number;
         };
+        
+        const result = await invoke<{ terminalId: string }>('acp_terminal_create', {
+          sessionId,
+          command,
+          args,
+          env,
+          cwd,
+          outputByteLimit,
+        });
+        
+        return result;
       } else if (method === ACPMethod.TerminalOutput) {
-        return {
-          output: "Running tests...\n✓ All tests passed (42 total)\n",
-          truncated: false,
-          exitStatus: {
-            exitCode: 0,
-            signal: null
-          }
-        };
+        const { sessionId, terminalId } = params as { sessionId: string; terminalId: string };
+        
+        const result = await invoke<{
+          output: string;
+          truncated: boolean;
+          exitStatus?: { exitCode: number | null; signal: string | null };
+        }>('acp_terminal_output', {
+          sessionId,
+          terminalId,
+        });
+        
+        return result;
+      } else if (method === ACPMethod.TerminalWaitForExit) {
+        const { sessionId, terminalId } = params as { sessionId: string; terminalId: string };
+        
+        const result = await invoke<{ exitCode: number | null; signal: string | null }>(
+          'acp_terminal_wait_for_exit',
+          { sessionId, terminalId }
+        );
+        
+        return result;
+      } else if (method === ACPMethod.TerminalKill) {
+        const { sessionId, terminalId } = params as { sessionId: string; terminalId: string };
+        
+        await invoke('acp_terminal_kill', { sessionId, terminalId });
+        return;
+      } else if (method === ACPMethod.TerminalRelease) {
+        const { sessionId, terminalId } = params as { sessionId: string; terminalId: string };
+        
+        await invoke('acp_terminal_release', { sessionId, terminalId });
+        return;
       } else if (method === ACPMethod.FsReadTextFile) {
         const { path, line, limit } = params as { path: string; line?: number; limit?: number };
         try {

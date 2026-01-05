@@ -124,6 +124,7 @@ const handleSubmit = async () => {
       })();
     }
 
+    status.value = 'submitted';
     const ret = await acpService.sessionPrompt(part)
     console.log('sessionPrompt result', ret);
     
@@ -166,7 +167,7 @@ onUnmounted(() => {
         }"
       />
       <div class="flex-1 overflow-y-auto min-h-0 flex">
-        <MessageList :messages="messages" />
+        <MessageList :messages="messages" :status="status" />
       </div>
       <ChatBox
         :style="{ width: '100%' }"

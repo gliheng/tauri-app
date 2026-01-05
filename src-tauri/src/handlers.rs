@@ -566,3 +566,235 @@ pub async fn terminal_kill_session(terminal_id: String) -> Result<(), String> {
     sessions.remove(&terminal_id);
     Ok(())
 }
+
+// ACP Terminal management structures
+struct ACPTerminal {
+    child: tokio::process::Child,
+    output: Arc<Mutex<String>>,
+    truncated: bool,
+    exit_status: Arc<Mutex<Option<(Option<i32>, Option<String>)>>>,
+    output_byte_limit: usize,
+}
+
+static ACP_TERMINALS: std::sync::LazyLock<Arc<Mutex<HashMap<String, ACPTerminal>>>> = 
+    std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
+
+// ACP Terminal RPC Methods
+
+#[derive(Deserialize)]
+pub struct EnvVar {
+    name: String,
+    value: String,
+}
+
+#[tauri::command]
+pub async fn acp_terminal_create(
+    session_id: String,
+    command: String,
+    args: Option<Vec<String>>,
+    env: Option<Vec<EnvVar>>,
+    cwd: Option<String>,
+    output_byte_limit: Option<usize>,
+) -> Result<serde_json::Value, serde_json::Value> {
+    let terminal_id = format!("{}_{}", session_id, nanoid::nanoid!());
+    let byte_limit = output_byte_limit.unwrap_or(1024 * 1024); // Default 1MB
+    
+    let mut cmd = TokioCommand::new(&command);
+    
+    if let Some(arguments) = args {
+        cmd.args(&arguments);
+    }
+    
+    if let Some(env_vars) = env {
+        for var in env_vars {
+            cmd.env(&var.name, &var.value);
+        }
+    }
+    
+    if let Some(working_dir) = cwd {
+        cmd.current_dir(working_dir);
+    }
+    
+    cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
+    
+    let mut child = cmd.spawn()
+        .map_err(|e| serde_json::json!({
+            "code": -32000,
+            "message": format!("Failed to spawn command: {}", e)
+        }))?;
+    
+    let output = Arc::new(Mutex::new(String::new()));
+    let exit_status = Arc::new(Mutex::new(None));
+    
+    // Capture stdout
+    if let Some(stdout) = child.stdout.take() {
+        let output_clone = output.clone();
+        let limit = byte_limit;
+        
+        tokio::spawn(async move {
+            let mut reader = AsyncBufReader::new(stdout);
+            let mut buffer = Vec::new();
+            
+            match reader.read_to_end(&mut buffer).await {
+                Ok(_) => {
+                    let mut output_lock = output_clone.lock().await;
+                    let text = String::from_utf8_lossy(&buffer[..buffer.len().min(limit)]).to_string();
+                    output_lock.push_str(&text);
+                }
+                Err(e) => {
+                    eprintln!("Error reading stdout: {}", e);
+                }
+            }
+        });
+    }
+    
+    // Capture stderr
+    if let Some(stderr) = child.stderr.take() {
+        let output_clone = output.clone();
+        let limit = byte_limit;
+        
+        tokio::spawn(async move {
+            let mut reader = AsyncBufReader::new(stderr);
+            let mut buffer = Vec::new();
+            
+            match reader.read_to_end(&mut buffer).await {
+                Ok(_) => {
+                    let mut output_lock = output_clone.lock().await;
+                    let text = String::from_utf8_lossy(&buffer[..buffer.len().min(limit)]).to_string();
+                    output_lock.push_str(&text);
+                }
+                Err(e) => {
+                    eprintln!("Error reading stderr: {}", e);
+                }
+            }
+        });
+    }
+    
+    // Monitor exit status
+    let exit_status_clone = exit_status.clone();
+    tokio::spawn(async move {
+        match child.wait().await {
+            Ok(status) => {
+                let mut exit_lock = exit_status_clone.lock().await;
+                // Signal is Unix-specific, so we don't use it for cross-platform compatibility
+                *exit_lock = Some((status.code(), None));
+            }
+            Err(e) => {
+                eprintln!("Error waiting for child: {}", e);
+            }
+        }
+    });
+    
+    let terminal = ACPTerminal {
+        child: TokioCommand::new("sleep").arg("0").spawn().unwrap(), // Placeholder
+        output,
+        truncated: false,
+        exit_status,
+        output_byte_limit: byte_limit,
+    };
+    
+    let mut terminals = ACP_TERMINALS.lock().await;
+    terminals.insert(terminal_id.clone(), terminal);
+    
+    Ok(serde_json::json!({
+        "terminalId": terminal_id
+    }))
+}
+
+#[tauri::command]
+pub async fn acp_terminal_output(
+    _session_id: String,
+    terminal_id: String,
+) -> Result<serde_json::Value, serde_json::Value> {
+    let terminals = ACP_TERMINALS.lock().await;
+    
+    let terminal = terminals.get(&terminal_id)
+        .ok_or_else(|| serde_json::json!({
+            "code": -32000,
+            "message": format!("Terminal {} not found", terminal_id)
+        }))?;
+    
+    let output = terminal.output.lock().await.clone();
+    let exit_status_lock = terminal.exit_status.lock().await;
+    let truncated = output.len() >= terminal.output_byte_limit;
+    
+    let mut result = serde_json::json!({
+        "output": output,
+        "truncated": truncated
+    });
+    
+    if let Some((exit_code, signal)) = exit_status_lock.as_ref() {
+        result["exitStatus"] = serde_json::json!({
+            "exitCode": exit_code,
+            "signal": signal
+        });
+    }
+    
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn acp_terminal_wait_for_exit(
+    _session_id: String,
+    terminal_id: String,
+) -> Result<serde_json::Value, serde_json::Value> {
+    let terminals = ACP_TERMINALS.lock().await;
+    
+    let terminal = terminals.get(&terminal_id)
+        .ok_or_else(|| serde_json::json!({
+            "code": -32000,
+            "message": format!("Terminal {} not found", terminal_id)
+        }))?;
+    
+    let exit_status = terminal.exit_status.clone();
+    drop(terminals);
+    
+    // Poll for exit status
+    for _ in 0..300 { // Wait up to 30 seconds
+        let status_lock = exit_status.lock().await;
+        if let Some((exit_code, signal)) = status_lock.as_ref() {
+            return Ok(serde_json::json!({
+                "exitCode": exit_code,
+                "signal": signal
+            }));
+        }
+        drop(status_lock);
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    }
+    
+    // Timeout
+    Ok(serde_json::json!({
+        "exitCode": null,
+        "signal": null
+    }))
+}
+
+#[tauri::command]
+pub async fn acp_terminal_kill(
+    _session_id: String,
+    terminal_id: String,
+) -> Result<(), serde_json::Value> {
+    let mut terminals = ACP_TERMINALS.lock().await;
+    
+    if let Some(terminal) = terminals.get_mut(&terminal_id) {
+        let _ = terminal.child.kill().await;
+        Ok(())
+    } else {
+        Err(serde_json::json!({
+            "code": -32000,
+            "message": format!("Terminal {} not found", terminal_id)
+        }))
+    }
+}
+
+#[tauri::command]
+pub async fn acp_terminal_release(
+    _session_id: String,
+    terminal_id: String,
+) -> Result<(), serde_json::Value> {
+    let mut terminals = ACP_TERMINALS.lock().await;
+    terminals.remove(&terminal_id);
+    Ok(())
+}

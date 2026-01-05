@@ -13,7 +13,7 @@ const tabItems = [
   {
     label: "MCP",
     icon: "i-mdi-server",
-    description: '',
+    description: "",
     slot: "mcp" as const,
   },
 ] satisfies TabsItem[];
@@ -24,12 +24,12 @@ const providerItems = [
     value: "deepseek",
   },
   {
-    label: 'Minimax',
-    value: 'minimax'
+    label: "Minimax",
+    value: "minimax",
   },
   {
-    label: 'Z.AI',
-    value: 'zai'
+    label: "Z.AI",
+    value: "zai",
   },
   {
     label: "OpenRouter",
@@ -41,28 +41,28 @@ const providerItems = [
   },
 ] satisfies TabsItem[];
 
-const defaultProvider = 'deepseek';
+const defaultProvider = "deepseek";
 
 const codeAgentItems = [
   {
-    label: 'Codex',
-    value: 'codex',
+    label: "Codex",
+    value: "codex",
   },
   {
-    label: 'Gemini',
-    value: 'gemini',
+    label: "Gemini",
+    value: "gemini",
   },
   {
-    label: 'Claude',
-    value: 'claude',
+    label: "Claude",
+    value: "claude",
   },
   {
-    label: 'Qwen',
-    value: 'qwen',
+    label: "Qwen",
+    value: "qwen",
   },
 ] satisfies TabsItem[];
 
-const defaultCodeAgent = 'codex';
+const defaultCodeAgent = "codex";
 
 const { modelSettings, codeAgentSettings } = storeToRefs(useSettingsStore());
 
@@ -97,7 +97,10 @@ const toggleModel = (provider: string, modelValue: string) => {
               <p class="text-center">{{ item.label }}</p>
               <UFormField label="Api Key" name="apiKey">
                 <UInput
-                  v-model.trim="modelSettings[item.value as keyof typeof modelSettings].apiKey"
+                  v-model.trim="
+                    modelSettings[item.value as keyof typeof modelSettings]
+                      .apiKey
+                  "
                   class="w-full"
                 />
               </UFormField>
@@ -105,11 +108,23 @@ const toggleModel = (provider: string, modelValue: string) => {
               <!-- Selected Models -->
               <div class="mt-4">
                 <h3 class="text-sm font-semibold mb-2">Selected Models</h3>
-                <div v-if="modelSettings[item.value as keyof typeof modelSettings]?.models?.length > 0" class="flex flex-wrap gap-2">
+                <div
+                  v-if="
+                    modelSettings[item.value as keyof typeof modelSettings]
+                      ?.models?.length > 0
+                  "
+                  class="flex flex-wrap gap-2"
+                >
                   <UBadge
-                    v-for="modelValue in modelSettings[item.value as keyof typeof modelSettings].models"
+                    v-for="modelValue in modelSettings[
+                      item.value as keyof typeof modelSettings
+                    ].models"
                     :key="modelValue"
-                    :label="modelRepo[item.value as keyof typeof modelRepo]?.find((m: any) => m.value === modelValue)?.label || modelValue"
+                    :label="
+                      modelRepo[item.value as keyof typeof modelRepo]?.find(
+                        (m: any) => m.value === modelValue,
+                      )?.label || modelValue
+                    "
                     color="primary"
                     variant="subtle"
                   />
@@ -122,11 +137,19 @@ const toggleModel = (provider: string, modelValue: string) => {
                 <h3 class="text-sm font-semibold mb-2">Available Models</h3>
                 <div class="flex flex-wrap gap-2">
                   <UButton
-                    v-for="model in modelRepo[item.value as keyof typeof modelRepo]"
+                    v-for="model in modelRepo[
+                      item.value as keyof typeof modelRepo
+                    ]"
                     :key="model.value"
                     :label="model.label"
                     size="sm"
-                    :variant="modelSettings[item.value as keyof typeof modelSettings]?.models?.includes(model.value) ? 'solid' : 'outline'"
+                    :variant="
+                      modelSettings[
+                        item.value as keyof typeof modelSettings
+                      ]?.models?.includes(model.value)
+                        ? 'solid'
+                        : 'outline'
+                    "
                     @click="toggleModel(item.value as string, model.value)"
                   />
                 </div>
@@ -143,37 +166,56 @@ const toggleModel = (provider: string, modelValue: string) => {
           :items="codeAgentItems"
         >
           <template #content="{ item }">
-            <UForm :state="codeAgentSettings" class="flex flex-col relative gap-4">
+            <UForm
+              :state="codeAgentSettings"
+              class="flex flex-col relative gap-4"
+            >
               <div class="flex items-center justify-between">
                 <p class="text-center font-medium">{{ item.label }}</p>
-                <USwitch v-model="codeAgentSettings[item.value as CodeAgent].useCustomModel" label="Use custom model" />
+                <USwitch
+                  v-model="
+                    codeAgentSettings[item.value as CodeAgent].useCustomModel
+                  "
+                  label="Use custom model"
+                />
               </div>
-              
+
               <UFormField label="Base URL" name="baseUrl">
                 <UInput
-                  v-model.trim="codeAgentSettings[item.value as CodeAgent].baseUrl"
+                  v-model.trim="
+                    codeAgentSettings[item.value as CodeAgent].baseUrl
+                  "
                   placeholder="https://api.example.com"
                   class="w-full"
-                  :disabled="!codeAgentSettings[item.value as CodeAgent].useCustomModel"
+                  :disabled="
+                    !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                  "
                 />
               </UFormField>
-              
+
               <UFormField label="Model" name="model">
                 <UInput
-                  v-model.trim="codeAgentSettings[item.value as CodeAgent].model"
+                  v-model.trim="
+                    codeAgentSettings[item.value as CodeAgent].model
+                  "
                   placeholder="gpt-4, claude-3, etc."
                   class="w-full"
-                  :disabled="!codeAgentSettings[item.value as CodeAgent].useCustomModel"
+                  :disabled="
+                    !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                  "
                 />
               </UFormField>
-              
+
               <UFormField label="API Key" name="apiKey">
                 <UInput
-                  v-model.trim="codeAgentSettings[item.value as CodeAgent].apiKey"
-                  type="password"
+                  v-model.trim="
+                    codeAgentSettings[item.value as CodeAgent].apiKey
+                  "
                   placeholder="Your API key"
                   class="w-full"
-                  :disabled="!codeAgentSettings[item.value as CodeAgent].useCustomModel"
+                  :disabled="
+                    !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                  "
                 />
               </UFormField>
             </UForm>
@@ -183,9 +225,7 @@ const toggleModel = (provider: string, modelValue: string) => {
     </template>
     <template #mcp>
       <div class="mx-4 mb-4 flex flex-col gap-2">
-        <p class="text-muted">
-          Configure MCP servers
-        </p>
+        <p class="text-muted">Configure MCP servers</p>
       </div>
     </template>
   </UTabs>

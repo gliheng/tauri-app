@@ -8,6 +8,7 @@ const props = defineProps({
     type: Array as PropType<any[]>,
     default: () => [],
   },
+  status: String,
 });
 </script>
 
@@ -20,6 +21,14 @@ const props = defineProps({
         v-for="message in messages"
         :key="message.id"
         v-bind="message"
+      />
+      <MessageBubble
+        v-if="status == 'submitted' || status == 'streaming'"
+        key="thinking"
+        id="thinking"
+        role="assistant"
+        content="Thinking ..."
+        loading
       />
     </div>
   </Scrollbar>
