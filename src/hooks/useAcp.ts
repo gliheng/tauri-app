@@ -274,21 +274,29 @@ function appendSessionUpdate(
     });
   } else if (sessionUpdate == 'tool_call') {
     // Handle new tool call creation
-    const msg: Message = {
-      id: String(messages.length),
-      role: "assistant",
-      content: rest.title,
-      parts: [
-        {
-          type: 'tool_call',
-          ...rest,
-        } as ToolCallPart,
-      ],
-    };
-    context.toolCallMap.set(rest.toolCallId, msg);
-    messages.push(msg);
+    const existingMsg = context.toolCallMap.get(rest.toolCallId);
+    if (existingMsg) {
+      // Update existing tool call message
+      // Claude code sends two tool_call message! Bug?
+      const part = existingMsg.parts[0] as ToolCallPart;
+      Object.assign(part, rest);
+    } else {
+      const msg: Message = {
+        id: String(messages.length),
+        role: "assistant",
+        content: rest.title,
+        parts: [
+          {
+            type: 'tool_call',
+            ...rest,
+          } as ToolCallPart,
+        ],
+      };
+      context.toolCallMap.set(rest.toolCallId, msg);
+      messages.push(msg);
+    }
   } else if (sessionUpdate == 'tool_call_update') {
-    // update previous tool call message
+    // Update previous tool call message
     const existingMsg = context.toolCallMap.get(rest.toolCallId);
     if (existingMsg) {
       // Update existing tool call message

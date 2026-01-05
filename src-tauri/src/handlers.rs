@@ -68,6 +68,7 @@ pub async fn acp_initialize(
             env_vars.insert("ANTHROPIC_MODEL".into(), ms.model);
             env_vars.insert("ANTHROPIC_AUTH_TOKEN".into(), ms.api_key);
             env_vars.insert("API_TIMEOUT_MS".into(), "600000".into());
+            env_vars.insert("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".into(), "1".into());
         }
     } else if *agent_name == "gemini" {
         args.push("@google/gemini-cli".into());
