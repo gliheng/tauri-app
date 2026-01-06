@@ -53,6 +53,7 @@ pub fn run() {
             handlers::move_file,
             handlers::terminal_create_session,
             handlers::terminal_send_input,
+            handlers::terminal_resize,
             handlers::terminal_kill_session,
             handlers::acp_terminal_create,
             handlers::acp_terminal_output,

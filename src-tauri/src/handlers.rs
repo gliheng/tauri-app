@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::path::{Path};
 use std::fs;
 use serde::{Deserialize, Serialize};
-use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
 use std::io::{Read, Write};
 
 // Global state to manage agent processes and callbacks
@@ -459,6 +459,7 @@ pub async fn move_file(from_path: &str, to_path: &str) -> Result<(), String> {
 
 struct TerminalSession {
     writer: Box<dyn Write + Send>,
+    master: Box<dyn MasterPty + Send>,
 }
 
 static TERMINAL_SESSIONS: std::sync::LazyLock<Arc<Mutex<HashMap<String, TerminalSession>>>> = 
@@ -468,14 +469,16 @@ static TERMINAL_SESSIONS: std::sync::LazyLock<Arc<Mutex<HashMap<String, Terminal
 pub async fn terminal_create_session(
     terminal_id: String,
     cwd: Option<String>,
+    cols: Option<u16>,
+    rows: Option<u16>,
     window: tauri::Window,
 ) -> Result<serde_json::Value, String> {
     let pty_system = native_pty_system();
     
     let pair = pty_system
         .openpty(PtySize {
-            rows: 24,
-            cols: 80,
+            rows: rows.unwrap_or(24),
+            cols: cols.unwrap_or(80),
             pixel_width: 0,
             pixel_height: 0,
         })
@@ -535,6 +538,7 @@ pub async fn terminal_create_session(
 
     let session = TerminalSession {
         writer,
+        master: pair.master,
     };
 
     let mut sessions = TERMINAL_SESSIONS.lock().await;
@@ -560,6 +564,29 @@ pub async fn terminal_send_input(
     
     session.writer.flush()
         .map_err(|e| format!("Failed to flush pty: {}", e))?;
+
+    Ok(serde_json::json!({
+        "success": true
+    }))
+}
+
+#[tauri::command]
+pub async fn terminal_resize(
+    terminal_id: String,
+    cols: u16,
+    rows: u16,
+) -> Result<serde_json::Value, String> {
+    let sessions = TERMINAL_SESSIONS.lock().await;
+    
+    let session = sessions.get(&terminal_id)
+        .ok_or_else(|| format!("Terminal session {} not found", terminal_id))?;
+
+    session.master.resize(PtySize {
+        rows,
+        cols,
+        pixel_width: 0,
+        pixel_height: 0,
+    }).map_err(|e| format!("Failed to resize pty: {}", e))?;
 
     Ok(serde_json::json!({
         "success": true

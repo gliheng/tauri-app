@@ -82,6 +82,8 @@ onMounted(async () => {
     await invoke('terminal_create_session', {
       terminalId,
       cwd: props.cwd,
+      cols: terminal.cols,
+      rows: terminal.rows,
     });
   } catch (error) {
     terminal.writeln(`\x1b[31mFailed to create terminal session: ${error}\x1b[0m`);
@@ -114,6 +116,13 @@ onUnmounted(async () => {
 
 useResizeObserver(terminalRef, () => {
   fitAddon?.fit();
+  if (terminal) {
+    invoke('terminal_resize', {
+      terminalId,
+      cols: terminal.cols,
+      rows: terminal.rows,
+    });
+  }
 });
 </script>
 
