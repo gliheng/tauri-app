@@ -5,8 +5,9 @@ import moment from "moment";
 import { getAllChats, deleteChat, Chat } from "@/db";
 import { useTabsStore } from "@/stores/tabs";
 import { confirm } from "@tauri-apps/plugin-dialog";
+import { nanoid } from "nanoid";
 
-const toast = useToast();
+const tabsStore = useTabsStore();
 const list = await getAllChats();
 const chatList = ref<Chat[]>(list);
 const { openTab, closeTab } = useTabsStore();
@@ -47,9 +48,38 @@ const groups = computed(() => {
           label: "Add new chat",
           suffix: "Add new chat",
           icon: "i-lucide-file-plus",
-          kbds: ["meta", "N"],
           onSelect() {
-            toast.add({ title: "Add new file" });
+            const id = nanoid();
+            tabsStore.openTab(`/chat/${id}`, "New chat");
+            router.push({
+              name: "chat",
+              params: { id },
+            });
+            emit("close");
+          },
+        },
+        {
+          label: "Open message list",
+          suffix: "Test all messages",
+          icon: "i-lucide-list",
+          onSelect() {
+            tabsStore.openTab('/msglist', "Message list render");
+            router.push({
+              name: "msglist",
+            });
+            emit("close");
+          },
+        },
+        {
+          label: "Open editor",
+          suffix: "Test code editor",
+          icon: "i-lucide-code",
+          onSelect() {
+            tabsStore.openTab(`/editor`, "Editor");
+            router.push({
+              name: "editor",
+            });
+            emit("close");
           },
         },
       ],
@@ -59,6 +89,7 @@ const groups = computed(() => {
 
 function onSelect(item: any) {
   const { chatId } = item as ChatHistoryItem;
+  if (!chatId) return;
   openTab(`/chat/${chatId}`, item.label);
   router.push({ name: "chat", params: { id: chatId } });
   emit("close");

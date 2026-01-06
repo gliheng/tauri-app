@@ -79,6 +79,12 @@ eventBus.on('artifact', (msg: string) => {
               v-if="currentArtifact?.type === 'workspace'"
               :cwd="currentArtifact.id"
             />
+            <div v-else class="h-full flex items-center justify-center text-muted-foreground">
+              <div class="text-center p-8">
+                <p class="text-lg font-medium mb-2">Agent Artifact</p>
+                <p class="text-sm">This area will display agent-generated files.</p>
+              </div>
+            </div>
             <template #fallback>
               <div class="h-30 flex items-center justify-center">
                 <Spinner />
