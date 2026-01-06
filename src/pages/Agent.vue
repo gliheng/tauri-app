@@ -142,7 +142,7 @@ onMounted(async () => {
     </div>
 
     <!-- Agent header section -->
-    <div class="flex flex-row gap-2 px-4 sticky top-0 rounded bg-zinc-100">
+    <div class="flex flex-row gap-2 px-4 sticky top-0 rounded bg-elevated">
       <div
         class="flex flex-col items-center justify-center py-8 flex-1"
       >

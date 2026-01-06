@@ -33,7 +33,6 @@ declare module 'vue' {
     PermissionModal: typeof import('./src/components/AgentChat/PermissionModal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    Running: typeof import('./src/components/Running.vue')['default']
     Scrollbar: typeof import('./src/components/Scrollbar.vue')['default']
     Settings: typeof import('./src/components/Settings.vue')['default']
     ShinyText: typeof import('./src/components/ShinyText.vue')['default']
