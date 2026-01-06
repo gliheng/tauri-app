@@ -17,9 +17,12 @@
         "height": 800,
         "minWidth": 800,
         "minHeight": 600,
-        "decorations": false
+        "decorations": false,
+        "transparent": true,
+        "shadow": true
       }
     ],
+    "macOSPrivateApi": true,
     "security": {
       "csp": null
     }

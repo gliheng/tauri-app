@@ -483,12 +483,15 @@ pub async fn terminal_create_session(
 
     let shell = if cfg!(target_os = "windows") {
         "cmd.exe".to_string()
+    } else if cfg!(target_os = "macos") {
+        "/bin/zsh".to_string()
     } else {
-        std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string())
+        "/bin/bash".to_string()
     };
 
     let mut cmd = CommandBuilder::new(&shell);
-    
+    cmd.env("TERM", "xterm-256color");
+
     if let Some(working_dir) = cwd {
         cmd.cwd(working_dir);
     }
