@@ -1,9 +1,10 @@
 import { ref } from "vue";
 import { ACPService, ACPMethod, ToolCallUpdate } from "@/services/acp";
-import { invoke } from '@tauri-apps/api/core';
 import { getCodeAgentConfig } from "@/llm";
 import { Agent } from "@/db";
 import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
+import { invoke } from '@tauri-apps/api/core';
+import { join } from '@tauri-apps/api/path';
 
 export type Role = 'user' | 'assistant';
 
@@ -90,7 +91,11 @@ export interface Message {
   parts: MessagePart[];
 }
 
-export function useAcp(chatId: string, agent: Agent) {
+export function useAcp({ chatId, agent, onInvoke }: {
+  chatId: string,
+  agent: Agent,
+  onInvoke?: (method: string, params: any) => void,
+}) {
   const overlay = useOverlay();
   const permissionModal = overlay.create(PermissionModal);
   const messages = ref<Message[]>([]);
@@ -115,9 +120,9 @@ export function useAcp(chatId: string, agent: Agent) {
       console.log('onDisconnect');
     },
     async onInvoke(method: string, params: any) {
+      onInvoke?.(method, params);
       // console.log("Method", method, "invoked with params", params);
       if (method === ACPMethod.SessionUpdate) {
-        status.value = 'streaming';
         const { update } = params as { update: any; sessionId: string };
         appendSessionUpdate(update, messages.value, context);
       } else if (method === ACPMethod.SessionRequestPermission) {
@@ -151,13 +156,13 @@ export function useAcp(chatId: string, agent: Agent) {
           cwd?: string;
           outputByteLimit?: number;
         };
-        
+
         const result = await invoke<{ terminalId: string }>('acp_terminal_create', {
           sessionId,
           command,
           args,
           env,
-          cwd,
+          cwd: cwd ?? agent.directory!,
           outputByteLimit,
         });
         

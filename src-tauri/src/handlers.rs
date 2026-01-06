@@ -44,6 +44,9 @@ pub async fn acp_initialize(
         args.push("@qwen-code/qwen-code".into());
         if let Some(ms) = settings {
             args.extend(["--auth-type".into(), "openai".into()]);
+            // args.extend(["--openai-base-url".into(), ms.base_url.into()]);
+            // args.extend(["--openai-api-key".into(), ms.api_key.into()]);
+            // args.extend(["--model".into(), ms.model.into()]);
             env_vars.insert("OPENAI_API_KEY".into(), ms.api_key);
             env_vars.insert("OPENAI_BASE_URL".into(), ms.base_url);
             env_vars.insert("OPENAI_MODEL".into(), ms.model);
@@ -581,7 +584,7 @@ static ACP_TERMINALS: std::sync::LazyLock<Arc<Mutex<HashMap<String, ACPTerminal>
 
 // ACP Terminal RPC Methods
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct EnvVar {
     name: String,
     value: String,
@@ -597,6 +600,7 @@ pub async fn acp_terminal_create(
     output_byte_limit: Option<usize>,
 ) -> Result<serde_json::Value, serde_json::Value> {
     let terminal_id = format!("{}_{}", session_id, nanoid::nanoid!());
+    println!("Creating terminal session: {} | command: {} | args: {:?} | env: {:?} | cwd: {:?} | output_byte_limit: {:?}", terminal_id, command, args, env, cwd, output_byte_limit);
     let byte_limit = output_byte_limit.unwrap_or(1024 * 1024); // Default 1MB
     
     let mut cmd = TokioCommand::new(&command);

@@ -7,6 +7,7 @@ import MessageList from "./MessageList.vue";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 import { useAcp } from "@/hooks/useAcp";
+import { ACPMethod } from "@/services/acp";
 
 const props = defineProps({
   agent: {
@@ -27,7 +28,15 @@ const isInitialized = ref(false);
 const input = ref("");
 const error = ref<string | null>(null);
 
-const { acpService, messages, status } = useAcp(props.chatId, props.agent);
+const { acpService, messages, status } = useAcp({
+  chatId: props.chatId,
+  agent: props.agent,
+  onInvoke(method) {
+    if (method === ACPMethod.SessionUpdate) {
+      status.value = 'streaming';
+    }
+  },
+});
 
 const start = async () => {
   try {
@@ -38,13 +47,13 @@ const start = async () => {
     const enableLoadSession = acpService.hasCapability("loadSession");
 
     if (enableLoadSession && props.chat && props.chat.sessionId) {
+      status.value = 'streaming';
       await acpService.sessionLoad(props.chat.sessionId);
       status.value = 'ready';
     }
     
     console.log("Agent initialized successfully");
     isInitialized.value = true;
-    status.value = "ready";
   } catch (err) {
     console.error("Failed to launch agent:", err);
     error.value = `Failed to launch agent: ${JSON.stringify(err, null, 2)}`;
@@ -76,9 +85,6 @@ const handleSubmit = async () => {
   if (!input.value.trim() || !isInitialized.value || !acpService) return;
   
   try {
-    error.value = null;
-    status.value = "streaming";
-    
     const text = input.value.trim();
     const part = {
       type: 'text' as const,
@@ -94,6 +100,7 @@ const handleSubmit = async () => {
       ],
     });
 
+    error.value = null;    
     input.value = "";
     status.value = "submitted";
 
@@ -124,7 +131,6 @@ const handleSubmit = async () => {
       })();
     }
 
-    status.value = 'submitted';
     const ret = await acpService.sessionPrompt(part)
     console.log('sessionPrompt result', ret);
     

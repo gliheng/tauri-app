@@ -23,7 +23,7 @@ const props = defineProps({
         v-bind="message"
       />
       <MessageBubble
-        v-if="status == 'submitted' || status == 'streaming'"
+        v-if="status == 'submitted'"
         key="thinking"
         id="thinking"
         role="assistant"

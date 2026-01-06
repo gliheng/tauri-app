@@ -104,6 +104,13 @@
   padding-left: 28px;
 }
 
+.markdown ul {
+  list-style: disc;
+}
+.markdown ol {
+  list-style: decimal;
+}
+
 /* Headings */
 .markdown h1,
 .markdown h2,

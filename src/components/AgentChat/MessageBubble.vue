@@ -45,15 +45,9 @@ function copyText() {
 <template>
   <section :class="bubbleStyle({ role })">
     <template v-if="role == 'assistant'">
-      <h1 class="flex items-center gap-2 mb-2 hidden">
-        <UAvatar
-          :class="{ 'animate-bounce': loading }"
-          icon="i-lucide-bot"
-          size="md"
-        />
-        Assistant
-      </h1>
-      <div class="w-full flex flex-col gap-2">
+      <div class="w-full flex flex-col gap-2"
+        :class="{ 'animate-pulse': loading }"
+      >
         <div
           v-for="(part, i) in displayParts"
           :key="i"
@@ -144,17 +138,12 @@ function copyText() {
             class="flex flex-col gap-2 w-full"
             :unmount-on-hide="false"
             :data-part-type="part.type"
+            default-open
           >
             <UButton
               class="self-start group min-w-[200px] max-w-full"
               :label="part.title"
-              :color="(() => {
-                const toolPart = part as ToolCallPart;
-                if (toolPart.status === 'completed') return 'success';
-                if (toolPart.status === 'failed') return 'error';
-                if (toolPart.status === 'in_progress') return 'info';
-                return 'neutral';
-              })()"
+              color="neutral"
               variant="subtle"
               leading-icon="i-lucide-hammer"
               trailing-icon="i-lucide-chevron-down"
@@ -168,21 +157,7 @@ function copyText() {
                 <div class="space-y-3">
                   <div class="flex items-center gap-2">
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Kind:</span>
-                    <UBadge :color="(() => {
-                      const toolPart = part as ToolCallPart;
-                      const kindColors: Record<string, string> = {
-                        read: 'blue',
-                        edit: 'yellow',
-                        delete: 'red',
-                        move: 'purple',
-                        search: 'cyan',
-                        execute: 'orange',
-                        think: 'pink',
-                        fetch: 'green',
-                        other: 'gray'
-                      };
-                      return kindColors[toolPart.kind] || 'gray';
-                    })()" variant="subtle" size="sm">
+                    <UBadge color="neutral" variant="subtle" size="sm">
                       {{ (part as ToolCallPart).kind }}
                     </UBadge>
                   </div>
@@ -190,10 +165,10 @@ function copyText() {
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</span>
                     <UBadge :color="(() => {
                       const toolPart = part as ToolCallPart;
-                      if (toolPart.status === 'completed') return 'green';
-                      if (toolPart.status === 'failed') return 'red';
-                      if (toolPart.status === 'in_progress') return 'blue';
-                      return 'gray';
+                      if (toolPart.status === 'completed') return 'success';
+                      if (toolPart.status === 'failed') return 'error';
+                      if (toolPart.status === 'in_progress') return 'info';
+                      return 'neutral';
                     })()" variant="subtle" size="sm">
                       {{ (part as ToolCallPart).status }}
                     </UBadge>
