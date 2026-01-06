@@ -45,9 +45,15 @@ function copyText() {
 <template>
   <section :class="bubbleStyle({ role })">
     <template v-if="role == 'assistant'">
-      <div class="w-full flex flex-col gap-2"
-        :class="{ 'animate-pulse': loading }"
-      >
+      <h1 class="flex items-center gap-2 mb-2 hidden">
+        <UAvatar
+          :class="{ 'animate-bounce': loading }"
+          icon="i-lucide-bot"
+          size="md"
+        />
+        Assistant
+      </h1>
+      <div class="w-full flex flex-col gap-2">
         <div
           v-for="(part, i) in displayParts"
           :key="i"

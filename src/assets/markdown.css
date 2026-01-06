@@ -10,7 +10,7 @@
   --x-color-text-strong: #24292f;
 }
 
-[data-theme="dark"] .markdown {
+:root.dark .markdown {
   --x-color-text: #c9d1d9;
   --x-color-primary: #58a6ff;
   --x-color-primary-hover: #79c0ff;

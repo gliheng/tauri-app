@@ -22,13 +22,9 @@ const props = defineProps({
         :key="message.id"
         v-bind="message"
       />
-      <MessageBubble
+      <ShinyText
         v-if="status == 'submitted'"
-        key="thinking"
-        id="thinking"
-        role="assistant"
-        content="Thinking ..."
-        loading
+        text="Thinking ..."
       />
     </div>
   </Scrollbar>

@@ -52,6 +52,7 @@ export function useChat(opts: {
           });
           await writeMessages(opts.id, messages, prevAssistantMessage?.id);
         },
+        abortSignal: req?.signal ?? undefined,
       });
       return ret.toDataStreamResponse({
         sendReasoning: true,
