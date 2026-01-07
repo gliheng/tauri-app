@@ -66,6 +66,15 @@ const defaultCodeAgent = "codex";
 
 const { modelSettings, codeAgentSettings } = storeToRefs(useSettingsStore());
 
+const getAvailableModels = (provider: string) => {
+  return modelRepo[provider as keyof typeof modelRepo].filter(
+    (m: any) =>
+      !modelSettings.value[provider as keyof typeof modelSettings]?.models?.includes(
+        m.value,
+      ),
+  );
+};
+
 const toggleModel = (provider: string, modelValue: string) => {
   if (!modelSettings.value[provider]?.models) {
     return;
@@ -137,22 +146,29 @@ const toggleModel = (provider: string, modelValue: string) => {
                 <h3 class="text-sm font-semibold mb-2">Available Models</h3>
                 <div class="flex flex-wrap gap-2">
                   <UButton
-                    v-for="model in modelRepo[
-                      item.value as keyof typeof modelRepo
-                    ]"
+                    v-for="model in getAvailableModels(item.value)"
                     :key="model.value"
                     :label="model.label"
                     size="sm"
-                    :variant="
-                      modelSettings[
-                        item.value as keyof typeof modelSettings
-                      ]?.models?.includes(model.value)
-                        ? 'solid'
-                        : 'outline'
-                    "
+                    variant="outline"
                     @click="toggleModel(item.value as string, model.value)"
                   />
                 </div>
+                <p
+                  v-if="
+                    modelRepo[
+                      item.value as keyof typeof modelRepo
+                    ].filter(
+                      (m: any) =>
+                        !modelSettings[
+                          item.value as keyof typeof modelSettings
+                        ]?.models?.includes(m.value),
+                    ).length === 0
+                  "
+                  class="text-sm text-gray-500 mt-2"
+                >
+                  All models selected
+                </p>
               </div>
             </UForm>
           </template>

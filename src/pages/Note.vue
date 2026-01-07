@@ -75,7 +75,7 @@ function downloadNote() {
       />
     </header>
     <div class="flex-1 min-h-0 overflow-y-auto">
-      <hgroup class="flex flex-row gap-2 items-center mx-[8rem] mt-[4rem]">
+      <hgroup class="flex flex-row gap-2 items-center mx-32 mt-16">
         <IconEdit v-model:icon="note.icon" />
         <NameEdit v-model:name="note.name" />
       </hgroup>

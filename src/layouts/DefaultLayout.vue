@@ -38,7 +38,7 @@ eventBus.on('artifact', (msg: string) => {
 
 <template>
   <div class="h-screen flex flex-row">
-    <Sidebar class="w-[200px] h-full" />
+    <Sidebar class="w-50 h-full" />
     <SplitterGroup class="flex-1" direction="horizontal">
       <SplitterPanel>
         <div class="h-full flex flex-col">
