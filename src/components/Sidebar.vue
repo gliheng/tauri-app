@@ -20,7 +20,6 @@ const sidebarStore = useSidebarStore();
 const mode = useColorMode();
 
 const logoImg = computed(() => {
-  return '/logo.png'
   return mode.value === "dark" ? "/raven-dark.png" : "/raven-light.png";
 });
 
