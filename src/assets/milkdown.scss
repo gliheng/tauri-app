@@ -1,5 +1,8 @@
 @import "@milkdown/crepe/theme/common/style.css";
 
+[data-milkdown-root] {
+  flex: 1;
+}
 .milkdown .ProseMirror {
   padding: 1rem 8rem 5rem;
 }
