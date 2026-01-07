@@ -124,7 +124,7 @@ const toggleModel = (provider: string, modelValue: string) => {
                   "
                   class="flex flex-wrap gap-2"
                 >
-                  <UBadge
+                  <UButton
                     v-for="modelValue in modelSettings[
                       item.value as keyof typeof modelSettings
                     ].models"
@@ -136,6 +136,7 @@ const toggleModel = (provider: string, modelValue: string) => {
                     "
                     color="primary"
                     variant="subtle"
+                    @click="toggleModel(item.value, modelValue)"
                   />
                 </div>
                 <p v-else class="text-sm text-gray-500">No models selected</p>
@@ -149,7 +150,6 @@ const toggleModel = (provider: string, modelValue: string) => {
                     v-for="model in getAvailableModels(item.value)"
                     :key="model.value"
                     :label="model.label"
-                    size="sm"
                     variant="outline"
                     @click="toggleModel(item.value as string, model.value)"
                   />
