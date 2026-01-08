@@ -114,8 +114,8 @@ const isMac = platform.startsWith("Mac");
       :class="{ 'pt-8': isMac }"
       data-tauri-drag-region
     >
-      <img class="w-10 h-10 pointer-events-none" :src="logoImg" alt="Logo" />
-      <span class="-ml-2 pointer-events-none">Raven</span>
+      <img class="w-40 h-10 pointer-events-none object-contain" :src="logoImg" alt="Logo" />
+      <!-- <span class="-ml-2 pointer-events-none">Raven</span> -->
     </h1>
     <UButton
       icon="i-lucide-message-circle"
