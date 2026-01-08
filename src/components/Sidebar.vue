@@ -110,11 +110,11 @@ const isMac = platform.startsWith("Mac");
   <aside
     class="bg-elevated flex flex-col p-2 gap-2 items-stretch"
   >
-    <h1 class="text-2xl font-bold mb-2 flex flex-row gap-4 items-center justify-center"
+    <h1 class="text-3xl font-bold mb-2 flex flex-row gap-4 items-center justify-center"
       :class="{ 'pt-8': isMac }"
       data-tauri-drag-region
     >
-      <img class="w-12 h-12 pointer-events-none" :src="logoImg" alt="Logo" />
+      <img class="w-10 h-10 pointer-events-none" :src="logoImg" alt="Logo" />
       <span class="-ml-2 pointer-events-none">Raven</span>
     </h1>
     <UButton
