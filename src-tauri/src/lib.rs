@@ -60,6 +60,9 @@ pub fn run() {
             handlers::acp_terminal_wait_for_exit,
             handlers::acp_terminal_kill,
             handlers::acp_terminal_release,
+            handlers::watch_file,
+            handlers::unwatch_file,
+            handlers::stop_watching,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

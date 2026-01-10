@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { provide, ref } from "vue";
+import { provide, ref, onMounted, onUnmounted, watch } from "vue";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { debounce } from "lodash-es";
 import FileTree from "./FileTree.vue";
 import Editor from "./Editor.vue";
 import Terminal from "./Terminal.vue";
@@ -87,8 +89,101 @@ async function onSelect(entry: FileEntry) {
   if (entry.type === FileEntryType.File) {
     const content = await loadFileContent(entry.path);
     file.value = { ...entry, content };
+    externallyModified.value = false;
   }
 }
+
+// File watching functionality
+const currentSessionId = ref(`editor-${Date.now()}`);
+const externallyModified = ref(false);
+
+// Start watching the base directory once on mount
+watch(() => props.cwd, async (newCwd) => {
+  if (newCwd) {
+    try {
+      await invoke('watch_file', {
+        args: {
+          session_id: currentSessionId.value,
+          relative_path: '.', // Watch the base directory
+          base_path: newCwd,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to watch directory:', error);
+    }
+  }
+}, { immediate: true });
+
+// Store unlisten functions for cleanup
+let unlistenFileChanged: (() => void) | null = null;
+let unlistenFileTreeChanged: (() => void) | null = null;
+
+// Set up event listeners (these need to be in setup, so we use onMounted)
+onMounted(async () => {
+  // File content change listener
+  unlistenFileChanged = await listen('file_changed', async (event: any) => {
+    const { path } = event.payload;
+    console.log('file changed', file.value?.path, path);
+
+    if (file.value?.path === path) {
+      try {
+        // Reload the file content
+        const newContent = await loadFileContent(path);
+        const currentContent = file.value?.content || '';
+
+        // Check if content actually changed
+        if (newContent !== currentContent) {
+          externallyModified.value = true;
+        }
+      } catch (error) {
+        console.error('Failed to reload file:', error);
+      }
+    }
+  });
+
+  // Debounced file tree refresh to avoid excessive updates
+  const debouncedFileTreeRefresh = debounce(async () => {
+    // Refresh the file tree by reloading the root
+    try {
+      const newRootFiles = await listFiles('');
+      fileSystem.value = newRootFiles;
+    } catch (error) {
+      console.error('Failed to refresh file tree:', error);
+    }
+  }, 300);
+
+  // File tree change listener (create/remove)
+  unlistenFileTreeChanged = await listen('file_tree_changed', async (_event: any) => {
+    debouncedFileTreeRefresh();
+  });
+});
+
+// Reload file when user explicitly wants to accept external changes
+async function reloadFile() {
+  if (file.value?.path) {
+    try {
+      const newContent = await loadFileContent(file.value.path);
+      file.value = { ...file.value, content: newContent };
+      externallyModified.value = false;
+    } catch (error) {
+      console.error('Failed to reload file:', error);
+    }
+  }
+}
+
+// Cleanup on unmount
+onUnmounted(async () => {
+  // Unlisten to file change events
+  unlistenFileChanged?.();
+  unlistenFileTreeChanged?.();
+
+  // Stop watching the directory
+  try {
+    await invoke('stop_watching', { sessionId: currentSessionId.value });
+  } catch (error) {
+    console.error('Failed to stop watching:', error);
+  }
+});
 
 const showTerminal = ref(false);
 </script>
@@ -104,7 +199,14 @@ const showTerminal = ref(false);
         <SplitterGroup direction="vertical" class="flex-1">
           <SplitterPanel :default-size="60">
             <header class="p-1 border-b border-gray-200 h-10 flex items-center" data-tauri-drag-region>
-              <h2 class="text-sm font-medium truncate select-none" data-tauri-drag-region>{{ file?.name }}</h2>
+              <div class="flex items-center gap-2">
+                <div v-if="externallyModified" class="flex items-center gap-1 text-amber-600" title="File modified externally">
+                  <UIcon name="i-lucide-alert-triangle" class="w-4 h-4" />
+                  <span class="text-xs">Modified externally</span>
+                  <UButton size="xs" variant="soft" @click="reloadFile">Reload</UButton>
+                </div>
+                <h2 v-else class="text-sm font-medium truncate select-none" data-tauri-drag-region>{{ file?.name }}</h2>
+              </div>
               <div class="flex-1"></div>
               <UButton size="sm" icon="i-lucide-square-terminal" @click="showTerminal = !showTerminal" />
             </header>

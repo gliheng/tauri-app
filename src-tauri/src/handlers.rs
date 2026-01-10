@@ -5,11 +5,12 @@ use tokio::process::Command as TokioCommand;
 use tokio::sync::Mutex;
 use std::sync::Arc;
 use std::collections::HashMap;
-use std::path::{Path};
+use std::path::{Path, PathBuf};
 use std::fs;
 use serde::{Deserialize, Serialize};
 use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
 use std::io::{Read, Write};
+use notify::{Watcher, RecursiveMode, EventKind};
 
 // Global state to manage agent processes and callbacks
 static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::process::Child>>>> = 
@@ -830,5 +831,157 @@ pub async fn acp_terminal_release(
 ) -> Result<(), serde_json::Value> {
     let mut terminals = ACP_TERMINALS.lock().await;
     terminals.remove(&terminal_id);
+    Ok(())
+}
+
+// File Watcher structures
+struct FileWatcherSession {
+    _watcher: notify::RecommendedWatcher,
+    #[allow(dead_code)]
+    base_path: PathBuf,
+}
+
+static FILE_WATCHERS: std::sync::LazyLock<Arc<Mutex<HashMap<String, FileWatcherSession>>>> =
+    std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
+
+#[derive(Deserialize)]
+pub struct WatchFileArgs {
+    session_id: String,
+    #[allow(dead_code)]
+    relative_path: String,
+    base_path: String,
+}
+
+#[tauri::command]
+pub async fn watch_file(
+    args: WatchFileArgs,
+    window: tauri::Window,
+) -> Result<(), String> {
+    let WatchFileArgs {
+        session_id,
+        relative_path: _,
+        base_path,
+    } = args;
+
+    let base_path_buf = PathBuf::from(&base_path);
+
+    // Validate the base path exists
+    if !base_path_buf.exists() {
+        return Err("Base path does not exist".to_string());
+    }
+
+    let mut watchers = FILE_WATCHERS.lock().await;
+
+    // Only create a new watcher if one doesn't exist for this session
+    if !watchers.contains_key(&session_id) {
+        let window_clone = window.clone();
+        let base_path_clone = base_path_buf.clone();
+
+        // Create the watcher with the new notify API
+        let mut watcher = notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
+            match res {
+                Ok(event) => {
+                    match &event.kind {
+                        // Only handle actual data/content changes, not metadata
+                        EventKind::Modify(notify::event::ModifyKind::Data(_)) => {
+                            // Handle file content modifications
+                            for path in &event.paths {
+                                if path.is_file() {
+                                    let relative = path
+                                        .strip_prefix(&base_path_clone)
+                                        .ok()
+                                        .and_then(|p: &Path| p.to_str())
+                                        .unwrap_or("");
+
+                                    let _ = window_clone.emit("file_changed", serde_json::json!({
+                                        "path": relative,
+                                        "type": "modified"
+                                    }));
+                                }
+                            }
+                        }
+                        EventKind::Create(_) => {
+                            // Handle file/folder creation
+                            for path in &event.paths {
+                                let relative = path
+                                    .strip_prefix(&base_path_clone)
+                                    .ok()
+                                    .and_then(|p: &Path| p.to_str())
+                                    .unwrap_or("");
+
+                                let _ = window_clone.emit("file_tree_changed", serde_json::json!({
+                                    "path": relative,
+                                    "type": "created"
+                                }));
+                            }
+                        }
+                        EventKind::Remove(_) => {
+                            // Handle file/folder removal
+                            for path in &event.paths {
+                                let relative = path
+                                    .strip_prefix(&base_path_clone)
+                                    .ok()
+                                    .and_then(|p: &Path| p.to_str())
+                                    .unwrap_or("");
+
+                                let _ = window_clone.emit("file_tree_changed", serde_json::json!({
+                                    "path": relative,
+                                    "type": "removed"
+                                }));
+                            }
+                        }
+                        // Handle rename/move events as file tree changes
+                        EventKind::Modify(notify::event::ModifyKind::Name(_)) => {
+                            for path in &event.paths {
+                                let relative = path
+                                    .strip_prefix(&base_path_clone)
+                                    .ok()
+                                    .and_then(|p: &Path| p.to_str())
+                                    .unwrap_or("");
+
+                                let _ = window_clone.emit("file_tree_changed", serde_json::json!({
+                                    "path": relative,
+                                    "type": "renamed"
+                                }));
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Watch error: {:?}", e);
+                }
+            }
+        }).expect("Failed to create file watcher");
+
+        // Watch the base directory recursively
+        watcher
+            .watch(&base_path_buf, RecursiveMode::Recursive)
+            .map_err(|e| format!("Failed to watch directory: {}", e))?;
+
+        watchers.insert(session_id.clone(), FileWatcherSession {
+            _watcher: watcher,
+            base_path: base_path_buf,
+        });
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn unwatch_file(
+    _session_id: String,
+    _relative_path: String,
+    _base_path: String,
+) -> Result<(), String> {
+    // No-op since we now watch the entire base directory
+    // Individual files don't need to be unwatched anymore
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn stop_watching(session_id: String) -> Result<(), String> {
+    let mut watchers = FILE_WATCHERS.lock().await;
+    watchers.remove(&session_id);
     Ok(())
 }

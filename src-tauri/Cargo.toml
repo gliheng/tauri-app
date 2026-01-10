@@ -29,6 +29,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 futures = "0.3"
 portable-pty = "0.8"
 nanoid = "0.4"
+notify = "8.0"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 objc2 = "0.6.1"
