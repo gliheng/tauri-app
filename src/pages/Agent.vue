@@ -6,7 +6,6 @@ import { useSidebarStore } from '@/stores/sidebar';
 import { useTabsStore } from '@/stores/tabs';
 import { AnimatePresence, motion } from 'motion-v';
 import { nanoid } from "nanoid";
-import { getModelConfig } from "@/llm";
 import { ACPService } from "@/services/acp";
 import AgentSessionList from "@/components/AgentSessionList.vue";
 import { confirm, message } from '@tauri-apps/plugin-dialog';
@@ -92,16 +91,10 @@ async function openDirectory() {
 
 const enableLoadSession = ref(false);
 onMounted(async () => {
-  const { model, apiKey, baseUrl } = getModelConfig();
   const acpService = new ACPService({ 
     program: agent.program!,
     directory: agent.directory!,
     mcpServers: [],
-    model: {
-      model,
-      baseUrl,
-      apiKey,
-    },
     onConnect() {
       console.log('onConnect');
     },

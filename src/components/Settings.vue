@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
+import { ref, watch } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import { CodeAgent, useSettingsStore } from "@/stores/settings";
 import { modelRepo } from "@/llm/models";
 
@@ -60,6 +62,10 @@ const codeAgentItems = [
     label: "Qwen",
     value: "qwen",
   },
+  {
+    label: "OpenCode",
+    value: "opencode",
+  },
 ] satisfies TabsItem[];
 
 const defaultCodeAgent = "codex";
@@ -87,6 +93,31 @@ const toggleModel = (provider: string, modelValue: string) => {
     models.push(modelValue);
   }
 };
+
+const currentTab = ref(defaultCodeAgent);
+const opencodeModels = ref<{ label: string; value: string }[]>([]);
+const loadingOpencodeModels = ref(false);
+
+const fetchOpencodeModels = async () => {
+  loadingOpencodeModels.value = true;
+  try {
+    const result = await invoke<{ models: string[] }>('get_opencode_models');
+    opencodeModels.value = result.models.map(m => ({
+      label: m,
+      value: m
+    }));
+  } catch (error) {
+    console.error('Failed to fetch opencode models:', error);
+  } finally {
+    loadingOpencodeModels.value = false;
+  }
+};
+
+watch(currentTab, async (tab) => {
+  if (tab === 'opencode') {
+    await fetchOpencodeModels();
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -178,6 +209,7 @@ const toggleModel = (provider: string, modelValue: string) => {
           orientation="vertical"
           variant="link"
           class="w-full items-start"
+          v-model="currentTab"
           :default-value="defaultCodeAgent"
           :items="codeAgentItems"
         >
@@ -196,45 +228,62 @@ const toggleModel = (provider: string, modelValue: string) => {
                 />
               </div>
 
-              <UFormField label="Base URL" name="baseUrl">
-                <UInput
-                  v-model.trim="
-                    codeAgentSettings[item.value as CodeAgent].baseUrl
-                  "
-                  placeholder="https://api.example.com"
-                  class="w-full"
-                  :disabled="
-                    !codeAgentSettings[item.value as CodeAgent].useCustomModel
-                  "
-                />
-              </UFormField>
+              <template v-if="item.value !== 'opencode'">
+                <UFormField label="Base URL" name="baseUrl">
+                  <UInput
+                    v-model.trim="
+                      codeAgentSettings[item.value as CodeAgent].baseUrl
+                    "
+                    placeholder="https://api.example.com"
+                    class="w-full"
+                    :disabled="
+                      !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                    "
+                  />
+                </UFormField>
 
-              <UFormField label="Model" name="model">
-                <UInput
-                  v-model.trim="
-                    codeAgentSettings[item.value as CodeAgent].model
-                  "
-                  placeholder="gpt-4, claude-3, etc."
-                  class="w-full"
-                  :disabled="
-                    !codeAgentSettings[item.value as CodeAgent].useCustomModel
-                  "
-                />
-              </UFormField>
+                <UFormField label="Model" name="model">
+                  <UInput
+                    v-model.trim="
+                      codeAgentSettings[item.value as CodeAgent].model
+                    "
+                    placeholder="gpt-4, claude-3, etc."
+                    class="w-full"
+                    :disabled="
+                      !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                    "
+                  />
+                </UFormField>
 
-              <UFormField label="API Key" name="apiKey">
-                <UInput
-                  v-model.trim="
-                    codeAgentSettings[item.value as CodeAgent].apiKey
-                  "
-                  placeholder="Your API key"
-                  class="w-full"
-                  :disabled="
-                    !codeAgentSettings[item.value as CodeAgent].useCustomModel
-                  "
-                />
-              </UFormField>
-            </UForm>
+                <UFormField label="API Key" name="apiKey">
+                  <UInput
+                    v-model.trim="
+                      codeAgentSettings[item.value as CodeAgent].apiKey
+                    "
+                    placeholder="Your API key"
+                    class="w-full"
+                    :disabled="
+                      !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                    "
+                  />
+                </UFormField>
+              </template>
+
+              <template v-else-if="item.value === 'opencode'">
+                <UFormField label="Select Model">
+                  <USelect
+                    v-model="codeAgentSettings.opencode.model"
+                    :items="opencodeModels"
+                    :loading="loadingOpencodeModels"
+                    :disabled="
+                      !codeAgentSettings.opencode?.useCustomModel
+                    "
+                    placeholder="Select a model"
+                    class="w-full"
+                  />
+                </UFormField>
+              </template>
+              </UForm>
           </template>
         </UTabs>
       </div>

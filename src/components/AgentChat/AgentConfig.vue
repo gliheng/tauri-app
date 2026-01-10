@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, toRaw } from "vue";
-import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup.vue";
 
@@ -10,7 +9,7 @@ export interface AgentFormData {
   type: "chat" | "code";
   instructions?: string;
   directory?: string;
-  program?: "codex" | "gemini" | "qwen";
+  program?: "codex" | "gemini" | "qwen" | "claude" | "opencode";
 }
 
 const emit = defineEmits<{
@@ -104,7 +103,8 @@ const launchAgent = () => {
                   { value: 'codex', label: 'Codex' },
                   { value: 'gemini', label: 'Gemini CLI' },
                   { value: 'claude', label: 'Claude Code' },
-                  { value: 'qwen', label: 'Qwen Code' }
+                  { value: 'qwen', label: 'Qwen Code' },
+                  { value: 'opencode', label: 'OpenCode' }
                 ]"
               />
             </div>

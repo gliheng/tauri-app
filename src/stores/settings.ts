@@ -31,13 +31,13 @@ const defaultSettings: Record<string, ChatModelConfig> = {
 };
 
 export interface CodeAgentConfig {
-  useCustomModel: boolean;
-  baseUrl: string;
-  model: string;
-  apiKey: string;
+  useCustomModel?: boolean;
+  baseUrl?: string;
+  model?: string;
+  apiKey?: string;
 }
 
-export type CodeAgent = 'codex' | 'gemini' | 'claude' | 'qwen';
+export type CodeAgent = 'codex' | 'gemini' | 'claude' | 'qwen' | 'opencode';
 
 const defaultCodeAgentSettings: Record<CodeAgent, CodeAgentConfig> = {
   codex: {
@@ -63,6 +63,10 @@ const defaultCodeAgentSettings: Record<CodeAgent, CodeAgentConfig> = {
     baseUrl: "",
     model: "",
     apiKey: "",
+  },
+  opencode: {
+    useCustomModel: false,
+    model: "",
   },
 };
 
