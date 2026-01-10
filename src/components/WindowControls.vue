@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import { ref, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { isAppleDevice } from "@/utils/device";
+import { UnlistenFn } from "@tauri-apps/api/event";
 
 const appWindow = getCurrentWindow();
-
-const unlisten = appWindow.onResized(async ({ payload: size }) => {
-  isMaximized.value = await appWindow.isMaximized();
-});
-
-onUnmounted(() => {
-  unlisten();
-});
-
 const isMaximized = ref(false);
+
+let unlisten: UnlistenFn | undefined;
+onMounted(async () => {
+  unlisten = await appWindow.onResized(async () => {
+    isMaximized.value = await appWindow.isMaximized();
+  });
+});
+onUnmounted(() => {
+  unlisten?.();
+});
+
 function close() {
   appWindow.close();
 }
