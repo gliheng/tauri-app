@@ -2,8 +2,8 @@
 import { computed, PropType } from "vue";
 import { tv } from "tailwind-variants";
 import { Message } from "ai";
-import MarkdownText from "./MarkdownText.vue";
-import FileImage from "./FileImage.vue";
+import MarkdownText from "@/components/MarkdownText.vue";
+import FileImage from "@/components/FileImage.vue";
 import MessageSwitcher from "./MessageSwitcher.vue";
 
 const props = defineProps({

@@ -2,10 +2,10 @@
 import { computed, watch, ref, PropType, inject } from "vue";
 import { motion } from "motion-v";
 import { Message } from "ai";
+import { CHAT_ACTIONS } from "@/constants";
 import MessageBubble from "./MessageBubble.vue";
 import MessageEdit from "./MessageEdit.vue";
-import Scrollbar from "./Scrollbar.vue";
-import { CHAT_ACTIONS } from "@/constants";
+import Scrollbar from "@/components/Scrollbar.vue";
 
 const props = defineProps({
   width: Number,

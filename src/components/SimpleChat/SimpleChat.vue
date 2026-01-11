@@ -3,7 +3,7 @@ import { provide, computed, ref, PropType } from "vue";
 import { AnimatePresence } from "motion-v";
 import { omit } from "lodash-es";
 import ChatBox from "@/components/ChatBox.vue";
-import MessageList from "@/components/MessageList.vue";
+import MessageList from "./MessageList.vue";
 import { useChat } from "@/hooks/useChat";
 import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db-sqlite";
 import { CHAT_ACTIONS, MESSAGE_GRAPH, ROOT_NODE_ID } from "@/constants";
