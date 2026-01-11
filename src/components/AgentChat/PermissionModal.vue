@@ -45,6 +45,7 @@ const handleCancel = () => {
   <UModal 
     title="Permission Required" 
     description="Please select an option to continue"
+    :dismissible="false"
     :close="{ onClick: handleCancel }"
   >
     <template #body>

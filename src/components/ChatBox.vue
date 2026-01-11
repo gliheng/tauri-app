@@ -30,6 +30,10 @@ async function send(evt: KeyboardEvent) {
   if (evt.key == "Enter" && evt.shiftKey) return;
   evt.preventDefault();
 
+  await submitForm();
+}
+
+async function submitForm() {
   let attachments: Attachment[] = [];
   if (files.value.length) {
     attachments = await Promise.all(files.value.map(file2DataUrl));
@@ -54,7 +58,7 @@ function appendFiles(newFiles: FileList) {
   <div class="mx-auto flex flex-col">
     <form
       class="rounded-md focus-within:outline-none transition-colors bg-default ring ring-inset ring-accented focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary"
-      @submit="send"
+      @submit.prevent="submitForm"
     >
       <section v-if="files.length" class="flex flex-wrap gap-2 p-2">
         <div
