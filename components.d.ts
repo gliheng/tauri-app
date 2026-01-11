@@ -38,6 +38,7 @@ declare module 'vue' {
     ShinyText: typeof import('./src/components/ShinyText.vue')['default']
     Sidebar: typeof import('./src/components/Sidebar.vue')['default']
     SimpleChat: typeof import('./src/components/SimpleChat/SimpleChat.vue')['default']
+    SlashCommandMenu: typeof import('./src/components/AgentChat/SlashCommandMenu.vue')['default']
     Spinner: typeof import('./src/components/Spinner.vue')['default']
     Tabs: typeof import('./src/components/Tabs.vue')['default']
     Terminal: typeof import('./src/components/CodeEditor/Terminal.vue')['default']

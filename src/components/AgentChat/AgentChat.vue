@@ -5,9 +5,10 @@ import ChatBox from "@/components/ChatBox.vue";
 import Spinner from "@/components/Spinner.vue";
 import MessageList from "./MessageList.vue";
 import ModeSelector from "./ModeSelector.vue";
+import SlashCommandMenu from "./SlashCommandMenu.vue";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
-import { useAcp } from "@/hooks/useAcp";
+import { useAcp, type AvailableCommand } from "@/hooks/useAcp";
 import { ACPMethod } from "@/services/acp";
 
 const props = defineProps({
@@ -29,8 +30,9 @@ const isInitialized = ref(false);
 const input = ref("");
 const error = ref<string | null>(null);
 const sessionId = ref<string | null>(props.chat?.sessionId ?? null);
+const chatBoxRef = ref<InstanceType<typeof ChatBox> | null>(null);
 
-const { acpService, messages, status, currentModeId, availableModes } = useAcp({
+const { acpService, messages, status, currentModeId, availableModes, availableCommands } = useAcp({
   chatId: props.chatId,
   agent: props.agent,
   onInvoke(method, params) {
@@ -43,17 +45,26 @@ const { acpService, messages, status, currentModeId, availableModes } = useAcp({
 });
 
 const hasModes = computed(() => availableModes.value.length > 0);
+const hasCommands = computed(() => availableCommands.value.length > 0);
 
 async function handleModeChange(modeId: string) {
   if (!acpService) return;
   try {
     currentModeId.value = modeId;
     await ensureSession();
-    const ret = await acpService.sessionSetMode(modeId);
+    await acpService.sessionSetMode(modeId);
   } catch (err) {
     console.error('Failed to set mode:', err);
     error.value = `Failed to set mode: ${JSON.stringify(err, null, 2)}`;
   }
+}
+
+function handleCommandSelect(command: AvailableCommand) {
+  const commandText = `/${command.name}`;
+  const cursorPosition = commandText.length;
+  setTimeout(() => {
+    chatBoxRef.value?.setInputAndFocus(commandText, cursorPosition);
+  }, 0);
 }
 
 async function ensureSession() {
@@ -202,6 +213,7 @@ onUnmounted(() => {
         <MessageList :messages="messages" :status="status" />
       </div>
       <ChatBox
+        ref="chatBoxRef"
         :style="{ width: '100%' }"
         v-model="input"
         :status="status"
@@ -210,6 +222,12 @@ onUnmounted(() => {
         @stop="cancel"
       >
         <template #left-addons>
+          <SlashCommandMenu
+            v-if="hasCommands"
+            :available-commands="availableCommands"
+            :disabled="status === 'streaming'"
+            @select="handleCommandSelect"
+          />
           <ModeSelector
             v-if="hasModes"
             v-model="currentModeId"

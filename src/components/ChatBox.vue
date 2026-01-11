@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, PropType } from "vue";
+import { ref, computed, PropType, nextTick } from "vue";
 import { Attachment } from "ai";
 import { file2DataUrl } from "@/utils/file";
 import { useSettingsStore } from "@/stores/settings";
@@ -21,6 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const settingsStore = useSettingsStore();
+const textareaRef = ref<any>();
 
 const streaming = computed(
   () => props.status == "submitted" || props.status == "streaming",
@@ -52,6 +53,21 @@ const files = ref<File[]>([]);
 function appendFiles(newFiles: FileList) {
   files.value = [...files.value, ...newFiles];
 }
+
+function setInputAndFocus(value: string, cursorPosition?: number) {
+  input.value = value;
+  const textarea = textareaRef.value?.textareaRef;
+  if (textarea) {
+    textarea.focus();
+    if (cursorPosition !== undefined) {
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    }
+  }
+}
+
+defineExpose({
+  setInputAndFocus,
+});
 </script>
 
 <template>
@@ -87,6 +103,7 @@ function appendFiles(newFiles: FileList) {
         </div>
       </section>
       <UTextarea
+        ref="textareaRef"
         class="w-full"
         v-model.trim="input"
         :loading="status === 'loading'"
