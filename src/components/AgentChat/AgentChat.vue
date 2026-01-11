@@ -33,9 +33,11 @@ const sessionId = ref<string | null>(props.chat?.sessionId ?? null);
 const { acpService, messages, status, currentModeId, availableModes } = useAcp({
   chatId: props.chatId,
   agent: props.agent,
-  onInvoke(method) {
+  onInvoke(method, params) {
     if (method === ACPMethod.SessionUpdate) {
-      status.value = 'streaming';
+      if (params.update.sessionUpdate === "agent_message_chunk") {
+        status.value = 'streaming';
+      }
     }
   },
 });
@@ -47,7 +49,7 @@ async function handleModeChange(modeId: string) {
   try {
     currentModeId.value = modeId;
     await ensureSession();
-    await acpService.sessionSetMode(modeId);
+    const ret = await acpService.sessionSetMode(modeId);
   } catch (err) {
     console.error('Failed to set mode:', err);
     error.value = `Failed to set mode: ${JSON.stringify(err, null, 2)}`;

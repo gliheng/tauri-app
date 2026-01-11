@@ -44,7 +44,7 @@ const selectDirectory = async () => {
   }
 };
 
-const launchAgent = () => {
+const createAgent = () => {
   emit('close', toRaw(agent.value) as AgentFormData);
 };
 </script>
@@ -115,9 +115,9 @@ const launchAgent = () => {
             class="text-xl px-8 py-4"
             color="primary"
             size="xl"
-            icon="i-lucide-rocket"
-            @click="launchAgent"
-          >Launch</UButton>
+            icon="i-lucide-wand-sparkles"
+            @click="createAgent"
+          >Create</UButton>
         </section>
       </div>
     </template>

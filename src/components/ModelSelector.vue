@@ -44,7 +44,7 @@ const selectedModel = computed({
   <USelectMenu
     class="w-40"
     v-model="selectedModel"
-    color="primary"
+    color="neutral"
     variant="soft"
     trailing-icon="i-lucide-chevrons-up-down"
     :items="modelList"

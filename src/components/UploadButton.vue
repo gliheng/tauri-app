@@ -9,8 +9,20 @@ const input = ref();
 </script>
 
 <template>
-  <UButton class="rounded-full" variant="soft" icon="i-mdi-paperclip" @click="input.click()" />
-  <input ref="input" type="file" multiple hidden @change="$emit('select-file', input.files)" />
+  <UButton
+    class="rounded-full"
+    variant="soft"
+    color="primary"
+    icon="i-mdi-paperclip"
+    @click="input.click()"
+  />
+  <input
+    ref="input"
+    type="file"
+    multiple
+    hidden
+    @change="$emit('select-file', input.files)"
+  />
 </template>
 
 <style lang="scss" scoped>
