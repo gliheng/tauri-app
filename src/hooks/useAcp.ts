@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { ACPService, ACPMethod, ToolCallUpdate } from "@/services/acp";
 import { getCodeAgentConfig } from "@/llm";
-import { Agent } from "@/db";
+import { Agent } from "@/db-sqlite";
 import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
 import { invoke } from '@tauri-apps/api/core';
 import { join } from '@tauri-apps/api/path';

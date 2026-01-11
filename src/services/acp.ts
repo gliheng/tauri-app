@@ -132,6 +132,11 @@ export interface AuthMethod {
   description: string;
 }
 
+export interface Model {
+  name: string;
+  modelId: string;
+}
+
 export interface Mode {
   id: string;
   name: string;
@@ -154,6 +159,10 @@ export interface InitializeResult {
   agentInfo: AgentInfo;
   agentCapabilities: AgentCapabilities;
   authMethods?: AuthMethod[];
+  models?: {
+    currentModelId: string;
+    availableModels: Model[];
+  };
   modes?: {
     currentModeId: string;
     availableModes: Mode[];
@@ -198,7 +207,11 @@ export class ACPService {
   async initialize(): Promise<void> {
     await invoke("acp_initialize", {
       agent: this.config.program,
-      settings: this.config.model,
+      settings: Object.assign({
+        base_url: "",
+        api_key: "",
+        model: "",
+      }, this.config.model),
     });
     this.startListening();
     const ret = await this.rpc("initialize", {
@@ -291,9 +304,6 @@ export class ACPService {
   }
 
   async send(payload: Record<string, any>): Promise<any> {
-    if (Object.keys(payload).length == 2 && payload.id === undefined) {
-      debugger;
-    }
     console.log('Send message', payload);
     await invoke("acp_send_message", {
       agent: this.config.program,

@@ -5,7 +5,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { init as initNative } from "./native";
 import { router } from "./router";
 import App from "./App.vue";
-import { init as initDb } from "./db";
+import { init as initDb } from "./db-sqlite";
 import "./assets/style.css";
 
 (async () => {

@@ -28,6 +28,8 @@
     "core:window:allow-unminimize",
     "core:window:allow-show",
     "core:window:allow-set-focus",
-    "dialog:default"
+    "dialog:default",
+    "sql:default",
+    "sql:allow-execute"
   ]
 }

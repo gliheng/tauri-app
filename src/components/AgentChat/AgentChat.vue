@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted, PropType } from "vue";
-import { Chat, updateChat, writeChat, type Agent } from "@/db";
+import { Chat, updateChat, writeChat, type Agent } from "@/db-sqlite";
 import ChatBox from "@/components/ChatBox.vue";
 import Spinner from "@/components/Spinner.vue";
 import MessageList from "./MessageList.vue";

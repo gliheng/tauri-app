@@ -271,13 +271,15 @@ watch(currentTab, async (tab) => {
 
               <template v-else-if="item.value === 'opencode'">
                 <UFormField label="Select Model">
-                  <USelect
+                  <USelectMenu
                     v-model="codeAgentSettings.opencode.model"
                     :items="opencodeModels"
                     :loading="loadingOpencodeModels"
                     :disabled="
                       !codeAgentSettings.opencode?.useCustomModel
                     "
+                    virtualize
+                    valueKey="value"
                     placeholder="Select a model"
                     class="w-full"
                   />

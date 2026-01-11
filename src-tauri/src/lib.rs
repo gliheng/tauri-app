@@ -1,16 +1,34 @@
-use tauri::Manager;
+use tauri_plugin_sql::{Migration, MigrationKind};
 
 mod handlers;
+
+fn get_migrations() -> Vec<Migration> {
+    vec![
+        Migration {
+            version: 1,
+            description: "create_initial_tables",
+            sql: include_str!("../migrations/001_initial.sql"),
+            kind: MigrationKind::Up,
+        },
+    ]
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_sql::Builder::new()
+                .add_migrations("sqlite:ai-studio.db", get_migrations())
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             #[cfg(debug_assertions)] // only include this code on debug builds
             {
+                use tauri::Manager;
+
                 let window = app.get_webview_window("main").unwrap();
                 window.open_devtools();
                 window.close_devtools();
@@ -22,8 +40,8 @@ pub fn run() {
                 use tauri::Manager;
                 let window = app.get_webview_window("main").unwrap();
 
-                use objc2::runtime::AnyObject;
                 use objc2::msg_send;
+                use objc2::runtime::AnyObject;
 
                 let ns_window: *mut AnyObject = window.ns_window().unwrap() as *mut AnyObject;
                 unsafe {

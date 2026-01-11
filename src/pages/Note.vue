@@ -2,7 +2,7 @@
 import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { throttle } from "lodash-es";
-import { getNote, writeNote, updateNote } from "@/db";
+import { getNote, writeNote, updateNote } from "@/db-sqlite";
 import { MilkdownProvider } from "@milkdown/vue";
 import MilkdownEditor from "@/components/MilkdownEditor.vue";
 import NameEdit from "@/components/NameEdit.vue";

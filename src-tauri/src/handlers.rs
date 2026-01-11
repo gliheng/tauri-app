@@ -1,23 +1,24 @@
-use tauri::Emitter;
+use notify::{EventKind, RecursiveMode, Watcher};
+use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::sync::Arc;
+use tauri::Emitter;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::sync::Mutex;
-use std::sync::Arc;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::fs;
-use serde::{Deserialize, Serialize};
-use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
-use std::io::{Read, Write};
-use notify::{Watcher, RecursiveMode, EventKind};
 
 // Global state to manage agent processes and callbacks
-static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::process::Child>>>> = 
+static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::process::Child>>>> =
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
-static LISTENING_TASKS: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>> = 
-    std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
+static LISTENING_TASKS: std::sync::LazyLock<
+    Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>,
+> = std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 #[derive(Deserialize, Debug)]
 pub struct ModelSettings {
@@ -34,10 +35,13 @@ pub async fn acp_initialize(
     agent: &str,
     settings: Option<ModelSettings>,
 ) -> Result<serde_json::Value, serde_json::Value> {
-    println!("acp_initialize called with agent: {}, settings: {:?}", agent, settings);
+    println!(
+        "acp_initialize called with agent: {}, settings: {:?}",
+        agent, settings
+    );
     let agent_parts: Vec<&str> = agent.split("::").collect();
     let agent_name = agent_parts.first().unwrap_or(&agent);
-    
+
     let mut args = vec!["x".into()];
     // Create environment variables map based on agent type
     let mut env_vars: HashMap<String, String> = HashMap::new();
@@ -56,12 +60,19 @@ pub async fn acp_initialize(
     } else if *agent_name == "codex" {
         args.push("@zed-industries/codex-acp".into());
         if let Some(ms) = settings {
-            args.extend(["-c".into(), "model_provider=x".into(),
-                "-c".into(), "model_providers.x.name=x".into(),
-                "-c".into(), format!("model_providers.x.base_url={}", ms.base_url),
-                "-c".into(), "model_providers.x.env_key=X_API_KEY".into(),
-                "-c".into(), "model_provider=x".into(),
-                "-c".into(), format!("model={}", ms.model),
+            args.extend([
+                "-c".into(),
+                "model_provider=x".into(),
+                "-c".into(),
+                "model_providers.x.name=x".into(),
+                "-c".into(),
+                format!("model_providers.x.base_url={}", ms.base_url),
+                "-c".into(),
+                "model_providers.x.env_key=X_API_KEY".into(),
+                "-c".into(),
+                "model_provider=x".into(),
+                "-c".into(),
+                format!("model={}", ms.model),
             ]);
             env_vars.insert("X_API_KEY".into(), ms.api_key);
         }
@@ -72,7 +83,10 @@ pub async fn acp_initialize(
             env_vars.insert("ANTHROPIC_MODEL".into(), ms.model);
             env_vars.insert("ANTHROPIC_AUTH_TOKEN".into(), ms.api_key);
             env_vars.insert("API_TIMEOUT_MS".into(), "600000".into());
-            env_vars.insert("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".into(), "1".into());
+            env_vars.insert(
+                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".into(),
+                "1".into(),
+            );
         }
     } else if *agent_name == "gemini" {
         args.push("@google/gemini-cli".into());
@@ -96,26 +110,28 @@ pub async fn acp_initialize(
             "message": format!("Unknown agent type: {}", agent_name)
         }));
     }
-    
+
     // println!("Command args: {:?}", args);
     // println!("Environment vars: {:?}", env_vars);
     let mut command = TokioCommand::new("bun");
-    
+
     // Apply environment variables from the map
     for (key, value) in env_vars {
         command.env(key, value);
     }
-    
+
     let child = command
         .args(&args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| serde_json::json!({
-            "code": 1,
-            "message": format!("Failed to start {} process: {}", agent_name, e)
-        }))?;
+        .map_err(|e| {
+            serde_json::json!({
+                "code": 1,
+                "message": format!("Failed to start {} process: {}", agent_name, e)
+            })
+        })?;
 
     // Store the process for later communication
     {
@@ -130,30 +146,38 @@ pub async fn acp_initialize(
 }
 
 #[tauri::command]
-pub async fn acp_send_message(agent: &str, message: serde_json::Value) -> Result<serde_json::Value, serde_json::Value> {
+pub async fn acp_send_message(
+    agent: &str,
+    message: serde_json::Value,
+) -> Result<serde_json::Value, serde_json::Value> {
     let mut processes = AGENT_PROCESSES.lock().await;
-    let child = processes.get_mut(agent)
-        .ok_or_else(|| serde_json::json!({
+    let child = processes.get_mut(agent).ok_or_else(|| {
+        serde_json::json!({
             "code": 2,
             "message": format!("Agent {} not found", agent)
-        }))?;
+        })
+    })?;
 
     if let Some(stdin) = child.stdin.as_mut() {
         let json_str = message.to_string();
-        stdin.write_all(json_str.as_bytes()).await
-            .map_err(|e| serde_json::json!({
+        stdin.write_all(json_str.as_bytes()).await.map_err(|e| {
+            serde_json::json!({
                 "code": 3,
                 "message": format!("Failed to write to stdin: {}", e)
-            }))?;
-        stdin.write_all(b"\n").await
-            .map_err(|e| serde_json::json!({
+            })
+        })?;
+        stdin.write_all(b"\n").await.map_err(|e| {
+            serde_json::json!({
                 "code": 4,
                 "message": format!("Failed to write newline to stdin: {}", e)
-            }))?;
-        stdin.flush().await.map_err(|e| serde_json::json!({
-            "code": 5,
-            "message": format!("Failed to flush stdin: {}", e)
-        }))?;
+            })
+        })?;
+        stdin.flush().await.map_err(|e| {
+            serde_json::json!({
+                "code": 5,
+                "message": format!("Failed to flush stdin: {}", e)
+            })
+        })?;
         println!("Message sent to agent {} {}", agent, json_str);
     }
 
@@ -163,14 +187,17 @@ pub async fn acp_send_message(agent: &str, message: serde_json::Value) -> Result
 }
 
 #[tauri::command]
-pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<serde_json::Value, serde_json::Value> {
+pub async fn acp_start_listening(
+    agent: &str,
+    window: tauri::Window,
+) -> Result<serde_json::Value, serde_json::Value> {
     let agent_name = agent.to_string();
     let window_clone = window.clone();
     let agent_name_clone = agent_name.clone();
-    
+
     let handle = tokio::spawn(async move {
         let mut reader_opt = None;
-        
+
         // Take stdout once at the beginning
         {
             let mut processes = AGENT_PROCESSES.lock().await;
@@ -188,42 +215,48 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<s
                     let processes = AGENT_PROCESSES.lock().await;
                     processes.contains_key(&agent_name_clone)
                 };
-                
+
                 if !agent_exists {
                     break;
                 }
-                
+
                 let mut line = String::new();
-                
+
                 match reader.read_line(&mut line).await {
                     Ok(0) => {
                         // EOF reached
-                        let _ = window_clone.emit(evt.as_str(), serde_json::json!({
-                            "type": "disconnect",
-                        }));
+                        let _ = window_clone.emit(
+                            evt.as_str(),
+                            serde_json::json!({
+                                "type": "disconnect",
+                            }),
+                        );
                         break;
-                    },
+                    }
                     Ok(n) => {
                         println!("Read {} bytes: {}", n, line.trim());
-                        
+
                         let event_data = serde_json::json!({
                             "type": "message",
                             "message": line.trim().to_string()
                         });
-                        
+
                         let _ = window_clone.emit(evt.as_str(), event_data);
-                    },
+                    }
                     Err(e) => {
                         println!("Error reading from stdout: {}", e);
-                        let _ = window_clone.emit(evt.as_str(), serde_json::json!({
-                            "type": "error",
-                            "error": format!("Read error: {}", e)
-                        }));
+                        let _ = window_clone.emit(
+                            evt.as_str(),
+                            serde_json::json!({
+                                "type": "error",
+                                "error": format!("Read error: {}", e)
+                            }),
+                        );
                         break;
                     }
                 }
             }
-            
+
             // Return stdout to the child process
             {
                 let mut processes = AGENT_PROCESSES.lock().await;
@@ -233,13 +266,13 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<s
             }
         }
     });
-    
+
     // Store the task handle
     {
         let mut tasks = LISTENING_TASKS.lock().await;
         tasks.insert(agent_name, handle);
     }
-    
+
     println!("Started listening to agent {}", agent);
     Ok(serde_json::json!({
         "code": 0,
@@ -249,7 +282,7 @@ pub async fn acp_start_listening(agent: &str, window: tauri::Window) -> Result<s
 #[tauri::command]
 pub async fn acp_stop_listening(agent: &str) -> Result<serde_json::Value, serde_json::Value> {
     let mut tasks = LISTENING_TASKS.lock().await;
-    
+
     if let Some(handle) = tasks.remove(agent) {
         handle.abort();
         println!("Stopped listening to agent {}", agent);
@@ -267,7 +300,7 @@ pub async fn acp_stop_listening(agent: &str) -> Result<serde_json::Value, serde_
 #[tauri::command]
 pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::Value> {
     println!("acp_dispose {}", agent);
-    
+
     // First stop listening if active
     {
         let mut tasks = LISTENING_TASKS.lock().await;
@@ -275,7 +308,7 @@ pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::V
             handle.abort();
         }
     }
-    
+
     // Then kill and remove the process
     {
         let mut processes = AGENT_PROCESSES.lock().await;
@@ -287,12 +320,12 @@ pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::V
                     match child.wait().await {
                         Ok(status) => {
                             println!("Agent {} process terminated with status: {}", agent, status);
-                        },
+                        }
                         Err(e) => {
                             println!("Error waiting for agent {} to terminate: {}", agent, e);
                         }
                     }
-                },
+                }
                 Err(e) => {
                     println!("Error killing agent {} process: {}", agent, e);
                     return Err(serde_json::json!({
@@ -308,7 +341,7 @@ pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::V
             }));
         }
     }
-    
+
     println!("Agent {} disposed successfully", agent);
     Ok(serde_json::json!({
         "code": 0,
@@ -328,31 +361,33 @@ pub struct FileNode {
 #[tauri::command]
 pub async fn read_directory(path: &str) -> Result<FileNode, String> {
     let path_buf = Path::new(path);
-    
+
     if !path_buf.exists() {
         return Err("Directory does not exist".to_string());
     }
 
-    let metadata = fs::metadata(path_buf)
-        .map_err(|e| format!("Failed to read metadata: {}", e))?;
+    let metadata = fs::metadata(path_buf).map_err(|e| format!("Failed to read metadata: {}", e))?;
 
-    let name = path_buf.file_name()
+    let name = path_buf
+        .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("")
         .to_string();
 
     if metadata.is_dir() {
         let mut children = Vec::new();
-        let entries = fs::read_dir(path_buf)
-            .map_err(|e| format!("Failed to read directory: {}", e))?;
+        let entries =
+            fs::read_dir(path_buf).map_err(|e| format!("Failed to read directory: {}", e))?;
 
         for entry in entries {
             let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
             let child_path = entry.path();
-            let child_metadata = entry.metadata()
+            let child_metadata = entry
+                .metadata()
                 .map_err(|e| format!("Failed to read child metadata: {}", e))?;
-            
-            let child_name = child_path.file_name()
+
+            let child_name = child_path
+                .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("")
                 .to_string();
@@ -376,17 +411,15 @@ pub async fn read_directory(path: &str) -> Result<FileNode, String> {
                     size: Some(child_metadata.len()),
                 }
             };
-            
+
             children.push(child_node);
         }
 
         // Sort directories first, then files, both alphabetically
-        children.sort_by(|a, b| {
-            match (a.is_dir, b.is_dir) {
-                (true, false) => std::cmp::Ordering::Less,
-                (false, true) => std::cmp::Ordering::Greater,
-                _ => a.name.cmp(&b.name),
-            }
+        children.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.name.cmp(&b.name),
         });
 
         Ok(FileNode {
@@ -411,46 +444,39 @@ pub async fn read_directory(path: &str) -> Result<FileNode, String> {
 
 #[tauri::command]
 pub async fn read_file(path: &str) -> Result<String, String> {
-    fs::read_to_string(path)
-        .map_err(|e| format!("Failed to read file: {}", e))
+    fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
 #[tauri::command]
 pub async fn write_file(path: &str, content: &str) -> Result<(), String> {
-    fs::write(path, content)
-        .map_err(|e| format!("Failed to write file: {}", e))
+    fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))
 }
 
 #[tauri::command]
 pub async fn create_file(path: &str) -> Result<(), String> {
-    fs::write(path, "")
-        .map_err(|e| format!("Failed to create file: {}", e))
+    fs::write(path, "").map_err(|e| format!("Failed to create file: {}", e))
 }
 
 #[tauri::command]
 pub async fn create_directory(path: &str) -> Result<(), String> {
-    fs::create_dir_all(path)
-        .map_err(|e| format!("Failed to create directory: {}", e))
+    fs::create_dir_all(path).map_err(|e| format!("Failed to create directory: {}", e))
 }
 
 #[tauri::command]
 pub async fn rename_file(old_path: &str, new_path: &str) -> Result<(), String> {
-    fs::rename(old_path, new_path)
-        .map_err(|e| format!("Failed to rename: {}", e))
+    fs::rename(old_path, new_path).map_err(|e| format!("Failed to rename: {}", e))
 }
 
 #[tauri::command]
 pub async fn delete_file(path: &str) -> Result<(), String> {
     let path_buf = Path::new(path);
-    
+
     if path_buf.is_dir() {
-        fs::remove_dir_all(path_buf)
-            .map_err(|e| format!("Failed to delete directory: {}", e))?;
+        fs::remove_dir_all(path_buf).map_err(|e| format!("Failed to delete directory: {}", e))?;
     } else {
-        fs::remove_file(path_buf)
-            .map_err(|e| format!("Failed to delete file: {}", e))?;
+        fs::remove_file(path_buf).map_err(|e| format!("Failed to delete file: {}", e))?;
     }
-    
+
     Ok(())
 }
 
@@ -461,9 +487,8 @@ pub async fn move_file(from_path: &str, to_path: &str) -> Result<(), String> {
         fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create destination directory: {}", e))?;
     }
-    
-    fs::rename(from_path, to_path)
-        .map_err(|e| format!("Failed to move file: {}", e))
+
+    fs::rename(from_path, to_path).map_err(|e| format!("Failed to move file: {}", e))
 }
 
 struct TerminalSession {
@@ -471,7 +496,7 @@ struct TerminalSession {
     master: Box<dyn MasterPty + Send>,
 }
 
-static TERMINAL_SESSIONS: std::sync::LazyLock<Arc<Mutex<HashMap<String, TerminalSession>>>> = 
+static TERMINAL_SESSIONS: std::sync::LazyLock<Arc<Mutex<HashMap<String, TerminalSession>>>> =
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 #[tauri::command]
@@ -483,7 +508,7 @@ pub async fn terminal_create_session(
     window: tauri::Window,
 ) -> Result<serde_json::Value, String> {
     let pty_system = native_pty_system();
-    
+
     let pair = pty_system
         .openpty(PtySize {
             rows: rows.unwrap_or(24),
@@ -508,37 +533,49 @@ pub async fn terminal_create_session(
         cmd.cwd(working_dir);
     }
 
-    let _child = pair.slave.spawn_command(cmd)
+    let _child = pair
+        .slave
+        .spawn_command(cmd)
         .map_err(|e| format!("Failed to spawn shell: {}", e))?;
 
-    let mut reader = pair.master.try_clone_reader()
+    let mut reader = pair
+        .master
+        .try_clone_reader()
         .map_err(|e| format!("Failed to clone reader: {}", e))?;
-    
-    let writer = pair.master.take_writer()
+
+    let writer = pair
+        .master
+        .take_writer()
         .map_err(|e| format!("Failed to take writer: {}", e))?;
 
     let terminal_id_clone = terminal_id.clone();
     let window_clone = window;
-    
+
     tokio::task::spawn_blocking(move || {
         let event_name = format!("terminal_output::{}", terminal_id_clone);
         let mut buffer = vec![0u8; 8192];
-        
+
         loop {
             match reader.read(&mut buffer) {
                 Ok(0) => break,
                 Ok(n) => {
                     let data = String::from_utf8_lossy(&buffer[..n]).to_string();
-                    let _ = window_clone.emit(&event_name, serde_json::json!({
-                        "type": "stdout",
-                        "data": data
-                    }));
+                    let _ = window_clone.emit(
+                        &event_name,
+                        serde_json::json!({
+                            "type": "stdout",
+                            "data": data
+                        }),
+                    );
                 }
                 Err(e) => {
-                    let _ = window_clone.emit(&event_name, serde_json::json!({
-                        "type": "error",
-                        "data": format!("Error reading output: {}", e)
-                    }));
+                    let _ = window_clone.emit(
+                        &event_name,
+                        serde_json::json!({
+                            "type": "error",
+                            "data": format!("Error reading output: {}", e)
+                        }),
+                    );
                     break;
                 }
             }
@@ -564,14 +601,19 @@ pub async fn terminal_send_input(
     input: String,
 ) -> Result<serde_json::Value, String> {
     let mut sessions = TERMINAL_SESSIONS.lock().await;
-    
-    let session = sessions.get_mut(&terminal_id)
+
+    let session = sessions
+        .get_mut(&terminal_id)
         .ok_or_else(|| format!("Terminal session {} not found", terminal_id))?;
 
-    session.writer.write_all(input.as_bytes())
+    session
+        .writer
+        .write_all(input.as_bytes())
         .map_err(|e| format!("Failed to write to pty: {}", e))?;
-    
-    session.writer.flush()
+
+    session
+        .writer
+        .flush()
         .map_err(|e| format!("Failed to flush pty: {}", e))?;
 
     Ok(serde_json::json!({
@@ -586,16 +628,20 @@ pub async fn terminal_resize(
     rows: u16,
 ) -> Result<serde_json::Value, String> {
     let sessions = TERMINAL_SESSIONS.lock().await;
-    
-    let session = sessions.get(&terminal_id)
+
+    let session = sessions
+        .get(&terminal_id)
         .ok_or_else(|| format!("Terminal session {} not found", terminal_id))?;
 
-    session.master.resize(PtySize {
-        rows,
-        cols,
-        pixel_width: 0,
-        pixel_height: 0,
-    }).map_err(|e| format!("Failed to resize pty: {}", e))?;
+    session
+        .master
+        .resize(PtySize {
+            rows,
+            cols,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .map_err(|e| format!("Failed to resize pty: {}", e))?;
 
     Ok(serde_json::json!({
         "success": true
@@ -618,7 +664,7 @@ struct ACPTerminal {
     output_byte_limit: usize,
 }
 
-static ACP_TERMINALS: std::sync::LazyLock<Arc<Mutex<HashMap<String, ACPTerminal>>>> = 
+static ACP_TERMINALS: std::sync::LazyLock<Arc<Mutex<HashMap<String, ACPTerminal>>>> =
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 // ACP Terminal RPC Methods
@@ -641,49 +687,51 @@ pub async fn acp_terminal_create(
     let terminal_id = format!("{}_{}", session_id, nanoid::nanoid!());
     println!("Creating terminal session: {} | command: {} | args: {:?} | env: {:?} | cwd: {:?} | output_byte_limit: {:?}", terminal_id, command, args, env, cwd, output_byte_limit);
     let byte_limit = output_byte_limit.unwrap_or(1024 * 1024); // Default 1MB
-    
+
     let mut cmd = TokioCommand::new(&command);
-    
+
     if let Some(arguments) = args {
         cmd.args(&arguments);
     }
-    
+
     if let Some(env_vars) = env {
         for var in env_vars {
             cmd.env(&var.name, &var.value);
         }
     }
-    
+
     if let Some(working_dir) = cwd {
         cmd.current_dir(working_dir);
     }
-    
+
     cmd.stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .stdin(Stdio::null());
-    
-    let mut child = cmd.spawn()
-        .map_err(|e| serde_json::json!({
+
+    let mut child = cmd.spawn().map_err(|e| {
+        serde_json::json!({
             "code": -32000,
             "message": format!("Failed to spawn command: {}", e)
-        }))?;
-    
+        })
+    })?;
+
     let output = Arc::new(Mutex::new(String::new()));
     let exit_status = Arc::new(Mutex::new(None));
-    
+
     // Capture stdout
     if let Some(stdout) = child.stdout.take() {
         let output_clone = output.clone();
         let limit = byte_limit;
-        
+
         tokio::spawn(async move {
             let mut reader = AsyncBufReader::new(stdout);
             let mut buffer = Vec::new();
-            
+
             match reader.read_to_end(&mut buffer).await {
                 Ok(_) => {
                     let mut output_lock = output_clone.lock().await;
-                    let text = String::from_utf8_lossy(&buffer[..buffer.len().min(limit)]).to_string();
+                    let text =
+                        String::from_utf8_lossy(&buffer[..buffer.len().min(limit)]).to_string();
                     output_lock.push_str(&text);
                 }
                 Err(e) => {
@@ -692,20 +740,21 @@ pub async fn acp_terminal_create(
             }
         });
     }
-    
+
     // Capture stderr
     if let Some(stderr) = child.stderr.take() {
         let output_clone = output.clone();
         let limit = byte_limit;
-        
+
         tokio::spawn(async move {
             let mut reader = AsyncBufReader::new(stderr);
             let mut buffer = Vec::new();
-            
+
             match reader.read_to_end(&mut buffer).await {
                 Ok(_) => {
                     let mut output_lock = output_clone.lock().await;
-                    let text = String::from_utf8_lossy(&buffer[..buffer.len().min(limit)]).to_string();
+                    let text =
+                        String::from_utf8_lossy(&buffer[..buffer.len().min(limit)]).to_string();
                     output_lock.push_str(&text);
                 }
                 Err(e) => {
@@ -714,7 +763,7 @@ pub async fn acp_terminal_create(
             }
         });
     }
-    
+
     // Monitor exit status
     let exit_status_clone = exit_status.clone();
     tokio::spawn(async move {
@@ -729,7 +778,7 @@ pub async fn acp_terminal_create(
             }
         }
     });
-    
+
     let terminal = ACPTerminal {
         child: TokioCommand::new("sleep").arg("0").spawn().unwrap(), // Placeholder
         output,
@@ -737,10 +786,10 @@ pub async fn acp_terminal_create(
         exit_status,
         output_byte_limit: byte_limit,
     };
-    
+
     let mut terminals = ACP_TERMINALS.lock().await;
     terminals.insert(terminal_id.clone(), terminal);
-    
+
     Ok(serde_json::json!({
         "terminalId": terminal_id
     }))
@@ -752,29 +801,30 @@ pub async fn acp_terminal_output(
     terminal_id: String,
 ) -> Result<serde_json::Value, serde_json::Value> {
     let terminals = ACP_TERMINALS.lock().await;
-    
-    let terminal = terminals.get(&terminal_id)
-        .ok_or_else(|| serde_json::json!({
+
+    let terminal = terminals.get(&terminal_id).ok_or_else(|| {
+        serde_json::json!({
             "code": -32000,
             "message": format!("Terminal {} not found", terminal_id)
-        }))?;
-    
+        })
+    })?;
+
     let output = terminal.output.lock().await.clone();
     let exit_status_lock = terminal.exit_status.lock().await;
     let truncated = output.len() >= terminal.output_byte_limit;
-    
+
     let mut result = serde_json::json!({
         "output": output,
         "truncated": truncated
     });
-    
+
     if let Some((exit_code, signal)) = exit_status_lock.as_ref() {
         result["exitStatus"] = serde_json::json!({
             "exitCode": exit_code,
             "signal": signal
         });
     }
-    
+
     Ok(result)
 }
 
@@ -784,18 +834,20 @@ pub async fn acp_terminal_wait_for_exit(
     terminal_id: String,
 ) -> Result<serde_json::Value, serde_json::Value> {
     let terminals = ACP_TERMINALS.lock().await;
-    
-    let terminal = terminals.get(&terminal_id)
-        .ok_or_else(|| serde_json::json!({
+
+    let terminal = terminals.get(&terminal_id).ok_or_else(|| {
+        serde_json::json!({
             "code": -32000,
             "message": format!("Terminal {} not found", terminal_id)
-        }))?;
-    
+        })
+    })?;
+
     let exit_status = terminal.exit_status.clone();
     drop(terminals);
-    
+
     // Poll for exit status
-    for _ in 0..300 { // Wait up to 30 seconds
+    for _ in 0..300 {
+        // Wait up to 30 seconds
         let status_lock = exit_status.lock().await;
         if let Some((exit_code, signal)) = status_lock.as_ref() {
             return Ok(serde_json::json!({
@@ -806,7 +858,7 @@ pub async fn acp_terminal_wait_for_exit(
         drop(status_lock);
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
     }
-    
+
     // Timeout
     Ok(serde_json::json!({
         "exitCode": null,
@@ -820,7 +872,7 @@ pub async fn acp_terminal_kill(
     terminal_id: String,
 ) -> Result<(), serde_json::Value> {
     let mut terminals = ACP_TERMINALS.lock().await;
-    
+
     if let Some(terminal) = terminals.get_mut(&terminal_id) {
         let _ = terminal.child.kill().await;
         Ok(())
@@ -861,10 +913,7 @@ pub struct WatchFileArgs {
 }
 
 #[tauri::command]
-pub async fn watch_file(
-    args: WatchFileArgs,
-    window: tauri::Window,
-) -> Result<(), String> {
+pub async fn watch_file(args: WatchFileArgs, window: tauri::Window) -> Result<(), String> {
     let WatchFileArgs {
         session_id,
         relative_path: _,
@@ -886,91 +935,108 @@ pub async fn watch_file(
         let base_path_clone = base_path_buf.clone();
 
         // Create the watcher with the new notify API
-        let mut watcher = notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
-            match res {
-                Ok(event) => {
-                    match &event.kind {
-                        // Only handle actual data/content changes, not metadata
-                        EventKind::Modify(notify::event::ModifyKind::Data(_)) => {
-                            // Handle file content modifications
-                            for path in &event.paths {
-                                if path.is_file() {
+        let mut watcher =
+            notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
+                match res {
+                    Ok(event) => {
+                        match &event.kind {
+                            // Only handle actual data/content changes, not metadata
+                            EventKind::Modify(notify::event::ModifyKind::Data(_)) => {
+                                // Handle file content modifications
+                                for path in &event.paths {
+                                    if path.is_file() {
+                                        let relative = path
+                                            .strip_prefix(&base_path_clone)
+                                            .ok()
+                                            .and_then(|p: &Path| p.to_str())
+                                            .unwrap_or("");
+
+                                        let _ = window_clone.emit(
+                                            "file_changed",
+                                            serde_json::json!({
+                                                "path": relative,
+                                                "type": "modified"
+                                            }),
+                                        );
+                                    }
+                                }
+                            }
+                            EventKind::Create(_) => {
+                                // Handle file/folder creation
+                                for path in &event.paths {
                                     let relative = path
                                         .strip_prefix(&base_path_clone)
                                         .ok()
                                         .and_then(|p: &Path| p.to_str())
                                         .unwrap_or("");
 
-                                    let _ = window_clone.emit("file_changed", serde_json::json!({
-                                        "path": relative,
-                                        "type": "modified"
-                                    }));
+                                    let _ = window_clone.emit(
+                                        "file_tree_changed",
+                                        serde_json::json!({
+                                            "path": relative,
+                                            "type": "created"
+                                        }),
+                                    );
                                 }
                             }
-                        }
-                        EventKind::Create(_) => {
-                            // Handle file/folder creation
-                            for path in &event.paths {
-                                let relative = path
-                                    .strip_prefix(&base_path_clone)
-                                    .ok()
-                                    .and_then(|p: &Path| p.to_str())
-                                    .unwrap_or("");
+                            EventKind::Remove(_) => {
+                                // Handle file/folder removal
+                                for path in &event.paths {
+                                    let relative = path
+                                        .strip_prefix(&base_path_clone)
+                                        .ok()
+                                        .and_then(|p: &Path| p.to_str())
+                                        .unwrap_or("");
 
-                                let _ = window_clone.emit("file_tree_changed", serde_json::json!({
-                                    "path": relative,
-                                    "type": "created"
-                                }));
+                                    let _ = window_clone.emit(
+                                        "file_tree_changed",
+                                        serde_json::json!({
+                                            "path": relative,
+                                            "type": "removed"
+                                        }),
+                                    );
+                                }
                             }
-                        }
-                        EventKind::Remove(_) => {
-                            // Handle file/folder removal
-                            for path in &event.paths {
-                                let relative = path
-                                    .strip_prefix(&base_path_clone)
-                                    .ok()
-                                    .and_then(|p: &Path| p.to_str())
-                                    .unwrap_or("");
+                            // Handle rename/move events as file tree changes
+                            EventKind::Modify(notify::event::ModifyKind::Name(_)) => {
+                                for path in &event.paths {
+                                    let relative = path
+                                        .strip_prefix(&base_path_clone)
+                                        .ok()
+                                        .and_then(|p: &Path| p.to_str())
+                                        .unwrap_or("");
 
-                                let _ = window_clone.emit("file_tree_changed", serde_json::json!({
-                                    "path": relative,
-                                    "type": "removed"
-                                }));
+                                    let _ = window_clone.emit(
+                                        "file_tree_changed",
+                                        serde_json::json!({
+                                            "path": relative,
+                                            "type": "renamed"
+                                        }),
+                                    );
+                                }
                             }
+                            _ => {}
                         }
-                        // Handle rename/move events as file tree changes
-                        EventKind::Modify(notify::event::ModifyKind::Name(_)) => {
-                            for path in &event.paths {
-                                let relative = path
-                                    .strip_prefix(&base_path_clone)
-                                    .ok()
-                                    .and_then(|p: &Path| p.to_str())
-                                    .unwrap_or("");
-
-                                let _ = window_clone.emit("file_tree_changed", serde_json::json!({
-                                    "path": relative,
-                                    "type": "renamed"
-                                }));
-                            }
-                        }
-                        _ => {}
+                    }
+                    Err(e) => {
+                        eprintln!("Watch error: {:?}", e);
                     }
                 }
-                Err(e) => {
-                    eprintln!("Watch error: {:?}", e);
-                }
-            }
-        }).expect("Failed to create file watcher");
+            })
+            .expect("Failed to create file watcher");
 
         // Watch the base directory recursively
         watcher
             .watch(&base_path_buf, RecursiveMode::Recursive)
             .map_err(|e| format!("Failed to watch directory: {}", e))?;
 
-        watchers.insert(session_id.clone(), FileWatcherSession {
-            _watcher: watcher,
-            base_path: base_path_buf,
-        });
+        watchers.insert(
+            session_id.clone(),
+            FileWatcherSession {
+                _watcher: watcher,
+                base_path: base_path_buf,
+            },
+        );
     }
 
     Ok(())
@@ -993,19 +1059,21 @@ pub async fn get_opencode_models() -> Result<serde_json::Value, serde_json::Valu
         .arg("models")
         .output()
         .await
-        .map_err(|e| serde_json::json!({
-            "code": 11,
-            "message": format!("Failed to execute opencode models: {}", e)
-        }))?;
-    
+        .map_err(|e| {
+            serde_json::json!({
+                "code": 11,
+                "message": format!("Failed to execute opencode models: {}", e)
+            })
+        })?;
+
     let stdout = String::from_utf8_lossy(&output.stdout);
-    
+
     let models: Vec<String> = stdout
         .lines()
         .map(|line| line.trim().to_string())
         .filter(|s| !s.is_empty())
         .collect();
-    
+
     Ok(serde_json::json!({ "models": models }))
 }
 

@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import moment from "moment";
-import { getAllChats, deleteChat, Chat } from "@/db";
+import { getAllChats, deleteChat, Chat } from "@/db-sqlite";
 import { useTabsStore } from "@/stores/tabs";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { nanoid } from "nanoid";

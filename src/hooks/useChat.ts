@@ -6,7 +6,7 @@ import {
 } from "ai";
 import { getModel } from "@/llm";
 import { useChat as aiUseChat, UseChatOptions } from "@ai-sdk/vue";
-import { updateChat, writeChat, writeMessages } from "@/db";
+import { updateChat, writeChat, writeMessages } from "@/db-sqlite";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 
@@ -51,6 +51,9 @@ export function useChat(opts: {
             responseMessages: response.messages,
           });
           await writeMessages(opts.id, messages, prevAssistantMessage?.id);
+        },
+        onError: async (error) => {
+          console.error('useChat onError', error);
         },
         abortSignal: req?.signal ?? undefined,
       });

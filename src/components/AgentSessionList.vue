@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants';
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { useRouter } from "vue-router";
 import { useTabsStore } from "@/stores/tabs";
-import { getChatsByAgentId, deleteChat, type Chat } from "@/db";
+import { getChatsByAgentId, deleteChat, type Chat } from "@/db-sqlite";
 
 const props = defineProps({
   agentId: {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Milkdown, useEditor } from "@milkdown/vue";
 import { Crepe } from "@milkdown/crepe";
-import { readFile, writeFile } from "@/db";
+import { readFile, writeFile } from "@/db-sqlite";
 
 const model = defineModel({
   type: String,

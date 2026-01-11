@@ -5,7 +5,7 @@ import { omit } from "lodash-es";
 import ChatBox from "@/components/ChatBox.vue";
 import MessageList from "@/components/MessageList.vue";
 import { useChat } from "@/hooks/useChat";
-import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db";
+import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db-sqlite";
 import { CHAT_ACTIONS, MESSAGE_GRAPH, ROOT_NODE_ID } from "@/constants";
 import { useSettingsStore } from "@/stores/settings";
 
@@ -115,8 +115,12 @@ provide(CHAT_ACTIONS, {
       }
     });
   },
-  append(message: any, options: any) {
-    return append(message, options);
+  append(message: any) {
+    return append(message, {
+      data: {
+        model: settingsStore.chatSettings.chatModel,
+      }
+    });
   },
   input,
   status,
@@ -178,6 +182,20 @@ provide(MESSAGE_GRAPH, {
         </template>
       </UPopover>
     </header>
+    <div
+      v-if="error"
+      class="mx-20 my-10"
+    >
+      <UAlert
+        title="Error!"
+        :description="error.message"
+        color="error"
+        icon="i-lucide-alert-octagon"
+        :ui="{
+          icon: 'size-10'
+        }"
+      />
+    </div>
     <AnimatePresence>
       <MessageList
         v-if="showMessageList"
