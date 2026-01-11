@@ -13,6 +13,7 @@ export enum ACPMethod {
   SessionPrompt = 'session/prompt',
   SessionCancel = 'session/cancel',
   SessionRequestPermission = 'session/request_permission',
+  SessionSetMode = 'session/set_mode',
   FsReadTextFile = 'fs/read_text_file',
   FsWriteTextFile = 'fs/write_text_file',
   TerminalCreate = 'terminal/create',
@@ -60,6 +61,10 @@ export type ACPMethodDefinitions = {
   };
   [ACPMethod.SessionCancel]: {
     params: { sessionId: string; };
+    return: void;
+  };
+  [ACPMethod.SessionSetMode]: {
+    params: { sessionId: string; modeId: string };
     return: void;
   };
   [ACPMethod.SessionRequestPermission]: {
@@ -188,6 +193,7 @@ export interface ACPServiceConfig {
   };
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onInitialize?: (initializeResult: InitializeResult) => void;
   onInvoke?: (method: string, params: any) => Promise<any>;
 }
 
@@ -204,12 +210,13 @@ export class ACPService {
 
   constructor(private config: ACPServiceConfig) {}
 
-  async initialize(): Promise<void> {
+  async initialize(): Promise<InitializeResult> {
     await invoke("acp_initialize", {
       agent: this.config.program,
       settings: Object.assign({
-        base_url: "",
-        api_key: "",
+        // Rust side are not optional fields
+        baseUrl: "",
+        apiKey: "",
         model: "",
       }, this.config.model),
     });
@@ -230,6 +237,8 @@ export class ACPService {
       }
     }) as InitializeResult;
     this.initializeResult = ret;
+    this.config.onInitialize?.(ret);
+    return ret;
   }
 
   async startListening(): Promise<() => void> {
@@ -353,6 +362,13 @@ export class ACPService {
   async sessionCancel(): Promise<void> {
     return this.rpc("session/cancel", {
       sessionId: this.sessionId,
+    });
+  }
+
+  async sessionSetMode(modeId: string): Promise<void> {
+    return this.rpc("session/set_mode", {
+      sessionId: this.sessionId,
+      modeId,
     });
   }
 

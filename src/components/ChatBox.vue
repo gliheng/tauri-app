@@ -101,6 +101,7 @@ function appendFiles(newFiles: FileList) {
         @mousedown.prevent
       >
         <UploadButton @select-file="appendFiles" />
+        <slot name="left-addons" />
         <template v-for="addon of addons">
           <ModelSelector v-if="addon == 'model-select'" key="model-select" />
         </template>

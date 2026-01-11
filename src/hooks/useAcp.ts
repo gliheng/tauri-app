@@ -1,10 +1,9 @@
-import { ref } from "vue";
-import { ACPService, ACPMethod, ToolCallUpdate } from "@/services/acp";
+import { Ref, ref } from "vue";
+import { ACPService, ACPMethod, ToolCallUpdate, InitializeResult, Mode } from "@/services/acp";
 import { getCodeAgentConfig } from "@/llm";
 import { Agent } from "@/db-sqlite";
 import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
 import { invoke } from '@tauri-apps/api/core';
-import { join } from '@tauri-apps/api/path';
 
 export type Role = 'user' | 'assistant';
 
@@ -84,6 +83,8 @@ export type ContentBlock = TextBlock | ImageBlock | AudioBlock | ResourceBlock |
 
 export type MessagePart = ContentBlock | ThoughtPart | PlanPart | ToolCallPart
 
+export type Status = 'submitted' | 'streaming' | 'ready' | 'error';
+
 export interface Message {
   id: string;
   content: string;
@@ -99,14 +100,28 @@ export function useAcp({ chatId, agent, onInvoke }: {
   const overlay = useOverlay();
   const permissionModal = overlay.create(PermissionModal);
   const messages = ref<Message[]>([]);
-  const status = ref<'submitted' | 'streaming' | 'ready' | 'error'>("ready");
+  const status = ref<Status>("ready");
+  const currentModeId = ref<string>('');
+  const availableModes = ref<Mode[]>([]);
+  const availableCommands = ref<AvailableCommand[]>([]);
+  const state = {
+    messages,
+    status,
+    currentModeId,
+    availableModes,
+    availableCommands,
+  };
   const context = {
     toolCallMap: new Map<string, Message>(),
-    availableCommands: [] as AvailableCommand[],
   };
 
   const { useCustomModel, ...modelConfig } = getCodeAgentConfig(agent.program!);
-  const model = useCustomModel ? modelConfig : undefined;
+  const model = useCustomModel ? {
+    model: '',
+    baseUrl: '',
+    apiKey: '',
+    ...modelConfig,
+  } : undefined;
   console.log('Creating ACP service for agent:', agent.program, 'chatId:', chatId, 'model:', model);
   const acpService = new ACPService({
     program: agent.program! + "::" + chatId, // Start a new process for each chat
@@ -119,17 +134,23 @@ export function useAcp({ chatId, agent, onInvoke }: {
     onDisconnect() {
       console.log('onDisconnect');
     },
+    async onInitialize(initializeResult: InitializeResult) {
+      if (initializeResult.modes) {
+        currentModeId.value = initializeResult.modes.currentModeId;
+        availableModes.value = initializeResult.modes.availableModes;
+      }
+    },
     async onInvoke(method: string, params: any) {
       onInvoke?.(method, params);
       // console.log("Method", method, "invoked with params", params);
       if (method === ACPMethod.SessionUpdate) {
         const { update } = params as { update: any; sessionId: string };
-        appendSessionUpdate(update, messages.value, context);
+        appendSessionUpdate(update, state, context);
       } else if (method === ACPMethod.SessionRequestPermission) {
         appendSessionUpdate({
           sessionUpdate: 'tool_call',
           ...params.toolCall,
-        }, messages.value, context);
+        }, state, context);
         const optionId = await permissionModal.open({
           options: params.options,
         });
@@ -233,8 +254,7 @@ export function useAcp({ chatId, agent, onInvoke }: {
   });
   return {
     acpService,
-    messages,
-    status,
+    ...state,
   };
 }
 
@@ -242,14 +262,20 @@ function appendSessionUpdate(
   params: {
     sessionUpdate: string;
   } & Record<string, any>,
-  messages: Message[],
+  state: {
+    messages: Ref<Message[]>;
+    status: Ref<Status>;
+    currentModeId: Ref<string>;
+    availableModes: Ref<Mode[]>;
+    availableCommands: Ref<AvailableCommand[]>;
+  },
   context: {
     toolCallMap: Map<string, Message>;
-    availableCommands: AvailableCommand[];
   },
 ) {
+  const { messages, currentModeId } = state;
   const { sessionUpdate, ...rest } = params;
-  const lastMessage = messages[messages.length - 1];
+  const lastMessage = messages.value[messages.value.length - 1];
   if (sessionUpdate == 'agent_message_chunk') {
     const content = rest.content;
     // Add message chunk
@@ -265,8 +291,8 @@ function appendSessionUpdate(
       }
       lastMessage.content += content.text;
     } else {
-      messages.push({
-        id: String(messages.length),
+      messages.value.push({
+        id: String(messages.value.length),
         role: "assistant",
         content: content.text,
         parts: [
@@ -291,8 +317,8 @@ function appendSessionUpdate(
       }
       lastMessage.content += content.text;
     } else {
-      messages.push({
-        id: String(messages.length),
+      messages.value.push({
+        id: String(messages.value.length),
         role: "assistant",
         content: content.text,
         parts: [
@@ -305,8 +331,8 @@ function appendSessionUpdate(
     }
   } else if (sessionUpdate == 'plan') {
     const entries = rest.entries;
-    messages.push({
-      id: String(messages.length),
+    messages.value.push({
+      id: String(messages.value.length),
       role: "assistant",
       content: JSON.stringify(entries),
       parts: [
@@ -326,7 +352,7 @@ function appendSessionUpdate(
       Object.assign(part, rest);
     } else {
       const msg: Message = {
-        id: String(messages.length),
+        id: String(messages.value.length),
         role: "assistant",
         content: rest.title,
         parts: [
@@ -337,7 +363,7 @@ function appendSessionUpdate(
         ],
       };
       context.toolCallMap.set(rest.toolCallId, msg);
-      messages.push(msg);
+      messages.value.push(msg);
     }
   } else if (sessionUpdate == 'tool_call_update') {
     // Update previous tool call message
@@ -349,11 +375,13 @@ function appendSessionUpdate(
       Object.assign(part, rest);
     }
   } else if (sessionUpdate == 'available_commands_update') {
-    context.availableCommands = rest.availableCommands;
+    state.availableCommands.value = rest.availableCommands;
+  } else if (sessionUpdate == 'current_mode_update') {
+    currentModeId.value = rest.modeId;
   } else if (sessionUpdate == 'user_message_chunk') {
     const content = rest.content;
-    messages.push({
-      id: String(messages.length),
+    messages.value.push({
+      id: String(messages.value.length),
       role: "user",
       content: content.text,
       parts: [

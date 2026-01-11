@@ -62,10 +62,10 @@ const codeAgentItems = [
     label: "Qwen",
     value: "qwen",
   },
-  {
-    label: "OpenCode",
-    value: "opencode",
-  },
+  // {
+  //   label: "OpenCode",
+  //   value: "opencode",
+  // },
 ] satisfies TabsItem[];
 
 const defaultCodeAgent = "codex";

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, PropType } from "vue";
+import { ref, onUnmounted, onMounted, PropType, computed } from "vue";
 import { Chat, updateChat, writeChat, type Agent } from "@/db-sqlite";
 import ChatBox from "@/components/ChatBox.vue";
 import Spinner from "@/components/Spinner.vue";
 import MessageList from "./MessageList.vue";
+import ModeSelector from "./ModeSelector.vue";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 import { useAcp } from "@/hooks/useAcp";
@@ -27,8 +28,9 @@ const props = defineProps({
 const isInitialized = ref(false);
 const input = ref("");
 const error = ref<string | null>(null);
+const sessionId = ref<string | null>(props.chat?.sessionId ?? null);
 
-const { acpService, messages, status } = useAcp({
+const { acpService, messages, status, currentModeId, availableModes } = useAcp({
   chatId: props.chatId,
   agent: props.agent,
   onInvoke(method) {
@@ -38,12 +40,35 @@ const { acpService, messages, status } = useAcp({
   },
 });
 
+const hasModes = computed(() => availableModes.value.length > 0);
+
+async function handleModeChange(modeId: string) {
+  if (!acpService) return;
+  try {
+    currentModeId.value = modeId;
+    await ensureSession();
+    await acpService.sessionSetMode(modeId);
+  } catch (err) {
+    console.error('Failed to set mode:', err);
+    error.value = `Failed to set mode: ${JSON.stringify(err, null, 2)}`;
+  }
+}
+
+async function ensureSession() {
+  if (!sessionId.value) {
+    const ret = await acpService.sessionNew();
+    sessionId.value = ret.sessionId;
+    console.log('Session created:', ret);
+  }
+}
+
 const start = async () => {
   try {
     error.value = null;
     console.log("Starting agent initialization...");
-            
+
     await acpService.initialize();
+
     const enableLoadSession = acpService.hasCapability("loadSession");
 
     if (enableLoadSession && props.chat && props.chat.sessionId) {
@@ -51,7 +76,7 @@ const start = async () => {
       await acpService.sessionLoad(props.chat.sessionId);
       status.value = 'ready';
     }
-    
+
     console.log("Agent initialized successfully");
     isInitialized.value = true;
   } catch (err) {
@@ -105,8 +130,7 @@ const handleSubmit = async () => {
     status.value = "submitted";
 
     if (!props.chat && messages.value.length === 1) {
-      const ret = await acpService.sessionNew();
-      console.log('Session created:', ret);
+      await ensureSession();
   
       // Async update chat meta data
       (async () => {
@@ -117,7 +141,7 @@ const handleSubmit = async () => {
           createdAt: new Date(),
           updatedAt: new Date(),
           agentId: props.agent.id,
-          sessionId: ret.sessionId,
+          sessionId: sessionId.value!,
         };
         await writeChat(agentChat);
         useTabsStore().setTitle(`/chat/${props.chatId}`, topic);
@@ -182,7 +206,17 @@ onUnmounted(() => {
         :messages="messages"
         @submit="handleSubmit"
         @stop="cancel"
-      />
+      >
+        <template #left-addons>
+          <ModeSelector
+            v-if="hasModes"
+            v-model="currentModeId"
+            :available-modes="availableModes"
+            :disabled="status === 'streaming'"
+            @update:modelValue="handleModeChange"
+          />
+        </template>
+      </ChatBox>
     </template>
   </div>
 </template>

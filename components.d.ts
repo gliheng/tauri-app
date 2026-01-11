@@ -29,6 +29,7 @@ declare module 'vue' {
     MessageSwitcher: typeof import('./src/components/MessageSwitcher.vue')['default']
     MilkdownEditor: typeof import('./src/components/MilkdownEditor.vue')['default']
     ModelSelector: typeof import('./src/components/ModelSelector.vue')['default']
+    ModeSelector: typeof import('./src/components/AgentChat/ModeSelector.vue')['default']
     NameEdit: typeof import('./src/components/NameEdit.vue')['default']
     PermissionModal: typeof import('./src/components/AgentChat/PermissionModal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

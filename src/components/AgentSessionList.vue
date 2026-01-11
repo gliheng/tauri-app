@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onActivated } from "vue";
 import { tv } from 'tailwind-variants';
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { useRouter } from "vue-router";
@@ -59,6 +59,11 @@ const onDeleteSession = async (id: string) => {
   }
 };
 
+// Refresh session list when component is activated
+onActivated(() => {
+  loadSessions();
+});
+
 const emit = defineEmits(['new-session']);
 
 </script>
@@ -88,8 +93,7 @@ const emit = defineEmits(['new-session']);
             <UButton
               icon="i-heroicons-trash"
               size="xs"
-              color="red"
-              variant="ghost"
+              color="error"
               @click.stop="onDeleteSession(session.id)"
             />
           </div>
