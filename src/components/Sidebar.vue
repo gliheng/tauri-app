@@ -63,6 +63,13 @@ async function addAgent() {
   });
 }
 
+function addImage() {
+  tabsStore.openTab(`/image`, "Image Generation");
+  router.push({
+    name: "image",
+  });
+}
+
 function agentUrl(agent: Agent) {
   return `/agent/${agent.id}`;
 }
@@ -206,6 +213,13 @@ const isMac = platform.startsWith("Mac");
         </section>
       </template>
     </UCollapsible>
+    <UButton
+      icon="i-lucide-image"
+      variant="subtle"
+      color="neutral"
+      @click="addImage"
+      >Create image</UButton
+    >
     <div class="flex-1"></div>
     <UModal
       class=""
