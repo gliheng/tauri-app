@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, PropType } from "vue";
+import { PropType } from "vue";
 import type { AvailableCommand } from "@/hooks/useAcp";
-import type { DropdownMenuItem } from "@nuxt/ui";
 
+// Cannot use dropdown menu because clicking on it will make the input focus lost
 const props = defineProps({
   availableCommands: {
     type: Array as PropType<AvailableCommand[]>,
@@ -17,25 +17,12 @@ const props = defineProps({
 const emit = defineEmits<{
   select: [command: AvailableCommand];
 }>();
-
-const items = computed(() => {
-  return props.availableCommands.map((command): DropdownMenuItem => ({
-    label: `/${command.name}`,
-    description: command.description,
-    onSelect() {
-      emit("select", command);
-    },
-  }));
-});
 </script>
 
 <template>
-  <UDropdownMenu
-    :items="items"
+  <UPopover
     :disabled="disabled || availableCommands.length === 0"
-    :ui="{
-      content: 'min-w-fit',
-    }"
+    position=""
   >
     <UButton
       icon="i-lucide-command"
@@ -43,6 +30,30 @@ const items = computed(() => {
       variant="soft"
       size="sm"
       :disabled="disabled || availableCommands.length === 0"
+      @mousedown.prevent
     />
-  </UDropdownMenu>
+
+    <template #content>
+      <div class="flex flex-col gap-1 p-1">
+        <UButton
+          v-for="command in availableCommands"
+          :key="command.name"
+          variant="ghost"
+          color="neutral"
+          class="justify-start"
+          @mousedown.prevent
+          @click="emit('select', command)"
+        >
+          <template #default>
+            <span data-slot="itemWrapper" class="flex-1 flex flex-col text-start min-w-0">
+              <span data-slot="itemLabel" class="truncate">/{{ command.name }}</span>
+              <span data-slot="itemDescription" class="truncate text-muted">{{ command.description }}</span>
+            </span>
+            <span data-slot="itemTrailing" class="ms-auto inline-flex gap-1.5 items-center">
+            </span>
+          </template>
+        </UButton>
+      </div>
+    </template>
+  </UPopover>
 </template>

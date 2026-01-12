@@ -58,10 +58,12 @@ function setInputAndFocus(value: string, cursorPosition?: number) {
   input.value = value;
   const textarea = textareaRef.value?.textareaRef;
   if (textarea) {
-    textarea.focus();
-    if (cursorPosition !== undefined) {
-      textarea.setSelectionRange(cursorPosition, cursorPosition);
-    }
+    nextTick(() => {
+      textarea.focus();
+      if (cursorPosition !== undefined) {
+        textarea.setSelectionRange(cursorPosition, cursorPosition);
+      }
+    });
   }
 }
 

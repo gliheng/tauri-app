@@ -62,9 +62,7 @@ async function handleModeChange(modeId: string) {
 function handleCommandSelect(command: AvailableCommand) {
   const commandText = `/${command.name}`;
   const cursorPosition = commandText.length;
-  setTimeout(() => {
-    chatBoxRef.value?.setInputAndFocus(commandText, cursorPosition);
-  }, 0);
+  chatBoxRef.value?.setInputAndFocus(commandText, cursorPosition);
 }
 
 async function ensureSession() {
