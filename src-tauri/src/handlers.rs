@@ -11,6 +11,7 @@ use tauri::Emitter;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::sync::Mutex;
+use tauri_plugin_shell::ShellExt;
 
 // Global state to manage agent processes and callbacks
 static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::process::Child>>>> =
@@ -34,6 +35,7 @@ pub struct ModelSettings {
 pub async fn acp_initialize(
     agent: &str,
     settings: Option<ModelSettings>,
+    app: tauri::AppHandle,
 ) -> Result<serde_json::Value, serde_json::Value> {
     println!(
         "acp_initialize called with agent: {}, settings: {:?}",
@@ -113,6 +115,7 @@ pub async fn acp_initialize(
 
     // println!("Command args: {:?}", args);
     // println!("Environment vars: {:?}", env_vars);
+    // let mut command2 = app.shell().sidecar("bun").unwrap();
     let mut command = TokioCommand::new("bun");
 
     // Apply environment variables from the map

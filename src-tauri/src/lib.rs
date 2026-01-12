@@ -3,19 +3,18 @@ use tauri_plugin_sql::{Migration, MigrationKind};
 mod handlers;
 
 fn get_migrations() -> Vec<Migration> {
-    vec![
-        Migration {
-            version: 1,
-            description: "create_initial_tables",
-            sql: include_str!("../migrations/001_initial.sql"),
-            kind: MigrationKind::Up,
-        },
-    ]
+    vec![Migration {
+        version: 1,
+        description: "create_initial_tables",
+        sql: include_str!("../migrations/001_initial.sql"),
+        kind: MigrationKind::Up,
+    }]
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .plugin(
             tauri_plugin_sql::Builder::new()
                 .add_migrations("sqlite:ai-studio.db", get_migrations())

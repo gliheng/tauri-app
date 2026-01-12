@@ -2586,6 +2586,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tauri-apps/plugin-shell@npm:~2":
+  version: 2.3.4
+  resolution: "@tauri-apps/plugin-shell@npm:2.3.4"
+  dependencies:
+    "@tauri-apps/api": "npm:^2.8.0"
+  checksum: 10c0/5a7cccb2dddf7fd252767cd07fee24d10bc31105a72e45f27a958c3b7be4bab610af6d6ffe58969b0816d12ffe39a884a082a8a79e32eb537f9d51059ef79a2f
+  languageName: node
+  linkType: hard
+
 "@tauri-apps/plugin-sql@npm:~2":
   version: 2.3.1
   resolution: "@tauri-apps/plugin-sql@npm:2.3.1"
@@ -6492,6 +6501,7 @@ __metadata:
     "@tauri-apps/plugin-dialog": "npm:^2.5.0"
     "@tauri-apps/plugin-fs": "npm:^2.4.5"
     "@tauri-apps/plugin-opener": "npm:^2.5.3"
+    "@tauri-apps/plugin-shell": "npm:~2"
     "@tauri-apps/plugin-sql": "npm:~2"
     "@types/lodash-es": "npm:^4"
     "@vitejs/plugin-vue": "npm:^5.2.1"
