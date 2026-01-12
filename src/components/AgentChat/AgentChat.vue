@@ -51,7 +51,6 @@ async function handleModeChange(modeId: string) {
   if (!acpService) return;
   try {
     currentModeId.value = modeId;
-    await ensureSession();
     await acpService.sessionSetMode(modeId);
   } catch (err) {
     console.error('Failed to set mode:', err);
@@ -63,14 +62,6 @@ function handleCommandSelect(command: AvailableCommand) {
   const commandText = `/${command.name}`;
   const cursorPosition = commandText.length;
   chatBoxRef.value?.setInputAndFocus(commandText, cursorPosition);
-}
-
-async function ensureSession() {
-  if (!sessionId.value) {
-    const ret = await acpService.sessionNew();
-    sessionId.value = ret.sessionId;
-    console.log('Session created:', ret);
-  }
 }
 
 const start = async () => {
@@ -86,6 +77,9 @@ const start = async () => {
       status.value = 'streaming';
       await acpService.sessionLoad(props.chat.sessionId);
       status.value = 'ready';
+    } else {
+      const ret = await acpService.sessionNew();
+      sessionId.value = ret.sessionId;
     }
 
     console.log("Agent initialized successfully");
@@ -140,9 +134,7 @@ const handleSubmit = async () => {
     input.value = "";
     status.value = "submitted";
 
-    if (!props.chat && messages.value.length === 1) {
-      await ensureSession();
-  
+    if (!props.chat && messages.value.length === 1) {  
       // Async update chat meta data
       (async () => {
         const { text: topic } = await generateTopic(messages.value[0].content);
