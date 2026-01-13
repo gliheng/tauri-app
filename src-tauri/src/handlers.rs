@@ -7,14 +7,21 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::Arc;
-use tauri::Emitter;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader as AsyncBufReader};
+use tauri::{Emitter, Manager};
+use tokio::io::{AsyncReadExt, BufReader as AsyncBufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::sync::Mutex;
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::process::CommandEvent;
+
+// Struct to hold the shell process with its event receiver
+struct ShellProcess {
+    _receiver: tauri::async_runtime::Receiver<CommandEvent>,
+    child: tauri_plugin_shell::process::CommandChild,
+}
 
 // Global state to manage agent processes and callbacks
-static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, tokio::process::Child>>>> =
+static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, ShellProcess>>>> =
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 static LISTENING_TASKS: std::sync::LazyLock<
@@ -47,87 +54,128 @@ pub async fn acp_initialize(
     let mut args = vec!["x".into()];
     // Create environment variables map based on agent type
     let mut env_vars: HashMap<String, String> = HashMap::new();
-    if *agent_name == "qwen" {
-        args.push("@qwen-code/qwen-code".into());
-        if let Some(ms) = settings {
-            args.extend(["--auth-type".into(), "openai".into()]);
-            // args.extend(["--openai-base-url".into(), ms.base_url.into()]);
-            // args.extend(["--openai-api-key".into(), ms.api_key.into()]);
-            // args.extend(["--model".into(), ms.model.into()]);
-            env_vars.insert("OPENAI_API_KEY".into(), ms.api_key);
-            env_vars.insert("OPENAI_BASE_URL".into(), ms.base_url);
-            env_vars.insert("OPENAI_MODEL".into(), ms.model);
-        }
-        args.push("--experimental-acp".into());
-    } else if *agent_name == "codex" {
-        args.push("@zed-industries/codex-acp".into());
-        if let Some(ms) = settings {
-            args.extend([
-                "-c".into(),
-                "model_provider=x".into(),
-                "-c".into(),
-                "model_providers.x.name=x".into(),
-                "-c".into(),
-                format!("model_providers.x.base_url={}", ms.base_url),
-                "-c".into(),
-                "model_providers.x.env_key=X_API_KEY".into(),
-                "-c".into(),
-                "model_provider=x".into(),
-                "-c".into(),
-                format!("model={}", ms.model),
-            ]);
-            env_vars.insert("X_API_KEY".into(), ms.api_key);
-        }
-    } else if *agent_name == "claude" {
-        args.push("@zed-industries/claude-code-acp".into());
-        if let Some(ms) = settings {
-            env_vars.insert("ANTHROPIC_BASE_URL".into(), ms.base_url);
-            env_vars.insert("ANTHROPIC_MODEL".into(), ms.model);
-            env_vars.insert("ANTHROPIC_AUTH_TOKEN".into(), ms.api_key);
-            env_vars.insert("API_TIMEOUT_MS".into(), "600000".into());
-            env_vars.insert(
-                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".into(),
-                "1".into(),
-            );
-        }
-    } else if *agent_name == "gemini" {
-        args.push("@google/gemini-cli".into());
-        if let Some(ms) = settings {
-            env_vars.insert("GEMINI_MODEL".into(), ms.model);
-            env_vars.insert("GOOGLE_GEMINI_BASE_URL".into(), ms.base_url);
-            env_vars.insert("GEMINI_API_KEY".into(), ms.api_key);
-        }
-        args.push("--experimental-acp".into());
-    } else if *agent_name == "opencode" {
-        args.push("@opencode-ai/opencode".into());
-        args.push("acp".into());
-        if let Some(ms) = settings {
-            if !ms.model.is_empty() {
-                args.extend(["--model".into(), ms.model.clone()]);
+    let package_name = match *agent_name {
+        "qwen" => {
+            args.push("@qwen-code/qwen-code".into());
+            if let Some(ms) = settings {
+                args.extend(["--auth-type".into(), "openai".into()]);
+                env_vars.insert("OPENAI_API_KEY".into(), ms.api_key);
+                env_vars.insert("OPENAI_BASE_URL".into(), ms.base_url);
+                env_vars.insert("OPENAI_MODEL".into(), ms.model);
             }
+            args.push("--experimental-acp".into());
+            "@qwen-code/qwen-code"
         }
-    } else {
-        return Err(serde_json::json!({
-            "code": 9,
-            "message": format!("Unknown agent type: {}", agent_name)
-        }));
-    }
+        "codex" => {
+            args.push("@zed-industries/codex-acp".into());
+            if let Some(ms) = settings {
+                args.extend([
+                    "-c".into(),
+                    "model_provider=x".into(),
+                    "-c".into(),
+                    "model_providers.x.name=x".into(),
+                    "-c".into(),
+                    format!("model_providers.x.base_url={}", ms.base_url),
+                    "-c".into(),
+                    "model_providers.x.env_key=X_API_KEY".into(),
+                    "-c".into(),
+                    "model_provider=x".into(),
+                    "-c".into(),
+                    format!("model={}", ms.model),
+                ]);
+                env_vars.insert("X_API_KEY".into(), ms.api_key);
+            }
+            "@zed-industries/codex-acp"
+        }
+        "claude" => {
+            args.push("@zed-industries/claude-code-acp".into());
+            if let Some(ms) = settings {
+                env_vars.insert("ANTHROPIC_BASE_URL".into(), ms.base_url);
+                env_vars.insert("ANTHROPIC_MODEL".into(), ms.model);
+                env_vars.insert("ANTHROPIC_AUTH_TOKEN".into(), ms.api_key);
+                env_vars.insert("API_TIMEOUT_MS".into(), "600000".into());
+                env_vars.insert(
+                    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".into(),
+                    "1".into(),
+                );
+            }
+            "@zed-industries/claude-code-acp"
+        }
+        "gemini" => {
+            args.push("@google/gemini-cli".into());
+            if let Some(ms) = settings {
+                env_vars.insert("GEMINI_MODEL".into(), ms.model);
+                env_vars.insert("GOOGLE_GEMINI_BASE_URL".into(), ms.base_url);
+                env_vars.insert("GEMINI_API_KEY".into(), ms.api_key);
+            }
+            args.push("--experimental-acp".into());
+            "@google/gemini-cli"
+        }
+        "opencode" => {
+            args.push("@opencode-ai/opencode".into());
+            args.push("acp".into());
+            if let Some(ms) = settings {
+                if !ms.model.is_empty() {
+                    args.extend(["--model".into(), ms.model.clone()]);
+                }
+            }
+            "@opencode-ai/opencode"
+        }
+        _ => {
+            return Err(serde_json::json!({
+                "code": 9,
+                "message": format!("Unknown agent type: {}", agent_name)
+            }));
+        }
+    };
 
     // println!("Command args: {:?}", args);
     // println!("Environment vars: {:?}", env_vars);
-    // let mut command2 = app.shell().sidecar("bun").unwrap();
-    let mut command = TokioCommand::new("bun");
 
-    // Apply environment variables from the map
-    for (key, value) in env_vars {
-        command.env(key, value);
+    let app_config_dir = app.path().app_data_dir().unwrap();
+
+    // Run bun install -g for the package before starting the agent
+    println!("Installing {} globally with bun...", package_name);
+
+    let install_command = app.shell().sidecar("bun").map_err(|e| {
+        serde_json::json!({
+            "code": 10,
+            "message": format!("Failed to load bun sidecar for install: {}", e)
+        })
+    })?;
+
+    let (_install_rx, _install_child) = install_command
+        .args(["install", "-g", package_name])
+        .env("BUN_INSTALL", app_config_dir.clone())
+        .spawn()
+        .map_err(|e| {
+            serde_json::json!({
+                "code": 11,
+                "message": format!("Failed to run bun install: {}", e)
+            })
+        })?;
+
+    // Wait a moment for installation to complete
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+    println!("Installation command started for {}", package_name);
+
+    // Create the sidecar command with environment variables
+    let command = app.shell().sidecar("bun").map_err(|e| {
+        serde_json::json!({
+            "code": 10,
+            "message": format!("Failed to load bun sidecar: {}", e)
+        })
+    })?;
+
+    // Set environment variables and config (chain the env calls)
+    let mut command = command.env("BUN_INSTALL", app_config_dir);
+    for (key, value) in &env_vars {
+        command = command.env(key, value);
     }
 
-    let child = command
+    let (receiver, child) = command
         .args(&args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
         .spawn()
         .map_err(|e| {
             serde_json::json!({
@@ -139,7 +187,13 @@ pub async fn acp_initialize(
     // Store the process for later communication
     {
         let mut processes = AGENT_PROCESSES.lock().await;
-        processes.insert(agent.to_string(), child);
+        processes.insert(
+            agent.to_string(),
+            ShellProcess {
+                _receiver: receiver,
+                child,
+            },
+        );
     }
 
     println!("Agent {} initialized successfully", agent);
@@ -154,35 +208,28 @@ pub async fn acp_send_message(
     message: serde_json::Value,
 ) -> Result<serde_json::Value, serde_json::Value> {
     let mut processes = AGENT_PROCESSES.lock().await;
-    let child = processes.get_mut(agent).ok_or_else(|| {
+    let shell_process = processes.get_mut(agent).ok_or_else(|| {
         serde_json::json!({
             "code": 2,
             "message": format!("Agent {} not found", agent)
         })
     })?;
 
-    if let Some(stdin) = child.stdin.as_mut() {
-        let json_str = message.to_string();
-        stdin.write_all(json_str.as_bytes()).await.map_err(|e| {
+    let json_str = message.to_string();
+    let mut data = json_str.as_bytes().to_vec();
+    data.push(b'\n');
+
+    shell_process
+        .child
+        .write(&data)
+        .map_err(|e| {
             serde_json::json!({
                 "code": 3,
                 "message": format!("Failed to write to stdin: {}", e)
             })
         })?;
-        stdin.write_all(b"\n").await.map_err(|e| {
-            serde_json::json!({
-                "code": 4,
-                "message": format!("Failed to write newline to stdin: {}", e)
-            })
-        })?;
-        stdin.flush().await.map_err(|e| {
-            serde_json::json!({
-                "code": 5,
-                "message": format!("Failed to flush stdin: {}", e)
-            })
-        })?;
-        println!("Message sent to agent {} {}", agent, json_str);
-    }
+
+    println!("Message sent to agent {} {}", agent, json_str);
 
     Ok(serde_json::json!({
         "code": 0,
@@ -198,74 +245,63 @@ pub async fn acp_start_listening(
     let window_clone = window.clone();
     let agent_name_clone = agent_name.clone();
 
-    let handle = tokio::spawn(async move {
-        let mut reader_opt = None;
-
-        // Take stdout once at the beginning
-        {
-            let mut processes = AGENT_PROCESSES.lock().await;
-            if let Some(child) = processes.get_mut(&agent_name_clone) {
-                if let Some(stdout) = child.stdout.take() {
-                    reader_opt = Some(AsyncBufReader::new(stdout));
-                }
-            }
+    // Take the receiver from the shell process
+    let receiver_opt = {
+        let mut processes = AGENT_PROCESSES.lock().await;
+        if let Some(shell_process) = processes.get_mut(&agent_name_clone) {
+            Some(std::mem::replace(&mut shell_process._receiver, tauri::async_runtime::channel(1).1))
+        } else {
+            None
         }
-        let evt = "acp_message::".to_string() + &agent_name_clone;
-        if let Some(mut reader) = reader_opt {
-            loop {
-                // Check if agent still exists
-                let agent_exists = {
-                    let processes = AGENT_PROCESSES.lock().await;
-                    processes.contains_key(&agent_name_clone)
-                };
+    };
 
-                if !agent_exists {
+    let mut receiver = receiver_opt.ok_or_else(|| {
+        serde_json::json!({
+            "code": 2,
+            "message": format!("Agent {} not found", agent)
+        })
+    })?;
+
+    let handle = tokio::spawn(async move {
+        let evt = "acp_message::".to_string() + &agent_name_clone;
+
+        while let Some(event) = receiver.recv().await {
+            match event {
+                CommandEvent::Stdout(line) => {
+                    let text = String::from_utf8_lossy(&line).to_string();
+                    println!("Received stdout: {}", text.trim());
+
+                    let event_data = serde_json::json!({
+                        "type": "message",
+                        "message": text.trim().to_string()
+                    });
+
+                    let _ = window_clone.emit(evt.as_str(), event_data);
+                }
+                CommandEvent::Stderr(line) => {
+                    let text = String::from_utf8_lossy(&line).to_string();
+                    println!("Received stderr: {}", text.trim());
+
+                    let event_data = serde_json::json!({
+                        "type": "error",
+                        "error": text.trim().to_string()
+                    });
+
+                    let _ = window_clone.emit(evt.as_str(), event_data);
+                }
+                CommandEvent::Terminated(payload) => {
+                    println!("Process terminated: {:?}", payload);
+                    let _ = window_clone.emit(
+                        evt.as_str(),
+                        serde_json::json!({
+                            "type": "disconnect",
+                            "code": payload.code,
+                            "signal": payload.signal,
+                        }),
+                    );
                     break;
                 }
-
-                let mut line = String::new();
-
-                match reader.read_line(&mut line).await {
-                    Ok(0) => {
-                        // EOF reached
-                        let _ = window_clone.emit(
-                            evt.as_str(),
-                            serde_json::json!({
-                                "type": "disconnect",
-                            }),
-                        );
-                        break;
-                    }
-                    Ok(n) => {
-                        println!("Read {} bytes: {}", n, line.trim());
-
-                        let event_data = serde_json::json!({
-                            "type": "message",
-                            "message": line.trim().to_string()
-                        });
-
-                        let _ = window_clone.emit(evt.as_str(), event_data);
-                    }
-                    Err(e) => {
-                        println!("Error reading from stdout: {}", e);
-                        let _ = window_clone.emit(
-                            evt.as_str(),
-                            serde_json::json!({
-                                "type": "error",
-                                "error": format!("Read error: {}", e)
-                            }),
-                        );
-                        break;
-                    }
-                }
-            }
-
-            // Return stdout to the child process
-            {
-                let mut processes = AGENT_PROCESSES.lock().await;
-                if let Some(child) = processes.get_mut(&agent_name_clone) {
-                    let _ = child.stdout.replace(reader.into_inner());
-                }
+                _ => {}
             }
         }
     });
@@ -315,19 +351,11 @@ pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::V
     // Then kill and remove the process
     {
         let mut processes = AGENT_PROCESSES.lock().await;
-        if let Some(mut child) = processes.remove(agent) {
-            // Try to kill the process gracefully first
-            match child.kill().await {
+        if let Some(shell_process) = processes.remove(agent) {
+            // Try to kill the process
+            match shell_process.child.kill() {
                 Ok(_) => {
-                    // Wait for the process to actually terminate
-                    match child.wait().await {
-                        Ok(status) => {
-                            println!("Agent {} process terminated with status: {}", agent, status);
-                        }
-                        Err(e) => {
-                            println!("Error waiting for agent {} to terminate: {}", agent, e);
-                        }
-                    }
+                    println!("Agent {} process killed successfully", agent);
                 }
                 Err(e) => {
                     println!("Error killing agent {} process: {}", agent, e);
