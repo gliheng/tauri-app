@@ -1,3 +1,6 @@
 - [ ] Input queue
-- [ ] Customize model
-- [ ] Acp codeact agent
+- [ ] Bundle bun
+- [ ] My Acp codeact agent
+- [ ] Chart using infinite canvas
+- [ ] Acp with [SDK](https://github.com/agentclientprotocol/typescript-sdk/)
+- [ ] Create image using image model

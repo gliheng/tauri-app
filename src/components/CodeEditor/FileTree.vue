@@ -4,6 +4,10 @@ import { FileEntryType, type FileEntry } from './types';
 import { TreeItem } from '@nuxt/ui';
 import { EDITOR_ACTIONS } from '@/constants';
 
+interface FileTreeItem extends TreeItem {
+  file: FileEntry;
+}
+
 const model = defineModel<FileEntry[]>({ required: true });
 
 const emit = defineEmits<{
@@ -31,12 +35,12 @@ function getIcon(name: string, isFolder: boolean, isLoading: boolean = false): s
   }
 }
 
-function toTreeItems(entries: FileEntry[], parentPath = ''): TreeItem[] {
+function toTreeItems(entries: FileEntry[], parentPath = ''): FileTreeItem[] {
   return entries.map((entry) => {
     const path = parentPath ? `${parentPath}/${entry.name}` : entry.name;
     const isFolder = entry.type === FileEntryType.Folder;
     const isLoading = loadingPaths.value.has(path);
-    const item: TreeItem = {
+    const item: FileTreeItem = {
       label: entry.name,
       icon: getIcon(entry.name, isFolder, isLoading),
       ui: {
@@ -90,6 +94,14 @@ async function onToggle(e: Event, item: any) {
     emit('select', entry);
   }
 }
+
+const selected = ref<FileTreeItem | undefined>();
+
+function onAddFile() {
+}
+
+function onAddFolder() {
+}
 </script>
 
 <template>
@@ -97,17 +109,23 @@ async function onToggle(e: Event, item: any) {
     <header class="flex items-center gap-1 p-1 h-10" data-tauri-drag-region>
       <h1 class="text-lg font-semibold truncate select-none" data-tauri-drag-region>Workspace Files</h1>
       <div class="flex-1"></div>
-      <UButton size="sm" icon="i-lucide-file-plus" />
-      <UButton size="sm" icon="i-lucide-folder-plus" />
+      <UButton size="sm" icon="i-lucide-file-plus" @click="onAddFile" />
+      <UButton size="sm" icon="i-lucide-folder-plus" @click="onAddFolder" />
     </header>
     <div class="flex-1 min-h-0 overflow-auto">
       <UTree
-        class="min-w-full w-fit"
+        class="min-w-full w-full"
         v-model:expanded="expanded"
+        v-model="selected"
         :get-key="e => e.value!"
         :items="items"
         @toggle="onToggle"
-      />
+        virtualize
+      >
+        <template #editing="{ item }">
+          <UInput v-model="(item as FileTreeItem).name" />
+        </template>
+      </UTree>
     </div>
   </div>
 </template>
