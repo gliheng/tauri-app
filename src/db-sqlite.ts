@@ -56,6 +56,15 @@ export interface Note {
   updatedAt: Date;
 }
 
+export interface Chart {
+  id: string;
+  name: string;
+  icon: string;
+  data: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Helper function to serialize/deserialize Date objects
 function dateToString(date: Date): string {
   return date.toISOString();
@@ -345,6 +354,65 @@ export async function getNote(id: string): Promise<Note | undefined> {
 export async function deleteNote(id: string): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute('DELETE FROM note WHERE id = $1', [id]);
+}
+
+// Chart operations
+export async function writeChart(data: Chart): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  await db.execute(
+    `INSERT OR REPLACE INTO chart (id, name, icon, data, createdAt, updatedAt)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [
+      data.id,
+      data.name,
+      data.icon,
+      data.data,
+      dateToString(data.createdAt),
+      dateToString(data.updatedAt),
+    ]
+  );
+}
+
+export async function updateChart(id: string, data: Partial<Chart>): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+
+  const existing = await getChart(id);
+  if (!existing) throw new Error(`Chart with ID ${id} not found`);
+
+  const updated = { ...existing, ...data };
+  await writeChart(updated);
+}
+
+export async function getCharts(): Promise<Chart[]> {
+  if (!db) throw new Error('Database not initialized');
+  const result = await db.select<Chart[]>(
+    `SELECT * FROM chart ORDER BY updatedAt DESC`
+  );
+  return result.map((row: any) => ({
+    ...row,
+    createdAt: stringToDate(row.createdAt),
+    updatedAt: stringToDate(row.updatedAt),
+  }));
+}
+
+export async function getChart(id: string): Promise<Chart | undefined> {
+  if (!db) throw new Error('Database not initialized');
+  const result = await db.select<Chart[]>(
+    `SELECT * FROM chart WHERE id = $1`,
+    [id]
+  );
+  if (result.length === 0) return undefined;
+  const row = result[0] as any;
+  return {
+    ...row,
+    createdAt: stringToDate(row.createdAt),
+    updatedAt: stringToDate(row.updatedAt),
+  };
+}
+
+export async function deleteChart(id: string): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  await db.execute('DELETE FROM chart WHERE id = $1', [id]);
 }
 
 // File operations

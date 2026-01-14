@@ -1,0 +1,185 @@
+<script setup lang="ts">
+import { markRaw, nextTick } from 'vue';
+import { ConnectionMode, VueFlow, Panel, useVueFlow, getRectOfNodes, MarkerType } from '@vue-flow/core';
+import { Background } from '@vue-flow/background';
+import { Controls } from '@vue-flow/controls';
+import { MiniMap } from '@vue-flow/minimap';
+import type { FlowExportObject, NodeChange, EdgeChange } from '@vue-flow/core';
+import TextNode from './TextNode.vue';
+import DropZoneBackground from './DropZoneBackground.vue';
+import { useLayout } from './layout';
+import useDragAndDrop from './useDnD';
+import { nanoid } from 'nanoid';
+
+const model = defineModel<FlowExportObject>();
+
+const {
+  onInit,
+  onConnect,
+  addEdges,
+  addNodes,
+  setNodes,
+  onNodesChange,
+  onEdgesChange,
+  onNodeClick,
+  toObject,
+  fitView,
+  applyNodeChanges,
+  onViewportChange,
+  fitBounds,
+  getNodes,
+  getEdges,
+} = useVueFlow()
+
+onViewportChange((newViewport) => {
+  model.value = toObject();
+});
+
+onNodesChange((changes: NodeChange[]) => {
+  model.value = toObject();
+});
+
+onEdgesChange((changes: EdgeChange[]) => {
+  model.value = toObject();
+});
+
+onConnect((connection) => {
+  addEdges(connection)
+});
+
+const nodeTypes = {
+  text: markRaw(TextNode),
+};
+
+const { layout } = useLayout()
+
+async function layoutGraph() {
+  setNodes(layout(getNodes.value, getEdges.value))
+
+  nextTick(() => {
+    fitView()
+  })
+}
+
+function addNode() {
+  const id = nanoid();
+  addNodes([{
+    id,
+    type: 'text',
+    data: {
+      content: '',
+    },
+    position: { x: 0, y: 0 },
+  }]);
+  focusOnNode(id);
+  
+  const changes: NodeChange[] = [{
+    id,
+    type: 'select',
+    selected: true,
+  }];
+  applyNodeChanges(changes);
+}
+
+
+function focusOnNode(nodeId: string) {
+  const node = getNodes.value.find((node: any) => node.id === nodeId);
+  if (!node) {
+    return;
+  }
+  fitBounds(getRectOfNodes([node]))
+}
+
+function logToObject() {
+  console.log(toObject())
+}
+
+const { onDragOver, onDrop, onDragLeave, isDragOver } = useDragAndDrop()
+
+defineExpose({
+  getGraph() {
+    return toObject();
+  },
+});
+</script>
+
+<template>
+  <div class="flex flex-col h-full" @drop="onDrop">
+    <VueFlow
+      class="flow-chart"
+      v-model:nodes="model.nodes"
+      v-model:edges="model.edges"
+      :min-zoom="0.5"
+      :max-zoom="2"
+      :node-types="nodeTypes"
+      :default-edge-options="{
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 20,
+          height: 20,
+        },
+      }"
+      :connection-mode="ConnectionMode.Loose"
+      :default-viewport="model?.viewport"
+      @dragover="onDragOver"
+      @dragleave="onDragLeave"
+    >
+      <DropZoneBackground
+        :style="{
+          backgroundColor: isDragOver ? '#e7f3ff' : 'transparent',
+          transition: 'background-color 0.2s ease',
+        }"
+      >
+        <p v-if="isDragOver">Drop here</p>
+      </DropZoneBackground>
+
+      <Background variant="dots" :gap="20" />
+      <Controls />
+      <Panel position="top-right">
+        <UButton icon="i-heroicons-plus-circle-20-solid" @click="addNode" />
+      </Panel>
+      <MiniMap />
+    </VueFlow>
+  </div>
+</template>
+
+<style lang="scss">
+@import '@vue-flow/core/dist/style.css';
+@import '@vue-flow/core/dist/theme-default.css';
+@import '@vue-flow/controls/dist/style.css';
+@import '@vue-flow/minimap/dist/style.css';
+
+.vue-flow__minimap {
+  transform: scale(75%);
+  transform-origin: bottom right;
+}
+
+.flow-chart .vue-flow__node {
+  --vf-node-color: var(--ui-color-neutral-500);
+  --vf-handle: var(--ui-color-neutral-500);
+  border: 1px solid var(--vf-node-color);
+  border-radius: 0.4rem;
+  background-color: var(--vf-node-bg);
+}
+
+.flow-chart .vue-flow__node.selected {
+  --vf-node-color: var(--ui-color-primary-500);
+  --vf-handle: var(--ui-color-primary-500);
+}
+
+.flow-chart .vue-flow__controls {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center
+}
+
+.flow-chart .vue-flow__controls .vue-flow__controls-button {
+  border: none;
+  border-right:1px solid #eee
+}
+
+.flow-chart .vue-flow__controls .vue-flow__controls-button svg {
+  height:100%;
+  width:100%
+}
+</style>
