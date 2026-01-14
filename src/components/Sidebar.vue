@@ -5,7 +5,7 @@ import { tv } from "tailwind-variants";
 import { useColorMode } from "@vueuse/core";
 import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
-import { Agent, Note, writeAgent } from "@/db-sqlite";
+import { Agent, Note, Chart, writeAgent } from "@/db-sqlite";
 import { computed } from "vue";
 import AgentConfig from "./AgentChat/AgentConfig.vue";
 import type { AgentFormData } from "./AgentChat/AgentConfig.vue";
@@ -109,6 +109,31 @@ function openNote(note: Note) {
   });
 }
 
+function chartUrl(chart: Chart) {
+  return `/chart/${chart.id}`;
+}
+
+function addChart() {
+  const id = nanoid();
+  tabsStore.openTab(`/chart/${id}`, "New chart");
+  router.push({
+    name: "chart",
+    params: {
+      id,
+    },
+  });
+}
+
+function openChart(chart: Chart) {
+  tabsStore.openTab(`/chart/${chart.id}`, chart.name);
+  router.push({
+    name: "chart",
+    params: {
+      id: chart.id,
+    },
+  });
+}
+
 const platform = navigator.platform;
 const isMac = platform.startsWith("Mac");
 </script>
@@ -208,6 +233,48 @@ const isMac = platform.startsWith("Mac");
             color="neutral"
             variant="soft"
             @click="addNote"
+            >Add</UButton
+          >
+        </section>
+      </template>
+    </UCollapsible>
+    <UCollapsible class="flex flex-col gap-2" default-open>
+      <UButton
+        class="group"
+        icon="i-lucide-git-branch"
+        variant="subtle"
+        color="neutral"
+        :ui="{
+          trailingIcon:
+            'group-data-[state=open]:rotate-180 transition-transform duration-200',
+        }"
+        trailing-icon="i-lucide-chevron-down"
+        default-open
+        block
+      >
+        Chart
+      </UButton>
+      <template #content>
+        <section class="space-y-1">
+          <UButton
+            v-for="chart in sidebarStore.charts"
+            :key="chart.id"
+            :class="buttonStyle({})"
+            :icon="chart.icon"
+            color="neutral"
+            variant="soft"
+            active-color="primary"
+            active-variant="solid"
+            :active="$route.path === chartUrl(chart)"
+            @click="openChart(chart)"
+            >{{ chart.name }}</UButton
+          >
+          <UButton
+            :class="buttonStyle({})"
+            icon="i-lucide-plus"
+            color="neutral"
+            variant="soft"
+            @click="addChart"
             >Add</UButton
           >
         </section>
