@@ -21,7 +21,14 @@ export default defineConfig(async () => ({
   ],
   
   optimizeDeps: {
-    include: ['monaco-editor/esm/vs/editor/editor.worker']
+    include: [
+      'monaco-editor/esm/vs/editor/editor.worker',
+      '@nuxt/ui > prosemirror-state',
+      '@nuxt/ui > prosemirror-transform',
+      '@nuxt/ui > prosemirror-model',
+      '@nuxt/ui > prosemirror-view',
+      '@nuxt/ui > prosemirror-gapcursor',
+    ],
   },
   
   build: {

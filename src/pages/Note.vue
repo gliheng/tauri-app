@@ -3,8 +3,7 @@ import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { throttle } from "lodash-es";
 import { getNote, writeNote, updateNote } from "@/db-sqlite";
-import { MilkdownProvider } from "@milkdown/vue";
-import MilkdownEditor from "@/components/MilkdownEditor.vue";
+import { NoteEditor } from "@/components/NoteEditor";
 import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";
 import { useSidebarStore } from "@/stores/sidebar";
@@ -79,9 +78,9 @@ function downloadNote() {
         <IconEdit v-model:icon="note.icon" />
         <NameEdit v-model:name="note.name" />
       </hgroup>
-      <MilkdownProvider>
-        <MilkdownEditor v-model="note.content" />
-      </MilkdownProvider>
+      <div class="mx-32 mt-6">
+        <NoteEditor v-model="note.content" />
+      </div>
     </div>
   </div>
 </template>
