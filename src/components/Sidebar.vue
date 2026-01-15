@@ -135,8 +135,7 @@ function openChart(chart: Chart) {
 }
 
 const platform = navigator.platform;
-const isMac = platform.startsWith("Mac");
-</script>
+const isMac = platform.startsWith("Mac");</script>
 
 <template>
   <aside
@@ -147,7 +146,6 @@ const isMac = platform.startsWith("Mac");
       data-tauri-drag-region
     >
       <img class="w-40 h-10 pointer-events-none object-contain" :src="logoImg" alt="Logo" />
-      <!-- <span class="-ml-2 pointer-events-none">Raven</span> -->
     </h1>
     <UButton
       icon="i-lucide-message-circle"
@@ -196,90 +194,20 @@ const isMac = platform.startsWith("Mac");
         </section>
       </template>
     </UCollapsible>
-    <UCollapsible class="flex flex-col gap-2" default-open>
-      <UButton
-        class="group"
-        icon="i-lucide-notebook-text"
-        variant="subtle"
-        color="neutral"
-        :ui="{
-          trailingIcon:
-            'group-data-[state=open]:rotate-180 transition-transform duration-200',
-        }"
-        trailing-icon="i-lucide-chevron-down"
-        default-open
-        block
-      >
-        Note
-      </UButton>
-      <template #content>
-        <section class="space-y-1">
-          <UButton
-            v-for="note in sidebarStore.notes"
-            :key="note.id"
-            :class="buttonStyle({})"
-            :icon="note.icon"
-            color="neutral"
-            variant="soft"
-            active-color="primary"
-            active-variant="solid"
-            :active="$route.path === noteUrl(note)"
-            @click="openNote(note)"
-            >{{ note.name }}</UButton
-          >
-          <UButton
-            :class="buttonStyle({})"
-            icon="i-lucide-plus"
-            color="neutral"
-            variant="soft"
-            @click="addNote"
-            >Add</UButton
-          >
-        </section>
-      </template>
-    </UCollapsible>
-    <UCollapsible class="flex flex-col gap-2" default-open>
-      <UButton
-        class="group"
-        icon="i-lucide-git-branch"
-        variant="subtle"
-        color="neutral"
-        :ui="{
-          trailingIcon:
-            'group-data-[state=open]:rotate-180 transition-transform duration-200',
-        }"
-        trailing-icon="i-lucide-chevron-down"
-        default-open
-        block
-      >
-        Chart
-      </UButton>
-      <template #content>
-        <section class="space-y-1">
-          <UButton
-            v-for="chart in sidebarStore.charts"
-            :key="chart.id"
-            :class="buttonStyle({})"
-            :icon="chart.icon"
-            color="neutral"
-            variant="soft"
-            active-color="primary"
-            active-variant="solid"
-            :active="$route.path === chartUrl(chart)"
-            @click="openChart(chart)"
-            >{{ chart.name }}</UButton
-          >
-          <UButton
-            :class="buttonStyle({})"
-            icon="i-lucide-plus"
-            color="neutral"
-            variant="soft"
-            @click="addChart"
-            >Add</UButton
-          >
-        </section>
-      </template>
-    </UCollapsible>
+    <UButton
+      icon="i-lucide-notebook-text"
+      variant="subtle"
+      color="neutral"
+      @click="addNote"
+      >Note</UButton
+    >
+    <UButton
+      icon="i-lucide-image"
+      variant="subtle"
+      color="neutral"
+      @click="addChart"
+      >Chart</UButton
+    >
     <UButton
       icon="i-lucide-image"
       variant="subtle"

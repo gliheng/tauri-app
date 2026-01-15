@@ -1,16 +1,36 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { ref, watch, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { throttle } from "lodash-es";
 import { getNote, writeNote, updateNote } from "@/db-sqlite";
 import { NoteEditor } from "@/components/NoteEditor";
 import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";
-import { useSidebarStore } from "@/stores/sidebar";
+import NavigationSlideover from "@/components/NavigationSlideover.vue";
+import { useNotesStore } from "@/stores/notes";
+import { useTabsStore } from "@/stores/tabs";
 
-const sidebarStore = useSidebarStore();
+const notesStore = useNotesStore();
+const tabsStore = useTabsStore();
+const router = useRouter();
 
 const route = useRoute();
+
+notesStore.loadNotes();
+
+const noteItems = computed(() => {
+  return notesStore.notes.map((note) => ({
+    name: note.name,
+    icon: note.icon,
+    onClick: () => {
+      tabsStore.openTab(`/note/${note.id}`, note.name);
+      router.push({
+        name: "note",
+        params: { id: note.id },
+      });
+    },
+  }));
+});
 
 const initialData = await getNote(route.params.id as string);
 const note = ref(Object.assign({
@@ -43,7 +63,7 @@ const throttledWatcher = throttle(async (note) => {
       },
     );
   }
-  sidebarStore.loadNotes();
+  notesStore.loadNotes();
 }, 1000);
 
 watch(note, throttledWatcher, {
@@ -65,6 +85,12 @@ function downloadNote() {
 
 <template>
   <div class="flex-1 flex flex-col min-h-0 justify-center relative">
+    <div class="absolute top-2 left-2 z-10">
+      <NavigationSlideover
+        title="Notes"
+        :items="noteItems"
+      />
+    </div>
     <header class="absolute top-2 right-2 z-10">
       <UButton
         icon="i-lucide-download"
