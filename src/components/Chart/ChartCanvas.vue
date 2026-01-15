@@ -5,11 +5,12 @@ import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
 import type { FlowExportObject, NodeChange, EdgeChange } from '@vue-flow/core';
+import { nanoid } from 'nanoid';
 import TextNode from './TextNode.vue';
 import DropZoneBackground from './DropZoneBackground.vue';
 import { useLayout } from './layout';
 import useDragAndDrop from './useDnD';
-import { nanoid } from 'nanoid';
+import { isEqual } from 'lodash-es';
 
 const model = defineModel<FlowExportObject>();
 
@@ -31,16 +32,23 @@ const {
   getEdges,
 } = useVueFlow()
 
+function triggerChange() {
+  const obj = toObject();
+  if (!isEqual(obj, model.value)) {
+    model.value = obj;
+  }
+}
+
 onViewportChange((newViewport) => {
-  model.value = toObject();
+  triggerChange();
 });
 
 onNodesChange((changes: NodeChange[]) => {
-  model.value = toObject();
+  triggerChange();
 });
 
 onEdgesChange((changes: EdgeChange[]) => {
-  model.value = toObject();
+  triggerChange();
 });
 
 onConnect((connection) => {
@@ -66,9 +74,7 @@ function addNode() {
   addNodes([{
     id,
     type: 'text',
-    data: {
-      content: '',
-    },
+    data: {},
     position: { x: 0, y: 0 },
   }]);
   focusOnNode(id);
@@ -94,7 +100,7 @@ function logToObject() {
   console.log(toObject())
 }
 
-const { onDragOver, onDrop, onDragLeave, isDragOver } = useDragAndDrop()
+const { onDragStart, onDragOver, onDrop, onDragLeave, isDragOver, isDragging } = useDragAndDrop()
 
 defineExpose({
   getGraph() {
@@ -104,11 +110,11 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col h-full" @drop="onDrop">
+  <div class="flex size-full" @drop="onDrop">
     <VueFlow
       class="flow-chart"
-      v-model:nodes="model.nodes"
-      v-model:edges="model.edges"
+      :nodes="model.nodes"
+      :edges="model.edges"
       :min-zoom="0.5"
       :max-zoom="2"
       :node-types="nodeTypes"
@@ -124,19 +130,15 @@ defineExpose({
       @dragover="onDragOver"
       @dragleave="onDragLeave"
     >
-      <DropZoneBackground
-        :style="{
-          backgroundColor: isDragOver ? '#e7f3ff' : 'transparent',
-          transition: 'background-color 0.2s ease',
-        }"
-      >
-        <p v-if="isDragOver">Drop here</p>
-      </DropZoneBackground>
-
+      <DropZoneBackground :is-drag-over="isDragOver" />
       <Background variant="dots" :gap="20" />
       <Controls />
       <Panel position="top-right">
-        <UButton icon="i-heroicons-plus-circle-20-solid" @click="addNode" />
+        <UButton
+          icon="i-heroicons-plus-circle-20-solid" 
+          :draggable="true"
+          @dragstart="onDragStart($event, 'text')"
+          @click="addNode" />
       </Panel>
       <MiniMap />
     </VueFlow>

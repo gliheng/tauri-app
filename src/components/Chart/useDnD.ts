@@ -1,36 +1,27 @@
-import { useVueFlow } from '@vue-flow/core'
-import { nanoid } from 'nanoid'
 import { ref, watch } from 'vue'
+import { nanoid } from 'nanoid'
+import { useVueFlow } from '@vue-flow/core'
+import type { Ref } from 'vue'
 
-let id = 0
-
-/**
- * @returns {string} - A unique id.
- */
-function getId() {
-  return `dndnode_${id++}`
+type DnDState = {
+  draggedType: Ref<string | null>
+  isDragOver: Ref<boolean>
+  isDragging: Ref<boolean>
 }
 
-/**
- * In a real world scenario you'd want to avoid creating refs in a global scope like this as they might not be cleaned up properly.
- * @type {{draggedType: Ref<string|null>, isDragOver: Ref<boolean>, isDragging: Ref<boolean>}}
- */
-const state = {
-  /**
-   * The type of the node being dragged.
-   */
+const state: DnDState = {
   draggedType: ref(null),
   isDragOver: ref(false),
   isDragging: ref(false),
 }
 
 export default function useDragAndDrop() {
-  const { draggedType, isDragOver, isDragging } = state
+  const { draggedType, isDragOver, isDragging } = state;
 
-  const { addNodes, screenToFlowCoordinate, onNodesInitialized, updateNode } = useVueFlow()
+  const { addNodes, screenToFlowCoordinate, onNodesInitialized, updateNode } = useVueFlow();
 
   watch(isDragging, (dragging) => {
-    document.body.style.userSelect = dragging ? 'none' : ''
+    document.body.style.userSelect = dragging ? 'none' : '';
   })
 
   function onDragStart(event: DragEvent, type: string) {
@@ -45,12 +36,7 @@ export default function useDragAndDrop() {
     document.addEventListener('drop', onDragEnd)
   }
 
-  /**
-   * Handles the drag over event.
-   *
-   * @param {DragEvent} event
-   */
-  function onDragOver(event) {
+  function onDragOver(event: DragEvent) {
     event.preventDefault()
 
     if (draggedType.value) {
@@ -73,11 +59,6 @@ export default function useDragAndDrop() {
     document.removeEventListener('drop', onDragEnd)
   }
 
-  /**
-   * Handles the drop event.
-   *
-   * @param {DragEvent} event
-   */
   function onDrop(event: DragEvent) {
     const position = screenToFlowCoordinate({
       x: event.clientX,
@@ -87,20 +68,17 @@ export default function useDragAndDrop() {
     const nodeId = nanoid()
     const type = draggedType.value
 
+    if (!type) {
+      return
+    }
+
     const newNode = {
       id: nodeId,
       type,
       position,
-      data: {
-        content: '',
-      },
+      data: {},
     }
 
-    /**
-     * Align node position after drop, so it's centered to the mouse
-     *
-     * We can hook into events even in a callback, and we can remove the event listener after it's been called.
-     */
     const { off } = onNodesInitialized(() => {
       updateNode(nodeId, (node) => ({
         position: { x: node.position.x - node.dimensions.width / 2, y: node.position.y - node.dimensions.height / 2 },

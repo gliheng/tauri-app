@@ -65,7 +65,7 @@ watch(chart, throttledWatcher, {
       <IconEdit v-model:icon="chart.icon" />
       <NameEdit v-model:name="chart.name" />
     </hgroup>
-    <div class="h-[calc(100%-60px)] w-full">
+    <div class="flex-1 w-full">
       <ChartCanvas v-model="chart.data" />
     </div>
   </div>
