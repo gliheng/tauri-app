@@ -85,20 +85,18 @@ function downloadNote() {
 
 <template>
   <div class="flex-1 flex flex-col min-h-0 justify-center relative">
-    <div class="absolute top-2 left-2 z-10">
-      <NavigationSlideover
-        title="Notes"
-        :items="noteItems"
-      />
-    </div>
-    <header class="absolute top-2 right-2 z-10">
+    <div class="absolute top-2 right-2 z-10 flex flex-row gap-2">
       <UButton
         icon="i-lucide-download"
         color="neutral"
         variant="subtle"
         @click="downloadNote"
       />
-    </header>
+      <NavigationSlideover
+        title="Notes"
+        :items="noteItems"
+      />
+    </div>
     <div class="flex-1 min-h-0 overflow-y-auto">
       <hgroup class="flex flex-row gap-2 items-center mx-32 mt-16">
         <IconEdit v-model:icon="note.icon" />

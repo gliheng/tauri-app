@@ -13,7 +13,6 @@ import NavigationSlideover from "@/components/NavigationSlideover.vue";
 const chartsStore = useChartsStore();
 const tabsStore = useTabsStore();
 const router = useRouter();
-
 const route = useRoute();
 
 chartsStore.loadCharts();
@@ -81,13 +80,13 @@ watch(chart, throttledWatcher, {
 
 <template>
   <div class="flex-1 flex flex-col min-h-0 relative">
-    <div class="absolute top-4 left-4 z-10">
+    <div class="absolute top-2 right-2 z-10 flex flex-row gap-2">
       <NavigationSlideover
         title="Charts"
         :items="chartItems"
       />
     </div>
-    <hgroup class="flex flex-row gap-2 items-center mx-4 mt-4">
+    <hgroup class="flex flex-row gap-2 items-center m-4">
       <IconEdit v-model:icon="chart.icon" />
       <NameEdit v-model:name="chart.name" />
     </hgroup>
