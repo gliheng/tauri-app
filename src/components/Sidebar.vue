@@ -248,7 +248,7 @@ const isMac = platform.startsWith("Mac");</script>
     <template #footer="{ collapsed }">
       <UModal
         :ui="{
-          content: 'min-w-[600px] min-h-[400px]',
+          content: 'w-[720px] max-w-[720px] h-[70dvh]',
         }"
       >
         <UButton

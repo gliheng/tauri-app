@@ -1,6 +1,7 @@
+- [ ] Fix qwen acp edit error
 - [ ] Input queue
-- [ ] Bundle bun
+- [x] Bundle bun
 - [ ] My Acp codeact agent
-- [ ] Chart using infinite canvas
+- [ ] Chart using infinite canvas (vueflow)
 - [ ] Acp with [SDK](https://github.com/agentclientprotocol/typescript-sdk/)
 - [ ] Create image using image model
