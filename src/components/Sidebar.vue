@@ -138,99 +138,131 @@ const platform = navigator.platform;
 const isMac = platform.startsWith("Mac");</script>
 
 <template>
-  <aside
-    class="bg-elevated flex flex-col p-2 gap-2 items-stretch"
+  <UDashboardSidebar
+    resizable
+    collapsible
+    :default-size="20"
+    :min-size="10"
+    :max-size="30"
+    :ui="{
+      root: 'bg-elevated',
+    }"
   >
-    <h1 class="text-3xl font-bold mb-2 flex flex-row gap-4 items-center justify-center"
-      :class="{ 'pt-8': isMac }"
-      data-tauri-drag-region
-    >
-      <img class="w-40 h-10 pointer-events-none object-contain" :src="logoImg" alt="Logo" />
-    </h1>
-    <UButton
-      icon="i-lucide-message-circle"
-      variant="subtle"
-      color="neutral"
-      @click="addChat"
-      >New Chat</UButton
-    >
-    <UCollapsible class="flex flex-col gap-2" default-open>
-      <UButton
-        class="group"
-        icon="i-lucide-brain"
-        variant="subtle"
-        color="neutral"
-        trailing-icon="i-lucide-chevron-down"
-        :ui="{
-          trailingIcon:
-            'group-data-[state=open]:rotate-180 transition-transform duration-200',
-        }"
-        block
-        >Agent</UButton
+    <template #header="{ collapsed }">
+      <h1
+        class="text-3xl font-bold flex flex-row gap-4 items-center justify-center"
+        :class="{ 'pt-8': isMac }"
+        data-tauri-drag-region
       >
-      <template #content>
-        <section class="space-y-1">
-          <UButton
-            v-for="agent in sidebarStore.agents"
-            :key="agent.id"
-            :class="buttonStyle({})"
-            :icon="agent.icon"
-            color="neutral"
-            variant="soft"
-            active-color="primary"
-            active-variant="solid"
-            :active="$route.path === agentUrl(agent)"
-            @click="openAgent(agent)"
-            >{{ agent.name }}</UButton
-          >
-          <UButton
-            :class="buttonStyle({})"
-            icon="i-lucide-plus"
-            color="neutral"
-            variant="soft"
-            @click="addAgent"
-            >Add</UButton
-          >
-        </section>
-      </template>
-    </UCollapsible>
-    <UButton
-      icon="i-lucide-notebook-text"
-      variant="subtle"
-      color="neutral"
-      @click="addNote"
-      >Note</UButton
-    >
-    <UButton
-      icon="i-lucide-image"
-      variant="subtle"
-      color="neutral"
-      @click="addChart"
-      >Chart</UButton
-    >
-    <UButton
-      icon="i-lucide-image"
-      variant="subtle"
-      color="neutral"
-      @click="addImage"
-      >Create image</UButton
-    >
-    <div class="flex-1"></div>
-    <UModal
-      class=""
-      :ui="{
-        content: 'min-w-[600px] min-h-[400px]',
-      }"
-    >
+        <img
+          v-if="!collapsed"
+          class="w-40 h-10 pointer-events-none object-contain"
+          :src="logoImg"
+          alt="Logo"
+        />
+        <UIcon
+          v-else
+          name="i-lucide-message-circle"
+          class="size-8 mx-auto text-primary"
+        />
+      </h1>
+    </template>
+
+    <template #default="{ collapsed }">
       <UButton
-        icon="i-mdi-cog"
-        color="neutral"
+        :label="collapsed ? undefined : 'New Chat'"
+        :square="collapsed"
+        icon="i-lucide-message-circle"
         variant="subtle"
-        label="Settings"
+        color="neutral"
+        @click="addChat"
       />
-      <template #content>
-        <Settings />
-      </template>
-    </UModal>
-  </aside>
+
+      <UCollapsible class="flex flex-col gap-2" default-open>
+        <UButton
+          :icon="collapsed ? undefined : 'i-lucide-brain'"
+          :label="collapsed ? undefined : 'Agent'"
+          class="group"
+          variant="subtle"
+          color="neutral"
+          trailing-icon="i-lucide-chevron-down"
+          block
+          :ui="{
+            trailingIcon:
+              'group-data-[state=open]:rotate-180 transition-transform duration-200',
+          }"
+          :square="collapsed"
+        />
+        <template #content>
+          <section class="space-y-1">
+            <UButton
+              v-for="agent in sidebarStore.agents"
+              :key="agent.id"
+              :icon="agent.icon"
+              :label="collapsed ? undefined : agent.name"
+              :class="buttonStyle({})"
+              color="neutral"
+              variant="soft"
+              active-color="primary"
+              active-variant="solid"
+              :active="$route.path === agentUrl(agent)"
+              @click="openAgent(agent)"
+            />
+            <UButton
+              :label="collapsed ? undefined : 'Add'"
+              :square="collapsed"
+              icon="i-lucide-plus"
+              color="neutral"
+              variant="soft"
+              @click="addAgent"
+            />
+          </section>
+        </template>
+      </UCollapsible>
+
+      <UButton
+        :label="collapsed ? undefined : 'Note'"
+        icon="i-lucide-notebook-text"
+        variant="subtle"
+        color="neutral"
+        @click="addNote"
+      />
+
+      <UButton
+        :label="collapsed ? undefined : 'Chart'"
+        icon="i-lucide-git-compare"
+        variant="subtle"
+        color="neutral"
+        @click="addChart"
+      />
+
+      <UButton
+        :label="collapsed ? undefined : 'Create image'"
+        icon="i-lucide-image"
+        variant="subtle"
+        color="neutral"
+        @click="addImage"
+      />
+    </template>
+
+    <template #footer="{ collapsed }">
+      <UModal
+        :ui="{
+          content: 'min-w-[600px] min-h-[400px]',
+        }"
+      >
+        <UButton
+          icon="i-mdi-cog"
+          :label="collapsed ? undefined : 'Settings'"
+          color="neutral"
+          variant="subtle"
+          block
+          :square="collapsed"
+        />
+        <template #content>
+          <Settings />
+        </template>
+      </UModal>
+    </template>
+  </UDashboardSidebar>
 </template>

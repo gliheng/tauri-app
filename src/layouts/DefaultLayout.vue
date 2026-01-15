@@ -37,8 +37,8 @@ eventBus.on('artifact', (msg: string) => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-row">
-    <Sidebar class="w-50 h-full" />
+  <UDashboardGroup>
+    <Sidebar />
     <SplitterGroup class="flex-1" direction="horizontal">
       <SplitterPanel>
         <div class="h-full flex flex-col">
@@ -94,7 +94,7 @@ eventBus.on('artifact', (msg: string) => {
         </SplitterPanel>
       </template>
     </SplitterGroup>
-  </div>
+  </UDashboardGroup>
 </template>
 
 <style lang="scss" scoped>

@@ -176,15 +176,15 @@ function bisect(nums: number[], n: number) {
         @scroll="onScroll"
       >
         <UButton
-          class="sticky min-h-full top-0 left-0 px-0 rounded-none bg-elevated shadow -mr-1 disabled:text-zinc-300 dark:disabled:text-slate-600"
+          class="sticky min-h-full top-0 left-0 px-0 rounded-none shadow -mr-1 disabled:text-zinc-300 dark:disabled:text-slate-600"
           icon="i-lucide-chevron-left"
           color="neutral"
-          variant="ghost"
+          variant="soft"
           size="sm"
           :hidden="!showScrollButtons"
           :disabled="!canScrollLeft"
           @click="onScrollLeft"
-        />
+        />  
         <UButton
           v-for="(tab, i) in tabs"
           :key="tab.path"

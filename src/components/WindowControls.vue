@@ -34,7 +34,7 @@ function minimize() {
 </script>
 
 <template>
-  <div class="flex flex-row px-2 gap-1 items-center select-none"
+  <div class="flex flex-row px-2 gap-1 items-center select-none scale-80"
     data-tauri-drag-region
   >
     <template v-if="isAppleDevice">
