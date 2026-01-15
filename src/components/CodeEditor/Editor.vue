@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { basicSetup } from 'codemirror'
-import { EditorView, ViewUpdate } from '@codemirror/view'
-import { EditorState } from '@codemirror/state'
+import { useTemplateRef, onMounted, onUnmounted, watch } from 'vue'
+import * as monaco from 'monaco-editor'
+import loader from '@monaco-editor/loader'
 
 interface Props {
   modelValue: string
@@ -23,80 +22,91 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const editorContainer = ref<HTMLElement>()
-let editorView: EditorView | null = null
+const editorContainer = useTemplateRef<HTMLElement>('editorContainer')
+let editor: monaco.editor.IStandaloneCodeEditor | null = null
+let monacoInstance: typeof monaco | null = null
 
-const getLanguageExtension = async () => {
-  switch (props.language) {
+const getMonacoLanguage = (lang: string): string => {
+  switch (lang) {
     case 'py':
-      const pythonLang = await import('@codemirror/lang-python')
-      return pythonLang.python()
+      return 'python'
     case 'js':
-      const jsLang = await import('@codemirror/lang-javascript')
-      return jsLang.javascript({ typescript: false })
+      return 'javascript'
     case 'ts':
-      const tsLang = await import('@codemirror/lang-javascript')
-      return tsLang.javascript({ typescript: true })
     case 'tsx':
-      const tsxLang = await import('@codemirror/lang-javascript')
-      return tsxLang.javascript({ typescript: true, jsx: true })
+      return 'typescript'
     case 'json':
-      const jsonLang = await import('@codemirror/lang-json')
-      return jsonLang.json()
+      return 'json'
     default:
-      return null
+      return 'plaintext'
   }
 }
 
-const getThemeExtension = async () => {
-  if (props.theme === 'dark') {
-    const { oneDark } = await import('@codemirror/theme-one-dark')
-    return oneDark
+const configureMonacoWorkers = () => {
+  // Configure workers for production and development
+  if (typeof window !== 'undefined') {
+    (window as any).MonacoEnvironment = {
+      getWorker: function (_: string, label: string) {
+        const getWorkerModule = (moduleUrl: string) => {
+          return new Worker(new URL(moduleUrl, import.meta.url), {
+            type: 'module',
+          })
+        }
+
+        switch (label) {
+          case 'json':
+            return getWorkerModule('monaco-editor/esm/vs/language/json/json.worker')
+          case 'css':
+          case 'scss':
+          case 'less':
+            return getWorkerModule('monaco-editor/esm/vs/language/css/css.worker')
+          case 'html':
+          case 'handlebars':
+          case 'razor':
+            return getWorkerModule('monaco-editor/esm/vs/language/html/html.worker')
+          case 'typescript':
+          case 'javascript':
+            return getWorkerModule('monaco-editor/esm/vs/language/typescript/ts.worker')
+          default:
+            return getWorkerModule('monaco-editor/esm/vs/editor/editor.worker')
+        }
+      }
+    }
   }
-  return []
 }
 
 const initializeEditor = async () => {
   if (!editorContainer.value) return
 
-  const [languageExtension, themeExtension] = await Promise.all([
-    getLanguageExtension(),
-    getThemeExtension(),
-  ])
-
-  const extensions = [
-    basicSetup,
-    themeExtension,
-    EditorView.updateListener.of((update: ViewUpdate) => {
-      if (update.docChanged) {
-        const newValue = update.state.doc.toString()
-        emit('update:modelValue', newValue)
-      }
-    }),
-    EditorView.theme({
-      '&': {
-        height: '100%',
+  try {
+    monacoInstance = await loader.init()
+    configureMonacoWorkers()
+    
+    editor = monacoInstance.editor.create(editorContainer.value, {
+      value: props.modelValue || '',
+      language: getMonacoLanguage(props.language),
+      theme: props.theme === 'dark' ? 'vs-dark' : 'vs',
+      readOnly: props.readonly,
+      automaticLayout: true,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      fontSize: 14,
+      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+      padding: { top: 8, bottom: 8 },
+      bracketPairColorization: { enabled: true },
+      suggest: {
+        showKeywords: true,
+        showSnippets: true,
       },
-    }),
-  ]
+    })
 
-  if (languageExtension) {
-    extensions.push(languageExtension);
+    editor.onDidChangeModelContent(() => {
+      const value = editor?.getValue() || ''
+      emit('update:modelValue', value)
+    })
+  } catch (error) {
+    console.error('Failed to initialize Monaco Editor:', error)
   }
-
-  if (props.readonly) {
-    extensions.push(EditorState.readOnly.of(true))
-  }
-
-  const startState = EditorState.create({
-    doc: props.modelValue || '',
-    extensions,
-  })
-
-  editorView = new EditorView({
-    state: startState,
-    parent: editorContainer.value,
-  })
 }
 
 onMounted(() => {
@@ -104,43 +114,31 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (editorView) {
-    editorView.destroy()
-  }
+  editor?.dispose()
 })
 
 watch(
   () => props.modelValue,
   (newValue) => {
-    if (editorView && newValue !== editorView.state.doc.toString()) {
-      editorView.dispatch({
-        changes: {
-          from: 0,
-          to: editorView.state.doc.length,
-          insert: newValue || '',
-        },
-      })
+    if (editor && newValue !== editor.getValue()) {
+      editor.setValue(newValue || '')
     }
   }
 )
 
 watch(
   [() => props.language, () => props.theme],
-  () => {
-    if (editorView) {
-      const currentValue = editorView.state.doc.toString()
-      editorView.destroy()
-      initializeEditor().then(() => {
-        if (editorView && currentValue !== props.modelValue) {
-          editorView.dispatch({
-            changes: {
-              from: 0,
-              to: editorView.state.doc.length,
-              insert: currentValue,
-            },
-          })
-        }
-      })
+  async () => {
+    if (editor && monacoInstance) {
+      const currentValue = editor.getValue()
+      
+      // Update language
+      const newLanguage = getMonacoLanguage(props.language)
+      monacoInstance.editor.setModelLanguage(editor.getModel()!, newLanguage)
+      
+      // Update theme
+      const newTheme = props.theme === 'dark' ? 'vs-dark' : 'vs'
+      monacoInstance.editor.setTheme(newTheme)
     }
   }
 )
@@ -151,16 +149,15 @@ watch(
 </template>
 
 <style lang="scss" scoped>
-:deep(.cm-editor.cm-focused) {
+.monaco-editor {
   outline: none;
-}
-
-:deep(.cm-scroller) {
-  overflow: auto;
-}
-
-:deep(.cm-content) {
-  padding: 8px;
-  font-family: Monaco, Menlo, "Ubuntu Mono", monospace;
+  
+  .monaco-scrollable-element {
+    overflow: auto;
+  }
+  
+  .monaco-editor-background {
+    background-color: var(--vs-editor-background);
+  }
 }
 </style>
