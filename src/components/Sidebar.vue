@@ -146,6 +146,7 @@ const isMac = platform.startsWith("Mac");</script>
     :max-size="30"
     :ui="{
       root: 'bg-elevated',
+      body: 'gap-2',
     }"
   >
     <template #header="{ collapsed }">
@@ -211,6 +212,7 @@ const isMac = platform.startsWith("Mac");</script>
             <UButton
               :label="collapsed ? undefined : 'Add'"
               :square="collapsed"
+              class="w-full"
               icon="i-lucide-plus"
               color="neutral"
               variant="soft"

@@ -35,7 +35,7 @@ const groups = computed(() => [{
 </script>
 
 <template>
-  <USlideover v-model:open="open" :title="title" side="left">
+  <USlideover v-model:open="open" :title="title" side="right">
     <UButton
       icon="i-lucide-menu"
       color="neutral"

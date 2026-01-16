@@ -434,13 +434,19 @@ export async function writeFile(file: File): Promise<number> {
 export async function readFile(id: number): Promise<FileStore | undefined> {
   if (!db) throw new Error('Database not initialized');
   const result = await db.select<
-    { fileName: string; fileType: string; fileData: number[]; createdAt: string }[]
+    { fileName: string; fileType: string; fileData: string | number[]; createdAt: string }[]
   >(`SELECT * FROM file_store WHERE id = $1`, [id]);
 
   if (result.length === 0) return undefined;
 
   const row = result[0];
-  const uint8Array = new Uint8Array(row.fileData);
+
+  // Handle both stringified array and actual array formats from Tauri's serialization
+  const fileDataArray = typeof row.fileData === 'string'
+    ? JSON.parse(row.fileData)
+    : row.fileData;
+
+  const uint8Array = new Uint8Array(fileDataArray);
   const file = new File([uint8Array], row.fileName, { type: row.fileType });
 
   return {

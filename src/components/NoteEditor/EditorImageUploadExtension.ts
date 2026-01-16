@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, Extension } from '@tiptap/core';
 import type { CommandProps } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
 import { VueNodeViewRenderer } from '@tiptap/vue-3';
@@ -112,6 +112,17 @@ export const createFileImagePlugin = () => {
     },
   });
 };
+
+// Tiptap Extension wrapper for the file image plugin
+export const FileImageExtension = Extension.create({
+  name: 'fileImageHandler',
+
+  addProseMirrorPlugins() {
+    return [
+      createFileImagePlugin(),
+    ];
+  },
+});
 
 // Export the ImageUpload extension as default
 export default ImageUpload;

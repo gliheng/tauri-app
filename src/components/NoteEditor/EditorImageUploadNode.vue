@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { NodeViewProps } from '@tiptap/vue-3';
 import { NodeViewWrapper, nodeViewProps } from '@tiptap/vue-3';
-import { readFile, writeFile } from '@/db-sqlite';
+import { writeFile } from '@/db-sqlite';
 import { ref, watch } from 'vue';
 
 const props = defineProps(nodeViewProps);
