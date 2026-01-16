@@ -1,116 +1,152 @@
 <script setup lang="ts">
-import type { Editor } from '@tiptap/vue-3';
-import { onMounted, ref } from 'vue';
+import type { Editor } from '@tiptap/vue-3'
+import { ref, computed, watch } from 'vue';
 
 const props = defineProps<{
-  editor: Editor;
-  autoOpen?: boolean;
-}>();
+  editor: Editor
+  autoOpen?: boolean
+}>()
 
-const open = defineModel<boolean>('open', { default: false });
+const open = ref(false)
+const url = ref('')
 
-const url = ref('');
-const text = ref('');
+const active = computed(() => props.editor.isActive('link'))
+const disabled = computed(() => {
+  if (!props.editor.isEditable) return true
+  const { selection } = props.editor.state
+  return selection.empty && !props.editor.isActive('link')
+})
 
-function openLinkPopover() {
-  const { view, state } = props.editor;
-  const { from, to } = state.selection;
+watch(() => props.editor, (editor, _, onCleanup) => {
+  if (!editor) return
 
-  if (from === to) {
-    // No selection, get the link at cursor or current text
-    const link = props.editor.getAttributes('link');
-    if (link.href) {
-      url.value = link.href;
-      text.value = state.doc.textBetween(from, to);
-    } else {
-      url.value = '';
-      text.value = '';
-    }
-  } else {
-    // Has selection
-    const link = props.editor.getAttributes('link');
-    url.value = link.href || '';
-    text.value = state.doc.textBetween(from, to);
+  const updateUrl = () => {
+    const { href } = editor.getAttributes('link')
+    url.value = href || ''
   }
 
-  open.value = true;
-}
+  updateUrl()
+  editor.on('selectionUpdate', updateUrl)
+
+  onCleanup(() => {
+    editor.off('selectionUpdate', updateUrl)
+  })
+}, { immediate: true })
+
+watch(active, (isActive) => {
+  if (isActive && props.autoOpen) {
+    open.value = true
+  }
+})
 
 function setLink() {
-  const { editor } = props;
+  if (!url.value) return
 
-  // empty
-  if (url.value === '') {
-    editor.chain().focus().extendMarkRange('link').unsetLink().run();
-    return;
+  const { selection } = props.editor.state
+  const isEmpty = selection.empty
+  const hasCode = props.editor.isActive('code')
+
+  let chain = props.editor.chain().focus()
+
+  // When linking code, extend the code mark range first to select the full code
+  if (hasCode && !isEmpty) {
+    chain = chain.extendMarkRange('code').setLink({ href: url.value })
+  } else {
+    chain = chain.extendMarkRange('link').setLink({ href: url.value })
+
+    if (isEmpty) {
+      chain = chain.insertContent({ type: 'text', text: url.value })
+    }
   }
 
-  // update link
-  editor
+  chain.run()
+  open.value = false
+}
+
+function removeLink() {
+  props.editor
     .chain()
     .focus()
     .extendMarkRange('link')
-    .setLink({ href: url.value })
-    .run();
+    .unsetLink()
+    .setMeta('preventAutolink', true)
+    .run()
+
+  url.value = ''
+  open.value = false
 }
 
-function deleteLink() {
-  const { editor } = props;
-  editor.chain().focus().extendMarkRange('link').unsetLink().run();
-  open.value = false;
+function openLink() {
+  if (!url.value) return
+  window.open(url.value, '_blank', 'noopener,noreferrer')
 }
 
-// Watch for editor selection changes to auto-open
-if (props.autoOpen) {
-  watch(
-    () => props.editor.state.selection,
-    () => {
-      const { from, to } = props.editor.state.selection;
-      if (from !== to) {
-        const link = props.editor.getAttributes('link');
-        if (link.href) {
-          openLinkPopover();
-        }
-      }
-    },
-  );
-}
-
-onMounted(() => {
-  if (props.autoOpen) {
-    openLinkPopover();
+function handleKeyDown(event: KeyboardEvent) {
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    setLink()
   }
-});
-
-defineExpose({
-  openLinkPopover,
-});
+}
 </script>
 
 <template>
-  <UPopover v-model:open="open" :modal="false">
-    <template #default>
-      <div class="link-popover p-2 min-w-64">
-        <UFormField label="URL">
-          <UInput v-model="url" placeholder="https://example.com" @keydown.enter="setLink()" />
-        </UFormField>
-        <div class="flex gap-2 mt-2">
-          <UButton size="xs" variant="soft" @click="setLink()">
-            Apply
-          </UButton>
-          <UButton size="xs" color="neutral" variant="ghost" @click="deleteLink()">
-            Remove
-          </UButton>
+  <UPopover v-model:open="open" :ui="{ content: 'p-0.5' }">
+    <UTooltip text="Link">
+      <UButton
+        icon="i-lucide-link"
+        color="neutral"
+        active-color="primary"
+        variant="ghost"
+        active-variant="soft"
+        size="sm"
+        :active="active"
+        :disabled="disabled"
+      />
+    </UTooltip>
+
+    <template #content>
+      <UInput
+        v-model="url"
+        autofocus
+        name="url"
+        type="url"
+        variant="none"
+        placeholder="Paste a link..."
+        @keydown="handleKeyDown"
+      >
+        <div class="flex items-center mr-0.5">
+          <UButton
+            icon="i-lucide-corner-down-left"
+            variant="ghost"
+            size="sm"
+            :disabled="!url && !active"
+            title="Apply link"
+            @click="setLink"
+          />
+
+          <USeparator orientation="vertical" class="h-6 mx-1" />
+
+          <UButton
+            icon="i-lucide-external-link"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            :disabled="!url && !active"
+            title="Open in new window"
+            @click="openLink"
+          />
+
+          <UButton
+            icon="i-lucide-trash"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            :disabled="!url && !active"
+            title="Remove link"
+            @click="removeLink"
+          />
         </div>
-      </div>
+      </UInput>
     </template>
   </UPopover>
 </template>
-
-<style scoped>
-.link-popover {
-  background: var(--ui-bg-default);
-  border: 1px solid var(--ui-border-muted);
-  border-radius: 0.5rem;
-}
-</style>

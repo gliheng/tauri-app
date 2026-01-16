@@ -13,3 +13,14 @@ export function file2DataUrl(file: File): Promise<Attachment> {
     reader.readAsDataURL(file);
   });
 }
+
+export function downloadFile(file: File): void {
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

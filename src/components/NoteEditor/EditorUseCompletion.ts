@@ -4,6 +4,8 @@ import type { Editor } from '@tiptap/vue-3';
 import { Completion } from './EditorCompletionExtension';
 import type { CompletionStorage } from './EditorCompletionExtension';
 
+const toast = useToast();
+
 type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate';
 
 export interface UseEditorCompletionOptions {
@@ -68,7 +70,12 @@ export function useEditorCompletion(
       insertState.value = undefined;
     },
     onError: (error) => {
-      console.error('AI completion error:', error);
+      toast.add({
+        title: 'AI completion error',
+        description: error instanceof Error ? error.message : 'An error occurred during AI completion',
+        icon: 'i-lucide-alert-circle',
+        color: 'error'
+      });
       insertState.value = undefined;
       getCompletionStorage()?.clearSuggestion();
     },

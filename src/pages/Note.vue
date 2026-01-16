@@ -9,6 +9,9 @@ import IconEdit from "@/components/IconEdit.vue";
 import NavigationSlideover from "@/components/NavigationSlideover.vue";
 import { useNotesStore } from "@/stores/notes";
 import { useTabsStore } from "@/stores/tabs";
+import { downloadFile } from "@/utils/file";
+
+const toast = useToast();
 
 const notesStore = useNotesStore();
 const tabsStore = useTabsStore();
@@ -72,14 +75,14 @@ watch(note, throttledWatcher, {
 
 function downloadNote() {
   const blob = new Blob([note.value.content], { type: "text/markdown" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = note.value.name + ".md";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const file = new File([blob], note.value.name + ".md", { type: "text/markdown" });
+  downloadFile(file);
+  toast.add({
+    title: 'Note downloaded',
+    description: `${note.value.name}.md has been downloaded`,
+    icon: 'i-lucide-download',
+    color: 'success'
+  });
 }
 </script>
 

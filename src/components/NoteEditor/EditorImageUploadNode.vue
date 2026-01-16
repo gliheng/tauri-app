@@ -3,6 +3,8 @@ import { NodeViewWrapper, nodeViewProps } from '@tiptap/vue-3';
 import { writeFile } from '@/db-sqlite';
 import { ref, watch } from 'vue';
 
+const toast = useToast();
+
 const props = defineProps(nodeViewProps);
 
 const file = ref<File | null>(null);
@@ -37,7 +39,12 @@ watch(file, async (newFile) => {
       .setImage({ src: fileUrl })
       .run();
   } catch (err) {
-    console.error('Failed to upload image:', err);
+    toast.add({
+      title: 'Failed to upload image',
+      description: err instanceof Error ? err.message : 'An error occurred while uploading the image',
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    });
     error.value = err instanceof Error ? err.message : 'Failed to upload image';
     loading.value = false;
   }

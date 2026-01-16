@@ -10,6 +10,10 @@ import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki';
 import { ImageUpload, FileImageExtension } from './EditorImageUploadExtension';
 import { useEditorCompletion } from './EditorUseCompletion';
 import EditorLinkPopover from './EditorLinkPopover.vue';
+import { readFile } from '@/db-sqlite';
+import { downloadFile } from '@/utils/file';
+
+const toast = useToast();
 
 const model = defineModel<string>({
   required: true,
@@ -256,15 +260,43 @@ const bubbleToolbarItems = computed(() => [
 ] satisfies EditorToolbarItem<any>[][]);
 
 const imageToolbarItems = (editor: any): EditorToolbarItem[][] => {
-  const node = editor.state.doc.nodeAt(editor.state.selection.from);
-
   return [
     [
       {
         icon: 'i-lucide-download',
-        to: node?.attrs?.src,
-        download: true,
         tooltip: { text: 'Download' },
+        onClick: async () => {
+          const { state } = editor;
+          const { selection } = state;
+          const pos = selection.from;
+          const node = state.doc.nodeAt(pos);
+
+          if (node && node.type.name === 'image') {
+            const src = node.attrs.src;
+            if (src?.startsWith('file://')) {
+              const id = Number(src.slice('file://'.length));
+              try {
+                const result = await readFile(id);
+                if (result?.file) {
+                  downloadFile(result.file);
+                  toast.add({
+                    title: 'Image downloaded',
+                    description: `${result.file.name} has been downloaded`,
+                    icon: 'i-lucide-download',
+                    color: 'success'
+                  });
+                }
+              } catch (err) {
+                toast.add({
+                  title: 'Failed to download image',
+                  description: err instanceof Error ? err.message : 'An error occurred while downloading the image',
+                  icon: 'i-lucide-alert-circle',
+                  color: 'error'
+                });
+              }
+            }
+          }
+        },
       },
       {
         icon: 'i-lucide-refresh-cw',
