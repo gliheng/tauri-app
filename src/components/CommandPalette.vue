@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import moment from "moment";
-import { getAllChats, deleteChat, Chat } from "@/db-sqlite";
 import { useTabsStore } from "@/stores/tabs";
+import { useChatsStore } from "@/stores/chats";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { nanoid } from "nanoid";
 
 const tabsStore = useTabsStore();
-const list = await getAllChats();
-const chatList = ref<Chat[]>(list);
+const chatsStore = useChatsStore();
 const { openTab, closeTab } = useTabsStore();
 const router = useRouter();
 
 const emit = defineEmits<{
   (e: "close"): void;
 }>();
+
+onMounted(() => {
+  chatsStore.loadChats();
+});
 
 interface ChatHistoryItem {
   chatId: string;
@@ -26,7 +29,7 @@ interface ChatHistoryItem {
 }
 
 const groups = computed(() => {
-  const historyItems: ChatHistoryItem[] = chatList.value.map((e) => ({
+  const historyItems: ChatHistoryItem[] = chatsStore.chats.map((e) => ({
     chatId: e.id,
     agentId: e.agentId,
     label: e.topic,
@@ -104,9 +107,7 @@ async function onRemoveChat(item: any) {
   if (ok) {
     const { chatId } = item as ChatHistoryItem;
     closeTab(chatId);
-    await deleteChat(chatId);
-    // Remove from chatList
-    chatList.value = chatList.value.filter((e) => e.id !== chatId);
+    await chatsStore.removeChat(chatId);
   }
 }
 </script>
