@@ -7,7 +7,7 @@ export interface ChatModelConfig {
   models: string[];
 }
 
-const defaultSettings: Record<string, ChatModelConfig> = {
+const defaultModelSettings: Record<string, ChatModelConfig> = {
   deepseek: {
     apiKey: "",
     models: [],
@@ -83,7 +83,7 @@ export function loadCodeAgentSettings() {
 export function loadModelSettings() {
   const stored = localStorage.getItem("modelSettings");
   const storedSettings = stored ? JSON.parse(stored) : {};
-  return defaultsDeep({}, storedSettings, defaultSettings) as Record<string, ChatModelConfig>;
+  return defaultsDeep({}, storedSettings, defaultModelSettings) as Record<string, ChatModelConfig>;
 }
 
 export function loadChatSettings() {

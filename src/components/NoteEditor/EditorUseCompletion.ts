@@ -1,6 +1,8 @@
 import { computed, Ref, ref, watch } from 'vue';
 import { useCompletion } from '@ai-sdk/vue';
 import type { Editor } from '@tiptap/vue-3';
+import { streamText } from 'ai';
+import { getModel } from '@/llm';
 import { Completion } from './EditorCompletionExtension';
 import type { CompletionStorage } from './EditorCompletionExtension';
 
@@ -8,13 +10,8 @@ const toast = useToast();
 
 type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate';
 
-export interface UseEditorCompletionOptions {
-  api?: string;
-}
-
 export function useEditorCompletion(
   editorRef: Ref<{ editor: Editor | undefined } | null | undefined>,
-  options: UseEditorCompletionOptions = {},
 ) {
   // State for direct insertion/transform mode
   const insertState = ref<{
@@ -31,12 +28,33 @@ export function useEditorCompletion(
   }
 
   const { completion, complete, isLoading, stop, setCompletion } = useCompletion({
-    api: options.api || '/api/completion',
     streamProtocol: 'text',
     body: computed(() => ({
       mode: mode.value,
       language: language.value,
     })),
+    fetch: async (_url, req) => {
+      const reqData = JSON.parse(req!.body as unknown as string);
+      const { prompt, mode: completionMode, language: targetLanguage, model } = reqData;
+      const systemPrompts: Record<CompletionMode, string> = {
+        continue: 'Continue the following text naturally, maintaining the same tone and style. Do not repeat the last sentence.',
+        fix: 'Fix grammar, spelling, punctuation, and improve clarity while preserving the original meaning.',
+        extend: 'Expand the text with relevant details, examples, or context while maintaining the original structure.',
+        reduce: 'Make the text more concise by removing unnecessary words while preserving the core meaning.',
+        simplify: 'Simplify the language and structure to make it easier to understand.',
+        summarize: 'Create a brief summary of the key points.',
+        translate: targetLanguage ? `Translate the following text to ${targetLanguage}.` : 'Translate the text to English.',
+      };
+
+      const ret = streamText({
+        model: getModel(model),
+        prompt,
+        system: systemPrompts[completionMode],
+        abortSignal: req?.signal ?? undefined,
+      });
+
+      return ret.toTextStreamResponse();
+    },
     onFinish: (_prompt, completionText) => {
       // For inline suggestion mode, don't clear - let user accept with Tab
       const storage = getCompletionStorage();

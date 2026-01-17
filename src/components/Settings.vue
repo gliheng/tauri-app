@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { CodeAgent, useSettingsStore } from "@/stores/settings";
 import { modelRepo } from "@/llm/models";
@@ -70,7 +70,41 @@ const codeAgentItems = [
 
 const defaultCodeAgent = "codex";
 
-const { modelSettings, codeAgentSettings } = storeToRefs(useSettingsStore());
+const { modelSettings, codeAgentSettings, chatSettings } = storeToRefs(useSettingsStore());
+
+const modelList = computed(() => {
+  const models: Array<{ label: string; value: string; provider: string }> = [];
+  
+  for (const [provider, config] of Object.entries(modelSettings.value)) {
+    const providerConfig = config as { apiKey: string; models: Array<string> };
+    const providerModels = modelRepo[provider as keyof typeof modelRepo] || [];
+    
+    for (const modelValue of providerConfig.models) {
+      const modelInfo = providerModels.find(m => m.value === modelValue);
+      if (modelInfo) {
+        models.push({
+          label: modelInfo.label,
+          provider,
+          value: `${provider}::${modelValue}`,
+        });
+      }
+    }
+  }
+  
+  return models;
+});
+
+const selectedModel = computed({
+  get: () => {
+    const chatModel = chatSettings.value.chatModel;
+    return modelList.value.find(m => m.value === chatModel) || modelList.value[0];
+  },
+  set: (value) => {
+    if (value) {
+      chatSettings.value.chatModel = value.value;
+    }
+  }
+});
 
 const getAvailableModels = (provider: string) => {
   return modelRepo[provider as keyof typeof modelRepo].filter(
@@ -133,7 +167,23 @@ watch(currentTab, async (tab) => {
     <template #models>
       <h1 class="text-xl font-semibold py-4">Models</h1>
       <div class="flex-1 flex flex-col gap-2 min-h-0 overflow-auto pr-2">
-        <h2 class="text-lg font-semibold">Chat Models</h2>
+        <h2 class="text-lg font-semibold">Default Model</h2>
+        <UFormField label="Select default chat model">
+          <USelectMenu
+            v-model="selectedModel"
+            color="neutral"
+            variant="soft"
+            trailing-icon="i-lucide-chevrons-up-down"
+            :items="modelList"
+            placeholder="Select a model"
+            class="w-full"
+          >
+            <template #item-leading="{ item }">
+              <UBadge size="xs" :label="item.provider" />
+            </template>
+          </USelectMenu>
+        </UFormField>
+        <h2 class="text-lg font-semibold mt-4">Chat Models</h2>
         <div class="flex-1 min-h-0">
           <UTabs
             orientation="vertical"

@@ -149,9 +149,20 @@ const isMac = platform.startsWith("Mac");</script>
     </template>
 
     <template #default="{ collapsed }">
+      <UTooltip v-if="collapsed" text="New Chat" :content="{
+        side: 'right',
+      }">
+        <UButton
+          :square="collapsed"
+          icon="i-lucide-message-circle"
+          variant="subtle"
+          color="neutral"
+          @click="addChat"
+        />
+      </UTooltip>
       <UButton
-        :label="collapsed ? undefined : 'New Chat'"
-        :square="collapsed"
+        v-else
+        label="New Chat"
         icon="i-lucide-message-circle"
         variant="subtle"
         color="neutral"
@@ -159,9 +170,27 @@ const isMac = platform.startsWith("Mac");</script>
       />
 
       <UCollapsible class="flex flex-col gap-2" default-open>
+        <UTooltip v-if="collapsed" text="Agent" :content="{
+          side: 'right',
+        }">
+          <UButton
+            :icon="collapsed ? undefined : 'i-lucide-brain'"
+            class="group"
+            variant="subtle"
+            color="neutral"
+            trailing-icon="i-lucide-chevron-down"
+            block
+            :ui="{
+              trailingIcon:
+                'group-data-[state=open]:rotate-180 transition-transform duration-200',
+            }"
+            square
+          />
+        </UTooltip>
         <UButton
-          :icon="collapsed ? undefined : 'i-lucide-brain'"
-          :label="collapsed ? undefined : 'Agent'"
+          v-else
+          icon="i-lucide-brain"
+          label="Agent"
           class="group"
           variant="subtle"
           color="neutral"
@@ -171,26 +200,44 @@ const isMac = platform.startsWith("Mac");</script>
             trailingIcon:
               'group-data-[state=open]:rotate-180 transition-transform duration-200',
           }"
-          :square="collapsed"
         />
         <template #content>
           <section class="space-y-1">
-            <UButton
+            <UTooltip
               v-for="agent in sidebarStore.agents"
               :key="agent.id"
-              :icon="agent.icon"
-              :label="collapsed ? undefined : agent.name"
-              :class="buttonStyle({})"
-              color="neutral"
-              variant="soft"
-              active-color="primary"
-              active-variant="solid"
-              :active="$route.path === agentUrl(agent)"
-              @click="openAgent(agent)"
-            />
+              :text="agent.name"
+              :content="{
+                side: 'right',
+              }"
+            >
+              <UButton
+                :icon="agent.icon"
+                :label="collapsed ? undefined : agent.name"
+                :class="buttonStyle({})"
+                color="neutral"
+                variant="soft"
+                active-color="primary"
+                active-variant="solid"
+                :active="$route.path === agentUrl(agent)"
+                @click="openAgent(agent)"
+              />
+            </UTooltip>
+            <UTooltip v-if="collapsed" text="Add Agent" :content="{
+              side: 'right',
+            }">
+              <UButton
+                square
+                class="w-full"
+                icon="i-lucide-plus"
+                color="neutral"
+                variant="soft"
+                @click="addAgent"
+              />
+            </UTooltip>
             <UButton
-              :label="collapsed ? undefined : 'Add'"
-              :square="collapsed"
+              v-else
+              label="Add"
               class="w-full"
               icon="i-lucide-plus"
               color="neutral"
@@ -201,16 +248,40 @@ const isMac = platform.startsWith("Mac");</script>
         </template>
       </UCollapsible>
 
+      <UTooltip v-if="collapsed" text="Create Document" :content="{
+        side: 'right',
+      }">
+        <UButton
+          square
+          icon="i-lucide-file-text"
+          variant="subtle"
+          color="neutral"
+          @click="goToDocuments"
+        />
+      </UTooltip>
       <UButton
-        :label="collapsed ? undefined : 'Documents'"
+        v-else
+        label="Document"
         icon="i-lucide-file-text"
         variant="subtle"
         color="neutral"
         @click="goToDocuments"
       />
 
+      <UTooltip v-if="collapsed" text="Generate Image with AI" :content="{
+        side: 'right',
+      }">
+        <UButton
+          square
+          icon="i-lucide-image"
+          variant="subtle"
+          color="neutral"
+          @click="addImage"
+        />
+      </UTooltip>
       <UButton
-        :label="collapsed ? undefined : 'Images'"
+        v-else
+        label="Image"
         icon="i-lucide-image"
         variant="subtle"
         color="neutral"
@@ -224,13 +295,24 @@ const isMac = platform.startsWith("Mac");</script>
           content: 'w-[720px] max-w-[720px] h-[70dvh]',
         }"
       >
+        <UTooltip v-if="collapsed" text="Settings" :content="{
+          side: 'right',
+        }">
+          <UButton
+            icon="i-mdi-cog"
+            color="neutral"
+            variant="subtle"
+            block
+            square
+          />
+        </UTooltip>
         <UButton
+          v-else
           icon="i-mdi-cog"
-          :label="collapsed ? undefined : 'Settings'"
+          label="Settings"
           color="neutral"
           variant="subtle"
           block
-          :square="collapsed"
         />
         <template #content>
           <Settings />
