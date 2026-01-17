@@ -480,6 +480,17 @@ pub async fn read_file(path: &str) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn write_file(path: &str, content: &str) -> Result<(), String> {
+    let path_buf = Path::new(path);
+
+    // Check if the parent directory exists, create it if it doesn't
+    if let Some(parent) = path_buf.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create parent directory: {}", e))?;
+        }
+    }
+
+    println!("Writing file: {}", path);
     fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))
 }
 

@@ -82,11 +82,11 @@ function downloadNote() {
       <DocumentsSlideover />
     </div>
     <div class="flex-1 min-h-0 overflow-y-auto">
-      <hgroup class="flex flex-row gap-2 items-center mx-32 mt-16">
+      <hgroup class="flex flex-row gap-2 items-center mx-32 mt-16 pl-[32px]">
         <IconEdit v-model:icon="note.icon" />
         <NameEdit v-model:name="note.name" />
       </hgroup>
-      <div class="mx-32 mt-6">
+      <div class="mx-32">
         <NoteEditor v-model="note.content" />
       </div>
     </div>

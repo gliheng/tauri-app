@@ -134,12 +134,6 @@ export function useAcp({ chatId, agent, onInvoke }: {
     onDisconnect() {
       console.log('onDisconnect');
     },
-    async onInitialize(initializeResult: InitializeResult) {
-      if (initializeResult.modes) {
-        currentModeId.value = initializeResult.modes.currentModeId;
-        availableModes.value = initializeResult.modes.availableModes;
-      }
-    },
     async onInvoke(method: string, params: any) {
       onInvoke?.(method, params);
       // console.log("Method", method, "invoked with params", params);
@@ -244,6 +238,7 @@ export function useAcp({ chatId, agent, onInvoke }: {
       } else if (method === ACPMethod.FsWriteTextFile) {
         const { path, content } = params as { path: string; content: string };
         try {
+          debugger;
           await invoke('write_file', { path, content });
         } catch(e) {
           console.error(e);
@@ -252,6 +247,25 @@ export function useAcp({ chatId, agent, onInvoke }: {
       }
     },
   });
+
+  // Intercept RPC calls to update state
+  const oldRpc = acpService.rpc;
+  acpService.rpc = async (method, message) => {
+    const rsp = await oldRpc.apply(acpService, [method, message]);
+    if (method === ACPMethod.SessionNew || method === ACPMethod.SessionLoad) {
+      if (rsp.models) {
+        currentModeId.value = rsp.models.currentModeId;
+        availableModes.value = rsp.models.availableModes;
+      }
+      if (rsp.modes) {
+        currentModeId.value = rsp.modes.currentModeId;
+        availableModes.value = rsp.modes.availableModes;
+      }
+    }
+    return rsp;
+  }
+
+
   return {
     acpService,
     ...state,

@@ -535,7 +535,6 @@ const emojiItems: EditorEmojiMenuItem[] = gitHubEmojis.filter((emoji) => !emoji.
     :handlers="customHandlers"
     placeholder="Type '/' for commands..."
     :ui="{ base: 'p-4 sm:px-8 py-6 min-h-96' }"
-    class="w-full"
   >
     <!-- Bubble toolbar for text selection -->
     <UEditorToolbar
@@ -616,9 +615,5 @@ html.dark .tiptap .shiki,
 html.dark .tiptap .shiki span {
   color: var(--shiki-dark) !important;
   background-color: var(--ui-bg-muted) !important;
-}
-
-.tiptap {
-  padding: 0;
 }
 </style>

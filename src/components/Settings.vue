@@ -159,7 +159,7 @@ watch(currentTab, async (tab) => {
     root: 'size-full flex-1 items-stretch gap-0',
     list: 'self-stretch bg-elevated min-w-40 p-0',
     indicator: 'hidden',
-    content: 'pl-4 flex flex-col gap-2',
+    content: 'pl-4 flex flex-col gap-2 pb-4',
   }">
     <template #list-leading>
       <h1 class="text-xl font-semibold pl-3 py-4">Settings</h1>

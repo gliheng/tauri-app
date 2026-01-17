@@ -149,31 +149,24 @@ const isMac = platform.startsWith("Mac");</script>
     </template>
 
     <template #default="{ collapsed }">
-      <UTooltip v-if="collapsed" text="New Chat" :content="{
+      <UTooltip text="New Chat" :content="{
         side: 'right',
       }">
         <UButton
-          :square="collapsed"
+          :label="collapsed ? undefined : 'New Chat'"
           icon="i-lucide-message-circle"
           variant="subtle"
           color="neutral"
           @click="addChat"
         />
       </UTooltip>
-      <UButton
-        v-else
-        label="New Chat"
-        icon="i-lucide-message-circle"
-        variant="subtle"
-        color="neutral"
-        @click="addChat"
-      />
 
       <UCollapsible class="flex flex-col gap-2" default-open>
-        <UTooltip v-if="collapsed" text="Agent" :content="{
+        <UTooltip text="Agent" :content="{
           side: 'right',
         }">
           <UButton
+            :label="collapsed ? undefined : 'Agent'"
             :icon="collapsed ? undefined : 'i-lucide-brain'"
             class="group"
             variant="subtle"
@@ -184,23 +177,8 @@ const isMac = platform.startsWith("Mac");</script>
               trailingIcon:
                 'group-data-[state=open]:rotate-180 transition-transform duration-200',
             }"
-            square
           />
         </UTooltip>
-        <UButton
-          v-else
-          icon="i-lucide-brain"
-          label="Agent"
-          class="group"
-          variant="subtle"
-          color="neutral"
-          trailing-icon="i-lucide-chevron-down"
-          block
-          :ui="{
-            trailingIcon:
-              'group-data-[state=open]:rotate-180 transition-transform duration-200',
-          }"
-        />
         <template #content>
           <section class="space-y-1">
             <UTooltip
@@ -223,70 +201,45 @@ const isMac = platform.startsWith("Mac");</script>
                 @click="openAgent(agent)"
               />
             </UTooltip>
-            <UTooltip v-if="collapsed" text="Add Agent" :content="{
+            <UTooltip text="Add Agent" :content="{
               side: 'right',
             }">
               <UButton
-                square
                 class="w-full"
+                :label="collapsed ? undefined : 'Add'"
                 icon="i-lucide-plus"
                 color="neutral"
                 variant="soft"
                 @click="addAgent"
               />
             </UTooltip>
-            <UButton
-              v-else
-              label="Add"
-              class="w-full"
-              icon="i-lucide-plus"
-              color="neutral"
-              variant="soft"
-              @click="addAgent"
-            />
           </section>
         </template>
       </UCollapsible>
 
-      <UTooltip v-if="collapsed" text="Create Document" :content="{
+      <UTooltip text="Create Document" :content="{
         side: 'right',
       }">
         <UButton
-          square
+          :label="collapsed ? undefined : 'Document'"
           icon="i-lucide-file-text"
           variant="subtle"
           color="neutral"
           @click="goToDocuments"
         />
       </UTooltip>
-      <UButton
-        v-else
-        label="Document"
-        icon="i-lucide-file-text"
-        variant="subtle"
-        color="neutral"
-        @click="goToDocuments"
-      />
 
-      <UTooltip v-if="collapsed" text="Generate Image with AI" :content="{
+      <UTooltip text="Generate Image with AI" :content="{
         side: 'right',
       }">
         <UButton
-          square
+          :label="collapsed ? undefined : 'Image'"
           icon="i-lucide-image"
           variant="subtle"
           color="neutral"
           @click="addImage"
         />
       </UTooltip>
-      <UButton
-        v-else
-        label="Image"
-        icon="i-lucide-image"
-        variant="subtle"
-        color="neutral"
-        @click="addImage"
-      />
     </template>
 
     <template #footer="{ collapsed }">
@@ -295,25 +248,17 @@ const isMac = platform.startsWith("Mac");</script>
           content: 'w-[720px] max-w-[720px] h-[70dvh]',
         }"
       >
-        <UTooltip v-if="collapsed" text="Settings" :content="{
+        <UTooltip text="Settings" :content="{
           side: 'right',
         }">
           <UButton
             icon="i-mdi-cog"
             color="neutral"
+            :label="collapsed ? undefined : 'Settings'"
             variant="subtle"
             block
-            square
           />
         </UTooltip>
-        <UButton
-          v-else
-          icon="i-mdi-cog"
-          label="Settings"
-          color="neutral"
-          variant="subtle"
-          block
-        />
         <template #content>
           <Settings />
         </template>

@@ -9,9 +9,15 @@ export interface AgentMessagePayload {
 }
 
 export enum ACPMethod {
-  SessionUpdate = 'session/update',
+  // Client initiated calls
+  Initialize = 'initialize',
+  SessionNew = 'session/new',
+  SessionLoad = 'session/load',
   SessionPrompt = 'session/prompt',
   SessionCancel = 'session/cancel',
+  
+  // Server initiated calls
+  SessionUpdate = 'session/update',
   SessionRequestPermission = 'session/request_permission',
   SessionSetMode = 'session/set_mode',
   FsReadTextFile = 'fs/read_text_file',
@@ -164,14 +170,6 @@ export interface InitializeResult {
   agentInfo: AgentInfo;
   agentCapabilities: AgentCapabilities;
   authMethods?: AuthMethod[];
-  models?: {
-    currentModelId: string;
-    availableModels: Model[];
-  };
-  modes?: {
-    currentModeId: string;
-    availableModes: Mode[];
-  };
 }
 
 export interface ACPServiceConfig {
@@ -193,7 +191,6 @@ export interface ACPServiceConfig {
   };
   onConnect?: () => void;
   onDisconnect?: () => void;
-  onInitialize?: (initializeResult: InitializeResult) => void;
   onInvoke?: (method: string, params: any) => Promise<any>;
 }
 
@@ -221,7 +218,7 @@ export class ACPService {
       }, this.config.model),
     });
     this.startListening();
-    const ret = await this.rpc("initialize", {
+    const ret = await this.rpc(ACPMethod.Initialize, {
       "protocolVersion": 1,
       "clientCapabilities": {
         "fs": {
@@ -237,7 +234,6 @@ export class ACPService {
       }
     }) as InitializeResult;
     this.initializeResult = ret;
-    this.config.onInitialize?.(ret);
     return ret;
   }
 

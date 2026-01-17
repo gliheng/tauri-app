@@ -5,6 +5,7 @@ import { streamText } from 'ai';
 import { getModel } from '@/llm';
 import { Completion } from './EditorCompletionExtension';
 import type { CompletionStorage } from './EditorCompletionExtension';
+import dedent from 'dedent';
 
 const toast = useToast();
 
@@ -36,20 +37,46 @@ export function useEditorCompletion(
     fetch: async (_url, req) => {
       const reqData = JSON.parse(req!.body as unknown as string);
       const { prompt, mode: completionMode, language: targetLanguage, model } = reqData;
-      const systemPrompts: Record<CompletionMode, string> = {
-        continue: 'Continue the following text naturally, maintaining the same tone and style. Do not repeat the last sentence.',
-        fix: 'Fix grammar, spelling, punctuation, and improve clarity while preserving the original meaning.',
-        extend: 'Expand the text with relevant details, examples, or context while maintaining the original structure.',
-        reduce: 'Make the text more concise by removing unnecessary words while preserving the core meaning.',
-        simplify: 'Simplify the language and structure to make it easier to understand.',
-        summarize: 'Create a brief summary of the key points.',
-        translate: targetLanguage ? `Translate the following text to ${targetLanguage}.` : 'Translate the text to English.',
-      };
+
+      const preserveMarkdown = 'IMPORTANT: Preserve all markdown formatting (bold, italic, links, etc.) exactly as in the original.'
+
+      let system: string;
+      switch (completionMode) {
+        case 'fix':
+          system = `You are a writing assistant. Fix all spelling and grammar errors in the given text. ${preserveMarkdown} Only output the corrected text, nothing else.`
+          break
+        case 'extend':
+          system = `You are a writing assistant. Extend the given text with more details, examples, and explanations while maintaining the same style. ${preserveMarkdown} Only output the extended text, nothing else.`
+          break
+        case 'reduce':
+          system = `You are a writing assistant. Make the given text more concise by removing unnecessary words while keeping the meaning. ${preserveMarkdown} Only output the reduced text, nothing else.`
+          break
+        case 'simplify':
+          system = `You are a writing assistant. Simplify the given text to make it easier to understand, using simpler words and shorter sentences. ${preserveMarkdown} Only output the simplified text, nothing else.`
+          break
+        case 'summarize':
+          system = 'You are a writing assistant. Summarize the given text concisely while keeping the key points. Only output the summary, nothing else.'
+          break
+        case 'translate':
+          system = `You are a writing assistant. Translate the given text to ${targetLanguage || 'English'}. ${preserveMarkdown} Only output the translated text, nothing else.`
+          break
+        case 'continue':
+        default:
+          system = dedent`
+            You are a writing assistant providing inline autocompletions.
+            CRITICAL RULES:
+            - Output ONLY the NEW text that comes AFTER the user's input
+            - NEVER repeat any words from the end of the user's text
+            - Keep completions short (1 sentence max)
+            - Match the tone and style of the existing text
+            - ${preserveMarkdown}`
+          break
+      }
 
       const ret = streamText({
         model: getModel(model),
         prompt,
-        system: systemPrompts[completionMode],
+        system,
         abortSignal: req?.signal ?? undefined,
       });
 
