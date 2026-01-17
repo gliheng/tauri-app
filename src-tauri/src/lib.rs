@@ -10,12 +10,6 @@ fn get_migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/001_initial.sql"),
             kind: MigrationKind::Up,
         },
-        Migration {
-            version: 2,
-            description: "add_chart_table",
-            sql: include_str!("../migrations/002_add_chart.sql"),
-            kind: MigrationKind::Up,
-        },
     ]
 }
 
@@ -25,7 +19,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(
             tauri_plugin_sql::Builder::new()
-                .add_migrations("sqlite:ai-studio.db", get_migrations())
+                .add_migrations("sqlite:data.db", get_migrations())
                 .build(),
         )
         .plugin(tauri_plugin_dialog::init())

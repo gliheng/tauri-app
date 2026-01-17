@@ -2,40 +2,23 @@
 import { ref, watch, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { throttle } from "lodash-es";
-import { getNote, writeNote, updateNote } from "@/db-sqlite";
+import { getDocument, writeDocument, updateDocument } from "@/db-sqlite";
 import { NoteEditor } from "@/components/NoteEditor";
 import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";
-import NavigationSlideover from "@/components/NavigationSlideover.vue";
-import { useNotesStore } from "@/stores/notes";
+import DocumentsSlideover from "@/components/DocumentsSlideover.vue";
+
 import { useTabsStore } from "@/stores/tabs";
 import { downloadFile } from "@/utils/file";
 
 const toast = useToast();
 
-const notesStore = useNotesStore();
 const tabsStore = useTabsStore();
 const router = useRouter();
 
 const route = useRoute();
 
-notesStore.loadNotes();
-
-const noteItems = computed(() => {
-  return notesStore.notes.map((note) => ({
-    name: note.name,
-    icon: note.icon,
-    onClick: () => {
-      tabsStore.openTab(`/note/${note.id}`, note.name);
-      router.push({
-        name: "note",
-        params: { id: note.id },
-      });
-    },
-  }));
-});
-
-const initialData = await getNote(route.params.id as string);
+const initialData = await getDocument(route.params.id as string);
 const note = ref(Object.assign({
   content: '',
   name: 'New Note',
@@ -46,8 +29,9 @@ let created = !!initialData;
 
 const throttledWatcher = throttle(async (note) => {
   if (!created) {
-    await writeNote({
+    await writeDocument({
       id: route.params.id as string,
+      type: 'note',
       name: note.name,
       icon: note.icon,
       content: note.content,
@@ -56,9 +40,10 @@ const throttledWatcher = throttle(async (note) => {
     });
     created = true;
   } else {
-    await updateNote(
+    await updateDocument(
       route.params.id as string,
       {
+        type: 'note',
         content: note.content,
         name: note.name,
         icon: note.icon,
@@ -66,7 +51,6 @@ const throttledWatcher = throttle(async (note) => {
       },
     );
   }
-  notesStore.loadNotes();
 }, 1000);
 
 watch(note, throttledWatcher, {
@@ -95,10 +79,7 @@ function downloadNote() {
         variant="subtle"
         @click="downloadNote"
       />
-      <NavigationSlideover
-        title="Notes"
-        :items="noteItems"
-      />
+      <DocumentsSlideover />
     </div>
     <div class="flex-1 min-h-0 overflow-y-auto">
       <hgroup class="flex flex-row gap-2 items-center mx-32 mt-16">

@@ -2,7 +2,7 @@ import Database from '@tauri-apps/plugin-sql';
 import { Message } from 'ai';
 import { ROOT_NODE_ID } from './constants';
 
-const DB_PATH = 'sqlite:ai-studio.db';
+const DB_PATH = 'sqlite:data.db';
 
 let db: Database | null = null;
 
@@ -45,6 +45,17 @@ export interface Agent {
 export interface FileStore {
   file: File;
   createdAt: Date;
+}
+
+export interface Document {
+  id: string;
+  type: 'note' | 'chart';
+  name: string;
+  icon: string;
+  content?: string;
+  data?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Note {
@@ -297,38 +308,48 @@ export async function getAgent(id: string): Promise<Agent | null> {
   };
 }
 
-// Note operations
-export async function writeNote(data: Note): Promise<void> {
+export async function writeDocument(data: Document): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute(
-    `INSERT OR REPLACE INTO note (id, name, icon, content, createdAt, updatedAt)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+    `INSERT OR REPLACE INTO document (id, type, name, icon, content, data, createdAt, updatedAt)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
     [
       data.id,
+      data.type,
       data.name,
       data.icon,
       data.content ?? null,
+      data.data ?? null,
       dateToString(data.createdAt),
       dateToString(data.updatedAt),
     ]
   );
 }
 
-export async function updateNote(id: string, data: Partial<Note>): Promise<void> {
+export async function updateDocument(id: string, data: Partial<Document>): Promise<void> {
   if (!db) throw new Error('Database not initialized');
 
-  const existing = await getNote(id);
-  if (!existing) throw new Error(`Note with ID ${id} not found`);
+  const existing = await getDocument(id);
+  if (!existing) throw new Error(`Document with ID ${id} not found`);
 
   const updated = { ...existing, ...data };
-  await writeNote(updated);
+  await writeDocument(updated);
 }
 
-export async function getNotes(): Promise<Note[]> {
+export async function getDocuments(type?: 'note' | 'chart'): Promise<Document[]> {
   if (!db) throw new Error('Database not initialized');
-  const result = await db.select<Note[]>(
-    `SELECT * FROM note ORDER BY updatedAt DESC`
-  );
+  
+  let query = `SELECT * FROM document`;
+  const params: any[] = [];
+  
+  if (type) {
+    query += ` WHERE type = $1`;
+    params.push(type);
+  }
+  
+  query += ` ORDER BY updatedAt DESC`;
+  
+  const result = await db.select<Document[]>(query, params);
   return result.map((row: any) => ({
     ...row,
     createdAt: stringToDate(row.createdAt),
@@ -336,10 +357,10 @@ export async function getNotes(): Promise<Note[]> {
   }));
 }
 
-export async function getNote(id: string): Promise<Note | undefined> {
+export async function getDocument(id: string): Promise<Document | undefined> {
   if (!db) throw new Error('Database not initialized');
-  const result = await db.select<Note[]>(
-    `SELECT * FROM note WHERE id = $1`,
+  const result = await db.select<Document[]>(
+    `SELECT * FROM document WHERE id = $1`,
     [id]
   );
   if (result.length === 0) return undefined;
@@ -351,69 +372,12 @@ export async function getNote(id: string): Promise<Note | undefined> {
   };
 }
 
-export async function deleteNote(id: string): Promise<void> {
+export async function deleteDocument(id: string): Promise<void> {
   if (!db) throw new Error('Database not initialized');
-  await db.execute('DELETE FROM note WHERE id = $1', [id]);
+  await db.execute('DELETE FROM document WHERE id = $1', [id]);
 }
 
-// Chart operations
-export async function writeChart(data: Chart): Promise<void> {
-  if (!db) throw new Error('Database not initialized');
-  await db.execute(
-    `INSERT OR REPLACE INTO chart (id, name, icon, data, createdAt, updatedAt)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [
-      data.id,
-      data.name,
-      data.icon,
-      data.data,
-      dateToString(data.createdAt),
-      dateToString(data.updatedAt),
-    ]
-  );
-}
 
-export async function updateChart(id: string, data: Partial<Chart>): Promise<void> {
-  if (!db) throw new Error('Database not initialized');
-
-  const existing = await getChart(id);
-  if (!existing) throw new Error(`Chart with ID ${id} not found`);
-
-  const updated = { ...existing, ...data };
-  await writeChart(updated);
-}
-
-export async function getCharts(): Promise<Chart[]> {
-  if (!db) throw new Error('Database not initialized');
-  const result = await db.select<Chart[]>(
-    `SELECT * FROM chart ORDER BY updatedAt DESC`
-  );
-  return result.map((row: any) => ({
-    ...row,
-    createdAt: stringToDate(row.createdAt),
-    updatedAt: stringToDate(row.updatedAt),
-  }));
-}
-
-export async function getChart(id: string): Promise<Chart | undefined> {
-  if (!db) throw new Error('Database not initialized');
-  const result = await db.select<Chart[]>(
-    `SELECT * FROM chart WHERE id = $1`,
-    [id]
-  );
-  if (result.length === 0) return undefined;
-  const row = result[0] as any;
-  return {
-    ...row,
-    createdAt: stringToDate(row.createdAt),
-    updatedAt: stringToDate(row.updatedAt),
-  };
-}
-
-export async function deleteChart(id: string): Promise<void> {
-  if (!db) throw new Error('Database not initialized');
-  await db.execute('DELETE FROM chart WHERE id = $1', [id]);
-}
 
 // File operations
 export async function writeFile(file: File): Promise<number> {

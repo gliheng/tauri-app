@@ -1,8 +1,8 @@
 import { Message } from "ai";
 import { ROOT_NODE_ID } from "./constants";
 
-const dbName = "ai-studio";
-const dbVer = 8;
+const dbName = "data";
+const dbVer = 1;
 
 let db: IDBDatabase;
 

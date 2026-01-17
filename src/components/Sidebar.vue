@@ -5,10 +5,12 @@ import { tv } from "tailwind-variants";
 import { useColorMode } from "@vueuse/core";
 import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
-import { Agent, Note, Chart, writeAgent } from "@/db-sqlite";
+import { Agent, Document, writeAgent, writeDocument, Note, Chart } from "@/db-sqlite";
 import { computed } from "vue";
 import AgentConfig from "./AgentChat/AgentConfig.vue";
+import DocumentConfig from "./DocumentConfig.vue";
 import type { AgentFormData } from "./AgentChat/AgentConfig.vue";
+
 
 const buttonStyle = tv({
   base: "items-center w-full",
@@ -36,6 +38,7 @@ function addChat() {
 
 const overlay = useOverlay();
 const agentCreateModal = overlay.create(AgentConfig);
+const documentCreateModal = overlay.create(DocumentConfig);
 
 async function addAgent() {
   const agent = await agentCreateModal.open() as AgentFormData | null;
@@ -74,10 +77,6 @@ function agentUrl(agent: Agent) {
   return `/agent/${agent.id}`;
 }
 
-function noteUrl(note: Note) {
-  return `/note/${note.id}`;
-}
-
 function openAgent(agent: Agent) {
   tabsStore.openTab(agentUrl(agent), agent.name);
   router.push({
@@ -88,48 +87,28 @@ function openAgent(agent: Agent) {
   });
 }
 
-function addNote() {
+function documentUrl(type: "note" | "chart", id: string) {
+  return `/${type}/${id}`;
+}
+
+function goToDocuments() {
+  tabsStore.openTab('/documents', 'Documents');
+  router.push({ name: 'documents' });
+}
+
+async function addDocument() {
+  const type = await documentCreateModal.open() as "note" | "chart" | null;
+  if (!type) {
+    return;
+  }
+
   const id = nanoid();
-  tabsStore.openTab(`/note/${id}`, "New note");
+  const name = type === 'note' ? 'New Note' : 'New Chart';
+  tabsStore.openTab(documentUrl(type, id), name);
   router.push({
-    name: "note",
+    name: type,
     params: {
       id,
-    },
-  });
-}
-
-function openNote(note: Note) {
-  tabsStore.openTab(`/note/${note.id}`, note.name);
-  router.push({
-    name: "note",
-    params: {
-      id: note.id,
-    },
-  });
-}
-
-function chartUrl(chart: Chart) {
-  return `/chart/${chart.id}`;
-}
-
-function addChart() {
-  const id = nanoid();
-  tabsStore.openTab(`/chart/${id}`, "New chart");
-  router.push({
-    name: "chart",
-    params: {
-      id,
-    },
-  });
-}
-
-function openChart(chart: Chart) {
-  tabsStore.openTab(`/chart/${chart.id}`, chart.name);
-  router.push({
-    name: "chart",
-    params: {
-      id: chart.id,
     },
   });
 }
@@ -223,23 +202,15 @@ const isMac = platform.startsWith("Mac");</script>
       </UCollapsible>
 
       <UButton
-        :label="collapsed ? undefined : 'Note'"
-        icon="i-lucide-notebook-text"
+        :label="collapsed ? undefined : 'Documents'"
+        icon="i-lucide-file-text"
         variant="subtle"
         color="neutral"
-        @click="addNote"
+        @click="goToDocuments"
       />
 
       <UButton
-        :label="collapsed ? undefined : 'Chart'"
-        icon="i-lucide-git-compare"
-        variant="subtle"
-        color="neutral"
-        @click="addChart"
-      />
-
-      <UButton
-        :label="collapsed ? undefined : 'Create image'"
+        :label="collapsed ? undefined : 'Images'"
         icon="i-lucide-image"
         variant="subtle"
         color="neutral"

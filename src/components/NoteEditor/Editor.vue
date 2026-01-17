@@ -278,6 +278,7 @@ const imageToolbarItems = (editor: any): EditorToolbarItem[][] => {
               try {
                 const result = await readFile(id);
                 if (result?.file) {
+                  console.log('download file', result);
                   downloadFile(result.file);
                   toast.add({
                     title: 'Image downloaded',

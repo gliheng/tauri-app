@@ -38,17 +38,20 @@ CREATE TABLE IF NOT EXISTS agent (
 
 CREATE INDEX IF NOT EXISTS idx_agent_updated_at ON agent(updatedAt);
 
--- Create note table
-CREATE TABLE IF NOT EXISTS note (
+-- Create document table (replaces note and chart tables)
+CREATE TABLE IF NOT EXISTS document (
   id TEXT PRIMARY KEY,
+  type TEXT NOT NULL CHECK(type IN ('note', 'chart')),
   name TEXT NOT NULL,
   icon TEXT NOT NULL,
-  content TEXT,
+  content TEXT,        -- used by notes
+  data TEXT,           -- used by charts (JSON)
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_note_updated_at ON note(updatedAt);
+CREATE INDEX IF NOT EXISTS idx_document_updated_at ON document(updatedAt);
+CREATE INDEX IF NOT EXISTS idx_document_type ON document(type);
 
 -- Create file_store table
 CREATE TABLE IF NOT EXISTS file_store (

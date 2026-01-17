@@ -1,0 +1,147 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useDocumentsStore } from "@/stores/documents";
+import { useTabsStore } from "@/stores/tabs";
+import { nanoid } from "nanoid";
+import DocumentConfig from "@/components/DocumentConfig.vue";
+import type { TabsItem } from "@nuxt/ui";
+
+const documentsStore = useDocumentsStore();
+const tabsStore = useTabsStore();
+const router = useRouter();
+
+const filter = ref<'all' | 'note' | 'chart'>('all');
+
+const overlay = useOverlay();
+const documentCreateModal = overlay.create(DocumentConfig);
+
+onMounted(() => {
+  documentsStore.loadDocuments();
+});
+
+const tabItems = [
+  {
+    label: "All",
+    icon: "i-lucide-file-text",
+    value: "all",
+  },
+  {
+    label: "Notes",
+    icon: "i-lucide-notebook-text",
+    value: "note",
+  },
+  {
+    label: "Charts",
+    icon: "i-lucide-git-compare",
+    value: "chart",
+  },
+] satisfies TabsItem[];
+
+const filteredDocuments = computed(() => {
+  if (filter.value === 'all') {
+    return documentsStore.documents;
+  } else if (filter.value === 'note') {
+    return documentsStore.notes;
+  } else {
+    return documentsStore.charts;
+  }
+});
+
+async function addDocument() {
+  const type = await documentCreateModal.open() as "note" | "chart" | null;
+  if (!type) {
+    return;
+  }
+
+  const id = nanoid();
+  const name = type === 'note' ? 'New Note' : 'New Chart';
+  tabsStore.openTab(`/${type}/${id}`, name);
+  router.push({
+    name: type,
+    params: {
+      id,
+    },
+  });
+}
+
+function openDocument(document: { id: string; name: string; type: 'note' | 'chart' }) {
+  tabsStore.openTab(`/${document.type}/${document.id}`, document.name);
+  router.push({
+    name: document.type,
+    params: {
+      id: document.id,
+    },
+  });
+}
+
+function formatDate(date: Date) {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+</script>
+
+<template>
+  <div class="size-full flex flex-col">
+    <div class="flex items-center justify-between border-b border-white/10 px-6 py-4">
+      <h1 class="text-lg font-semibold">Documents</h1>
+      <UButton
+        icon="i-lucide-plus"
+        label="Create New"
+        variant="subtle"
+        @click="addDocument"
+      />
+    </div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <div class="px-6 pt-4">
+        <UTabs v-model="filter" :items="tabItems" variant="line" />
+      </div>
+
+      <div class="flex-1 overflow-auto p-6">
+        <div v-if="filteredDocuments.length === 0" class="flex items-center justify-center h-full text-white/50">
+          <div class="text-center">
+            <p class="text-lg mb-2">No documents found</p>
+            <p class="text-sm">Create your first document to get started!</p>
+          </div>
+        </div>
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <UCard
+            v-for="document in filteredDocuments"
+            :key="document.id"
+            class="bg-white/5 border-white/10 cursor-pointer hover:border-white/30 transition-all hover:scale-[1.02]"
+            @click="openDocument(document)"
+          >
+            <div class="flex items-start gap-3">
+              <div class="flex-shrink-0">
+                <UIcon
+                  :name="document.icon"
+                  class="text-2xl"
+                />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-2">
+                  <h3 class="font-semibold text-base truncate">{{ document.name }}</h3>
+                  <UBadge
+                    :color="document.type === 'note' ? 'primary' : 'warning'"
+                    :icon="document.type === 'note' ? 'i-lucide-notebook-text' : 'i-lucide-git-compare'"
+                    variant="soft"
+                    size="sm"
+                  >
+                    {{ document.type }}
+                  </UBadge>
+                </div>
+                <p class="text-sm text-white/50 mt-2">
+                  Updated {{ formatDate(document.updatedAt) }}
+                </p>
+              </div>
+            </div>
+          </UCard>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
