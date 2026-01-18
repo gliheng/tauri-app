@@ -60,8 +60,7 @@ async function handleModeChange(modeId: string) {
 
 function handleCommandSelect(command: AvailableCommand) {
   const commandText = `/${command.name}`;
-  const cursorPosition = commandText.length;
-  chatBoxRef.value?.setInputAndFocus(commandText, cursorPosition);
+  chatBoxRef.value?.insertText(commandText);
 }
 
 const start = async () => {
@@ -210,8 +209,16 @@ onUnmounted(() => {
         :messages="messages"
         @submit="handleSubmit"
         @stop="cancel"
+        mention
       >
         <template #left-addons>
+          <UButton
+            icon="i-lucide-at-sign"
+            color="primary"
+            variant="soft"
+            size="sm"
+            @mousedown.prevent
+          />
           <SlashCommandMenu
             v-if="hasCommands"
             :available-commands="availableCommands"

@@ -40,7 +40,7 @@ function addMessageToGraph(id: string, parent?: string) {
     const parentNode = graph[parent];
     parentNode.children.push(id);
     const totalSiblings = parentNode.children.length;
-    parentNode.children.forEach((node, i) => {
+    parentNode.children.forEach((node: string, i: number) => {
       const siblingNode = graph[node];
       if (siblingNode) {
         siblingNode.siblingCount = totalSiblings;

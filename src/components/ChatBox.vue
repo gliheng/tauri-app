@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, PropType, nextTick } from "vue";
+import { ref, computed, PropType, nextTick, onMounted, onBeforeUnmount, watch } from "vue";
 import { Attachment } from "ai";
 import { file2DataUrl } from "@/utils/file";
 import { useSettingsStore } from "@/stores/settings";
 import FileImage from "./FileImage.vue";
+import { invoke } from "@tauri-apps/api/core";
+import { useEditor, EditorContent } from "@tiptap/vue-3";
+import Document from "@tiptap/extension-document";
+import Paragraph from "@tiptap/extension-paragraph";
+import Text from "@tiptap/extension-text";
+import HardBreak from "@tiptap/extension-hard-break";
 
 const props = defineProps({
   status: String,
@@ -21,17 +27,52 @@ const emit = defineEmits<{
 }>();
 
 const settingsStore = useSettingsStore();
-const textareaRef = ref<any>();
 
 const streaming = computed(
   () => props.status == "submitted" || props.status == "streaming",
 );
 
-async function send(evt: KeyboardEvent) {
-  if (evt.key == "Enter" && evt.shiftKey) return;
-  evt.preventDefault();
+const editor = useEditor({
+  extensions: [
+    Document,
+    Paragraph,
+    Text,
+    HardBreak,
+  ],
+  content: "",
+  editorProps: {
+    attributes: {
+      class: "outline-none min-h-[4.5rem] max-h-[9rem] overflow-y-auto px-3 py-2",
+    },
+  },
+  onUpdate: ({ editor }) => {
+    input.value = editor.getText();
+  },
+});
 
-  await submitForm();
+onMounted(() => {
+  if (editor.value) {
+    editor.value.commands.setContent(input.value || "");
+  }
+});
+
+onBeforeUnmount(() => {
+  editor.value?.destroy();
+});
+
+watch(input, (newValue) => {
+  if (editor.value && newValue !== editor.value.getText()) {
+    const currentPos = editor.value.state.selection.from;
+    editor.value.commands.setContent(newValue || "", { emitUpdate: false });
+    editor.value.commands.focus(currentPos);
+  }
+});
+
+async function send(evt: KeyboardEvent) {
+  if (evt.key == "Enter" && !evt.shiftKey) {
+    evt.preventDefault();
+    await submitForm();
+  }
 }
 
 async function submitForm() {
@@ -54,22 +95,43 @@ function appendFiles(newFiles: FileList) {
   files.value = [...files.value, ...newFiles];
 }
 
-function setInputAndFocus(value: string, cursorPosition?: number) {
-  input.value = value;
-  const textarea = textareaRef.value?.textareaRef;
-  if (textarea) {
-    nextTick(() => {
-      textarea.focus();
-      if (cursorPosition !== undefined) {
-        textarea.setSelectionRange(cursorPosition, cursorPosition);
-      }
-    });
+function insertText(text: string) {
+  if (editor.value) {
+    editor.value.commands.insertContent(text);
+    editor.value.commands.focus();
   }
 }
 
+function setInput(value: string) {
+  input.value = value;
+  nextTick(() => {
+    editor.value?.commands.focus();
+  });
+}
+
 defineExpose({
-  setInputAndFocus,
+  insertText,
+  setInput,
 });
+
+interface FileSuggestion {
+  name: string;
+  path: string;
+  is_dir: boolean;
+  relative_path: string;
+}
+
+async function globFiles(directory: string, pattern?: string): Promise<FileSuggestion[]> {
+  try {
+    return await invoke<FileSuggestion[]>('glob_files', {
+      directory,
+      pattern,
+    });
+  } catch (error) {
+    console.error('Failed to glob files:', error);
+    return [];
+  }
+}
 </script>
 
 <template>
@@ -104,20 +166,10 @@ defineExpose({
           />
         </div>
       </section>
-      <UTextarea
-        ref="textareaRef"
-        class="w-full"
-        v-model.trim="input"
-        :loading="status === 'loading'"
-        placeholder="Start a new chat"
-        :rows="3"
-        :maxrows="6"
-        autoresize
-        autofocus
-        :ui="{
-          base: 'bg-transparent! ring-transparent focus-visible:ring-transparent',
-        }"
-        @keydown.enter="send"
+      <EditorContent
+        :editor="editor"
+        class="w-full bg-transparent focus:outline-none"
+        @keydown="send"
       />
       <div
         class="w-full p-2 flex items-center gap-1 pointer-none"
@@ -146,6 +198,14 @@ defineExpose({
     </form>
   </div>
 </template>
+
+<style lang="scss">
+.tiptap {
+  :first-child {
+    margin-top: 0;
+  }
+}
+</style>
 
 <style lang="scss" scoped>
 .line-clamp {

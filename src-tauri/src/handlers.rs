@@ -1,3 +1,5 @@
+use glob::glob;
+use ignore::Walk;
 use notify::{EventKind, RecursiveMode, Watcher};
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use serde::{Deserialize, Serialize};
@@ -490,7 +492,6 @@ pub async fn write_file(path: &str, content: &str) -> Result<(), String> {
         }
     }
 
-    println!("Writing file: {}", path);
     fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))
 }
 
@@ -1124,4 +1125,101 @@ pub async fn stop_watching(session_id: String) -> Result<(), String> {
     let mut watchers = FILE_WATCHERS.lock().await;
     watchers.remove(&session_id);
     Ok(())
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FileSuggestion {
+    name: String,
+    path: String,
+    is_dir: bool,
+    relative_path: String,
+}
+
+#[tauri::command]
+pub async fn glob_files(directory: &str, pattern: Option<&str>) -> Result<Vec<FileSuggestion>, String> {
+    let base_path = PathBuf::from(directory);
+
+    if !base_path.exists() || !base_path.is_dir() {
+        return Err("Directory does not exist".to_string());
+    }
+
+    let mut results = Vec::new();
+
+    let pattern_str = pattern.unwrap_or("");
+
+    if pattern_str.is_empty() {
+        let walker = Walk::new(directory);
+
+        for entry in walker {
+            match entry {
+                Ok(entry) => {
+                    let path = entry.path();
+                    if let Some(relative_path) = path.strip_prefix(&base_path).ok() {
+                        if let Some(relative_str) = relative_path.to_str() {
+                            if !relative_str.is_empty() {
+                                let name = path
+                                    .file_name()
+                                    .and_then(|n| n.to_str())
+                                    .unwrap_or("")
+                                    .to_string();
+
+                                results.push(FileSuggestion {
+                                    name,
+                                    path: path.to_string_lossy().to_string(),
+                                    is_dir: path.is_dir(),
+                                    relative_path: relative_str.to_string(),
+                                });
+                            }
+                        }
+                    }
+                }
+                Err(_) => continue,
+            }
+        }
+    } else {
+        let search_pattern = if pattern_str.contains('/') {
+            format!("{}/{}", directory, pattern_str)
+        } else {
+            format!("{}/**/{}", directory, pattern_str)
+        };
+
+        match glob(&search_pattern) {
+            Ok(entries) => {
+                for entry in entries.flatten() {
+                    let path = entry;
+                    if let Some(relative_path) = path.strip_prefix(&base_path).ok() {
+                        if let Some(relative_str) = relative_path.to_str() {
+                            if !relative_str.is_empty() {
+                                let name = path
+                                    .file_name()
+                                    .and_then(|n| n.to_str())
+                                    .unwrap_or("")
+                                    .to_string();
+
+                                results.push(FileSuggestion {
+                                    name,
+                                    path: path.to_string_lossy().to_string(),
+                                    is_dir: path.is_dir(),
+                                    relative_path: relative_str.to_string(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(format!("Failed to read glob pattern: {}", e));
+            }
+        }
+    }
+
+    results.sort_by(|a, b| {
+        match (a.is_dir, b.is_dir) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.relative_path.cmp(&b.relative_path),
+        }
+    });
+
+    Ok(results)
 }
