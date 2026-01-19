@@ -4,7 +4,6 @@ import { Attachment } from "ai";
 import { file2DataUrl } from "@/utils/file";
 import { useSettingsStore } from "@/stores/settings";
 import FileImage from "./FileImage.vue";
-import { invoke } from "@tauri-apps/api/core";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import Document from "@tiptap/extension-document";
 import Paragraph from "@tiptap/extension-paragraph";
@@ -16,6 +15,10 @@ const props = defineProps({
   addons: {
     type: Array as PropType<string[]>,
     required: false,
+  },
+  extensions: {
+    type: Array as PropType<any[]>,
+    default: () => [],
   },
 });
 
@@ -38,6 +41,7 @@ const editor = useEditor({
     Paragraph,
     Text,
     HardBreak,
+    ...props.extensions,
   ],
   content: "",
   editorProps: {
@@ -114,28 +118,10 @@ defineExpose({
   setInput,
 });
 
-interface FileSuggestion {
-  name: string;
-  path: string;
-  is_dir: boolean;
-  relative_path: string;
-}
-
-async function globFiles(directory: string, pattern?: string): Promise<FileSuggestion[]> {
-  try {
-    return await invoke<FileSuggestion[]>('glob_files', {
-      directory,
-      pattern,
-    });
-  } catch (error) {
-    console.error('Failed to glob files:', error);
-    return [];
-  }
-}
 </script>
 
 <template>
-  <div class="mx-auto flex flex-col">
+  <div class="mx-auto flex flex-col relative">
     <form
       class="rounded-md focus-within:outline-none transition-colors bg-default ring ring-inset ring-accented focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary"
       @submit.prevent="submitForm"
@@ -213,5 +199,6 @@ async function globFiles(directory: string, pattern?: string): Promise<FileSugge
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-clamp: 3;
 }
 </style>

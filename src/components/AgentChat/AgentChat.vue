@@ -10,6 +10,13 @@ import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 import { useAcp, type AvailableCommand } from "@/hooks/useAcp";
 import { ACPMethod } from "@/services/acp";
+import { invoke } from "@tauri-apps/api/core";
+import Mention from "@tiptap/extension-mention";
+import MentionMenu from "./MentionMenu.vue";
+import MentionItem from "./MentionItem.vue";
+import { type Editor } from "@tiptap/core";
+
+const toast = useToast();
 
 const props = defineProps({
   agent: {
@@ -180,6 +187,165 @@ onMounted(() => {
 onUnmounted(() => {
   stop();
 });
+
+interface MentionItem {
+  id: string;
+  label: string;
+  path: string;
+  is_dir: boolean;
+}
+
+let editorInstance: Editor | null = null;
+function selectMention(index: number) {
+  const item = mentionItems.value[index];
+  if (item && mentionRange.value && editorInstance) {
+    editorInstance.chain()
+      .focus()
+      .insertContentAt(mentionRange.value, [{
+        type: 'mention',
+        attrs: { id: item.id, label: item.path }
+      }])
+      .run();
+    mentionMenuOpen.value = false;
+  }
+}
+
+interface FileSuggestion {
+  name: string;
+  path: string;
+  is_dir: boolean;
+}
+
+async function globFiles(directory: string, pattern?: string): Promise<FileSuggestion[]> {
+  try {
+    return invoke<FileSuggestion[]>('glob_files', {
+      directory,
+      pattern,
+    });
+  } catch (error) {
+    toast.add({
+      title: 'Failed to glob files',
+      description: error instanceof Error ? error.message : String(error),
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    });
+    return [];
+  }
+}
+
+const mentionMenuOpen = ref(false);
+const mentionItems = ref<MentionItem[]>([]);
+const mentionQuery = ref("");
+const selectedIndex = ref(0);
+const mentionRange = ref<{ from: number; to: number } | null>(null);
+const mentionPosition = ref({ x: 0, y: 0 });
+const MENU_HEIGHT = 200; // Estimated max height of the menu
+const MENU_OFFSET = 10; // Offset from cursor
+
+function calculateMenuPosition(cursorCoords: { top: number; bottom: number; left: number }) {
+  const viewportHeight = window.innerHeight;
+  const spaceBelow = viewportHeight - cursorCoords.bottom;
+  const spaceAbove = cursorCoords.top;
+
+  // If there's not enough space below, show menu above the cursor
+  if (spaceBelow < MENU_HEIGHT && spaceAbove > MENU_HEIGHT) {
+    return {
+      x: cursorCoords.left,
+      y: cursorCoords.top - MENU_HEIGHT - MENU_OFFSET
+    };
+  }
+
+  // Default: show below cursor
+  return {
+    x: cursorCoords.left,
+    y: cursorCoords.bottom + MENU_OFFSET
+  };
+}
+
+const mentionExtension = Mention.configure({
+  HTMLAttributes: {
+    class: 'mention',
+  },
+  suggestion: {
+    items: async ({ query }) => {
+      mentionQuery.value = query;
+      const files = await globFiles(props.agent.directory!, `*${query}*`);
+      mentionItems.value = files.map((file): MentionItem => ({
+        id: file.path,
+        label: file.name,
+        path: file.path,
+        is_dir: file.is_dir,
+      }));
+      selectedIndex.value = 0;
+      return mentionItems.value;
+    },
+    render: () => {
+      return {
+        onStart: (props: any) => {
+          if (!props.clientRect) {
+            return
+          }
+          mentionRange.value = { from: props.range.from, to: props.range.to };
+          const { from } = props.range;
+          const { view } = props.editor;
+          const start = view.coordsAtPos(from);
+          // Calculate position with viewport awareness
+          mentionPosition.value = calculateMenuPosition(start);
+          mentionMenuOpen.value = true;
+          editorInstance = props.editor;
+        },
+
+        onUpdate(props: any) {
+          mentionRange.value = { from: props.range.from, to: props.range.to };
+          const { from } = props.range;
+          const { view } = props.editor;
+          const start = view.coordsAtPos(from);
+
+          mentionPosition.value = calculateMenuPosition(start);
+        },
+
+        onKeyDown(props: any) {
+          if (props.event.key === 'Escape') {
+            mentionMenuOpen.value = false;
+            return true;
+          }
+
+          if (props.event.key === 'ArrowUp') {
+            selectedIndex.value = (selectedIndex.value - 1 + mentionItems.value.length) % mentionItems.value.length;
+            return true;
+          }
+
+          if (props.event.key === 'ArrowDown') {
+            selectedIndex.value = (selectedIndex.value + 1) % mentionItems.value.length;
+            return true;
+          }
+
+          if (props.event.key === 'ArrowLeft' || props.event.key === 'ArrowRight') {
+            // Allow arrow keys to pass through to the editor for navigation
+            return false;
+          }
+
+          if (props.event.key === 'Enter') {
+            const item = mentionItems.value[selectedIndex.value];
+            if (item) {
+              selectMention(selectedIndex.value);
+            }
+            return true;
+          }
+
+          return false;
+        },
+
+        onExit() {
+          mentionMenuOpen.value = false;
+          mentionItems.value = [];
+          mentionRange.value = null;
+        },
+      };
+    },
+  },
+});
+
 </script>
 
 <template>
@@ -203,13 +369,16 @@ onUnmounted(() => {
       </div>
       <ChatBox
         ref="chatBoxRef"
+        class="chat-box"
         :style="{ width: '100%' }"
         v-model="input"
         :status="status"
         :messages="messages"
         @submit="handleSubmit"
         @stop="cancel"
-        mention
+        :extensions="[
+          mentionExtension,
+        ]"
       >
         <template #left-addons>
           <UButton
@@ -217,7 +386,7 @@ onUnmounted(() => {
             color="primary"
             variant="soft"
             size="sm"
-            @mousedown.prevent
+            @click="chatBoxRef?.insertText('@')"
           />
           <SlashCommandMenu
             v-if="hasCommands"
@@ -232,8 +401,27 @@ onUnmounted(() => {
             :disabled="status === 'streaming'"
             @update:modelValue="handleModeChange"
           />
+          <MentionMenu
+            v-if="mentionMenuOpen"
+            :mention-items="mentionItems"
+            :selected-index="selectedIndex"
+            :position="mentionPosition"
+            @select="selectMention($event)"
+          />
         </template>
       </ChatBox>
     </template>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.chat-box {
+  :deep(.mention) {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-radius: 0.25rem;
+    padding: 0 0.25rem;
+    font-weight: 500;
+  }
+}
+</style>

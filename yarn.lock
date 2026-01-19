@@ -1222,6 +1222,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@popperjs/core@npm:^2.9.0":
+  version: 2.11.8
+  resolution: "@popperjs/core@npm:2.11.8"
+  checksum: 10c0/4681e682abc006d25eb380d0cf3efc7557043f53b6aea7a5057d0d1e7df849a00e281cd8ea79c902a35a414d7919621fc2ba293ecec05f413598e0b23d5a1e63
+  languageName: node
+  linkType: hard
+
 "@remirror/core-constants@npm:3.0.0":
   version: 3.0.0
   resolution: "@remirror/core-constants@npm:3.0.0"
@@ -2204,6 +2211,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tiptap/extension-mention@npm:^3.15.3":
+  version: 3.15.3
+  resolution: "@tiptap/extension-mention@npm:3.15.3"
+  peerDependencies:
+    "@tiptap/core": ^3.15.3
+    "@tiptap/pm": ^3.15.3
+    "@tiptap/suggestion": ^3.15.3
+  checksum: 10c0/29463578dc9a2a976254f46719cb7abd946a71408549d39256ae36eeeab7367efe36d0fba675f52c85b5244a9dcdb23b074651263e86e43729b6d032019c42f1
+  languageName: node
+  linkType: hard
+
 "@tiptap/extension-node-range@npm:^3.15.3":
   version: 3.15.3
   resolution: "@tiptap/extension-node-range@npm:3.15.3"
@@ -2572,6 +2590,13 @@ __metadata:
   version: 2.0.0
   resolution: "@types/mdurl@npm:2.0.0"
   checksum: 10c0/cde7bb571630ed1ceb3b92a28f7b59890bb38b8f34cd35326e2df43eebfc74985e6aa6fd4184e307393bad8a9e0783a519a3f9d13c8e03788c0f98e5ec869c5e
+  languageName: node
+  linkType: hard
+
+"@types/tippy.js@npm:^6.3.0":
+  version: 6.3.0
+  resolution: "@types/tippy.js@npm:6.3.0"
+  checksum: 10c0/f9f4b4c53b89b5c74d27324c5fa0a634b8612eed9c36c8a604c493e5baef7196c836237de41eed6a3fa68cbe677e6f02d7e63dd66ae52b07936c8cb8c0c91417
   languageName: node
   linkType: hard
 
@@ -5489,6 +5514,7 @@ __metadata:
     "@tiptap/extension-collaboration": "npm:^3.15.3"
     "@tiptap/extension-drag-handle": "npm:^3.15.3"
     "@tiptap/extension-emoji": "npm:^3.15.3"
+    "@tiptap/extension-mention": "npm:^3.15.3"
     "@tiptap/extension-node-range": "npm:^3.15.3"
     "@tiptap/extension-text-align": "npm:^3.15.3"
     "@tiptap/extensions": "npm:^3.15.3"
@@ -5497,6 +5523,7 @@ __metadata:
     "@tiptap/vue-3": "npm:^3.15.3"
     "@tiptap/y-tiptap": "npm:^3.0.1"
     "@types/lodash-es": "npm:^4"
+    "@types/tippy.js": "npm:^6.3.0"
     "@vitejs/plugin-vue": "npm:^5.2.1"
     "@vue-flow/background": "npm:^1.3.2"
     "@vue-flow/controls": "npm:^1.1.3"
@@ -5527,6 +5554,7 @@ __metadata:
     tailwind-variants: "npm:^1.0.0"
     tailwindcss: "npm:^4.1.8"
     tailwindcss-animate: "npm:^1.0.7"
+    tippy.js: "npm:^6.3.7"
     tiptap-extension-code-block-shiki: "npm:^1.0.0"
     typescript: "npm:~5.6.2"
     vite: "npm:^6.0.3"
@@ -6319,6 +6347,15 @@ __metadata:
     fdir: "npm:^6.5.0"
     picomatch: "npm:^4.0.3"
   checksum: 10c0/869c31490d0d88eedb8305d178d4c75e7463e820df5a9b9d388291daf93e8b1eb5de1dad1c1e139767e4269fe75f3b10d5009b2cc14db96ff98986920a186844
+  languageName: node
+  linkType: hard
+
+"tippy.js@npm:^6.3.7":
+  version: 6.3.7
+  resolution: "tippy.js@npm:6.3.7"
+  dependencies:
+    "@popperjs/core": "npm:^2.9.0"
+  checksum: 10c0/ec3677beb8caec791ee1f715663f28f42d60e0f7250074a047d13d5e6db95fdb6d26d8a3ac16cecb4ebcaf33ae919dbc889cf97948d115e8d3c81518c911b379
   languageName: node
   linkType: hard
 

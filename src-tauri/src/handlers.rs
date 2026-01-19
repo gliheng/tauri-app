@@ -1132,94 +1132,72 @@ pub struct FileSuggestion {
     name: String,
     path: String,
     is_dir: bool,
-    relative_path: String,
 }
 
 #[tauri::command]
 pub async fn glob_files(directory: &str, pattern: Option<&str>) -> Result<Vec<FileSuggestion>, String> {
-    let base_path = PathBuf::from(directory);
+    use ignore::WalkBuilder;
+    use std::path::Path;
 
-    if !base_path.exists() || !base_path.is_dir() {
-        return Err("Directory does not exist".to_string());
+    let dir_path = Path::new(directory);
+    if !dir_path.exists() {
+        return Err(format!("Directory does not exist: {}", directory));
     }
+
+    let pattern = pattern.unwrap_or("*");
+    let glob_pattern = glob::Pattern::new(pattern)
+        .map_err(|e| format!("Invalid glob pattern: {}", e))?;
 
     let mut results = Vec::new();
 
-    let pattern_str = pattern.unwrap_or("");
+    let walker = WalkBuilder::new(directory)
+        .hidden(false)
+        .git_ignore(true)
+        .git_global(true)
+        .git_exclude(true)
+        .filter_entry(|entry| {
+            // Skip .git directory
+            entry.file_name() != ".git"
+        })
+        .build();
 
-    if pattern_str.is_empty() {
-        let walker = Walk::new(directory);
-
-        for entry in walker {
-            match entry {
-                Ok(entry) => {
-                    let path = entry.path();
-                    if let Some(relative_path) = path.strip_prefix(&base_path).ok() {
-                        if let Some(relative_str) = relative_path.to_str() {
-                            if !relative_str.is_empty() {
-                                let name = path
-                                    .file_name()
-                                    .and_then(|n| n.to_str())
-                                    .unwrap_or("")
-                                    .to_string();
-
-                                results.push(FileSuggestion {
-                                    name,
-                                    path: path.to_string_lossy().to_string(),
-                                    is_dir: path.is_dir(),
-                                    relative_path: relative_str.to_string(),
-                                });
-                            }
-                        }
-                    }
-                }
-                Err(_) => continue,
-            }
-        }
-    } else {
-        let search_pattern = if pattern_str.contains('/') {
-            format!("{}/{}", directory, pattern_str)
-        } else {
-            format!("{}/**/{}", directory, pattern_str)
+    for entry in walker {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
         };
 
-        match glob(&search_pattern) {
-            Ok(entries) => {
-                for entry in entries.flatten() {
-                    let path = entry;
-                    if let Some(relative_path) = path.strip_prefix(&base_path).ok() {
-                        if let Some(relative_str) = relative_path.to_str() {
-                            if !relative_str.is_empty() {
-                                let name = path
-                                    .file_name()
-                                    .and_then(|n| n.to_str())
-                                    .unwrap_or("")
-                                    .to_string();
-
-                                results.push(FileSuggestion {
-                                    name,
-                                    path: path.to_string_lossy().to_string(),
-                                    is_dir: path.is_dir(),
-                                    relative_path: relative_str.to_string(),
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            Err(e) => {
-                return Err(format!("Failed to read glob pattern: {}", e));
-            }
+        let path = entry.path();
+        
+        // Skip the root directory itself
+        if path == dir_path {
+            continue;
         }
+
+        let file_name = match path.file_name() {
+            Some(name) => name.to_string_lossy().to_string(),
+            None => continue,
+        };
+
+        // Match against the glob pattern
+        if !glob_pattern.matches(&file_name) {
+            continue;
+        }
+
+        let relative_path = path
+            .strip_prefix(directory)
+            .unwrap_or(path)
+            .to_string_lossy()
+            .to_string();
+
+        let is_dir = path.is_dir();
+
+        results.push(FileSuggestion {
+            name: file_name,
+            is_dir,
+            path: relative_path,
+        });
     }
-
-    results.sort_by(|a, b| {
-        match (a.is_dir, b.is_dir) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => a.relative_path.cmp(&b.relative_path),
-        }
-    });
 
     Ok(results)
 }
