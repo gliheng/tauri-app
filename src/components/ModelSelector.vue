@@ -41,22 +41,24 @@ const selectedModel = computed({
 </script>
 
 <template>
-  <USelectMenu
-    class="w-40"
-    v-model="selectedModel"
-    color="neutral"
-    variant="soft"
-    trailing-icon="i-lucide-chevrons-up-down"
-    :items="modelList"
-    :ui="{
-      base: 'bg-primary/10 hover:bg-primary/15 text-primary-500 focus-visible:bg-primary/15',
-      trailingIcon: 'text-primary-500',
-    }"
-  >
-    <template #item-leading="{ item }">
-      <UBadge size="xs" :label="item.provider" />
-    </template>
-  </USelectMenu>
+  <UTooltip text="Select Model for this conversation">
+    <USelectMenu
+      class="w-40"
+      v-model="selectedModel"
+      color="neutral"
+      variant="soft"
+      trailing-icon="i-lucide-chevrons-up-down"
+      :items="modelList"
+      :ui="{
+        base: 'bg-primary/10 hover:bg-primary/15 text-primary-500 focus-visible:bg-primary/15',
+        trailingIcon: 'text-primary-500',
+      }"
+    >
+      <template #item-leading="{ item }">
+        <UBadge size="xs" :label="item.provider" />
+      </template>
+    </USelectMenu>
+  </UTooltip>
 </template>
 
 <style lang="scss" scoped></style>

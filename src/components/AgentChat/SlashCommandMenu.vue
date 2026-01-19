@@ -24,15 +24,16 @@ const emit = defineEmits<{
     :disabled="disabled || availableCommands.length === 0"
     position=""
   >
-    <UButton
-      icon="i-lucide-command"
-      color="primary"
-      variant="soft"
-      size="sm"
-      :disabled="disabled || availableCommands.length === 0"
-      @mousedown.prevent
-    />
-
+    <UTooltip text="Select command to run">
+      <UButton
+        icon="i-lucide-command"
+        color="primary"
+        variant="soft"
+        size="sm"
+        :disabled="disabled || availableCommands.length === 0"
+        @mousedown.prevent
+      />
+    </UTooltip>
     <template #content>
       <div class="flex flex-col gap-1 p-1">
         <UButton

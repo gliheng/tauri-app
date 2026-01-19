@@ -31,7 +31,7 @@ const emit = defineEmits<{
 
 const settingsStore = useSettingsStore();
 
-const streaming = computed(
+const nonInteractive = computed(
   () => props.status == "submitted" || props.status == "streaming",
 );
 
@@ -161,14 +161,16 @@ defineExpose({
         class="w-full p-2 flex items-center gap-1 pointer-none"
         @mousedown.prevent
       >
-        <UploadButton @select-file="appendFiles" />
+        <UploadButton :disabled="nonInteractive" @select-file="appendFiles" />
+
         <slot name="left-addons" />
+
         <template v-for="addon of addons">
           <ModelSelector v-if="addon == 'model-select'" key="model-select" />
         </template>
         <div class="flex-1"></div>
         <UButton
-          v-if="streaming"
+          v-if="nonInteractive"
           class="rounded-full"
           icon="i-mdi-stop"
           @click="emit('stop')"

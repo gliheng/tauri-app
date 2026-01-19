@@ -29,17 +29,6 @@ export default defineConfig(async () => ({
       '@nuxt/ui > prosemirror-gapcursor',
     ],
   },
-  
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          monaco: ['monaco-editor']
-        }
-      }
-    }
-  },
-
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent vite from obscuring rust errors

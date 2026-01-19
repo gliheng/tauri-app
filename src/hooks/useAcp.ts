@@ -240,7 +240,6 @@ export function useAcp({ chatId, agent, onInvoke }: {
       } else if (method === ACPMethod.FsWriteTextFile) {
         const { path, content } = params as { path: string; content: string };
         try {
-          debugger;
           await invoke('write_file', { path, content });
         } catch(e) {
           console.error(e);

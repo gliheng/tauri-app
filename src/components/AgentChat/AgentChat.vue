@@ -51,6 +51,9 @@ const { acpService, messages, status, currentModeId, availableModes, availableCo
   },
 });
 
+const nonInteractive = computed(
+  () => status.value == "submitted" || status.value == "streaming",
+);
 const hasModes = computed(() => availableModes.value.length > 0);
 const hasCommands = computed(() => availableCommands.value.length > 0);
 
@@ -79,14 +82,12 @@ const start = async () => {
 
     const enableLoadSession = acpService.hasCapability("loadSession");
 
-    debugger;
     if (enableLoadSession && props.chat && props.chat.sessionId) {
       status.value = 'streaming';
       await acpService.sessionLoad(props.chat.sessionId);
       status.value = 'ready';
     } else {
       const ret = await acpService.sessionNew();
-      debugger;
       sessionId.value = ret.sessionId;
     }
 
@@ -271,7 +272,7 @@ const mentionExtension = Mention.configure({
   suggestion: {
     items: async ({ query }) => {
       mentionQuery.value = query;
-      const files = await globFiles(props.agent.directory!, `*${query}*`);
+      const files = await globFiles(props.agent.directory!, query);
       mentionItems.value = files.map((file): MentionItem => ({
         id: file.path,
         label: file.name,
@@ -327,7 +328,9 @@ const mentionExtension = Mention.configure({
             return false;
           }
 
-          if (props.event.key === 'Enter') {
+          const key = props.event.key;
+          // Allow tab and enter to pass through to the editor for navigation
+          if (key === 'Tab' || key === 'Enter') {
             const item = mentionItems.value[selectedIndex.value];
             if (item) {
               selectMention(selectedIndex.value);
@@ -383,24 +386,27 @@ const mentionExtension = Mention.configure({
         ]"
       >
         <template #left-addons>
-          <UButton
-            icon="i-lucide-at-sign"
-            color="primary"
-            variant="soft"
-            size="sm"
-            @click="chatBoxRef?.insertText('@')"
-          />
+          <UTooltip text="Add files as context">
+            <UButton
+              icon="i-lucide-at-sign"
+              color="primary"
+              variant="soft"
+              size="sm"
+              :disabled="nonInteractive"
+              @click="chatBoxRef?.insertText('@')"
+            />
+          </UTooltip>
           <SlashCommandMenu
             v-if="hasCommands"
             :available-commands="availableCommands"
-            :disabled="status === 'streaming'"
+            :disabled="nonInteractive"
             @select="handleCommandSelect"
           />
           <ModeSelector
-            v-if="hasModes"
+            v-if="hasModes" 
             v-model="currentModeId"
             :available-modes="availableModes"
-            :disabled="status === 'streaming'"
+            :disabled="nonInteractive"
             @update:modelValue="handleModeChange"
           />
           <MentionMenu

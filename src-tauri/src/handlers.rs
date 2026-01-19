@@ -1,5 +1,3 @@
-use glob::glob;
-use ignore::Walk;
 use notify::{EventKind, RecursiveMode, Watcher};
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use serde::{Deserialize, Serialize};
@@ -1144,21 +1142,15 @@ pub async fn glob_files(directory: &str, pattern: Option<&str>) -> Result<Vec<Fi
         return Err(format!("Directory does not exist: {}", directory));
     }
 
-    let pattern = pattern.unwrap_or("*");
-    let glob_pattern = glob::Pattern::new(pattern)
-        .map_err(|e| format!("Invalid glob pattern: {}", e))?;
+    let query = pattern.unwrap_or("").to_lowercase();
 
     let mut results = Vec::new();
 
     let walker = WalkBuilder::new(directory)
-        .hidden(false)
+        .hidden(true)
         .git_ignore(true)
         .git_global(true)
         .git_exclude(true)
-        .filter_entry(|entry| {
-            // Skip .git directory
-            entry.file_name() != ".git"
-        })
         .build();
 
     for entry in walker {
@@ -1179,16 +1171,16 @@ pub async fn glob_files(directory: &str, pattern: Option<&str>) -> Result<Vec<Fi
             None => continue,
         };
 
-        // Match against the glob pattern
-        if !glob_pattern.matches(&file_name) {
-            continue;
-        }
-
         let relative_path = path
             .strip_prefix(directory)
             .unwrap_or(path)
             .to_string_lossy()
             .to_string();
+
+        // Match query as substring in relative path (case-insensitive)
+        if !query.is_empty() && !relative_path.to_lowercase().contains(&query) {
+            continue;
+        }
 
         let is_dir = path.is_dir();
 
