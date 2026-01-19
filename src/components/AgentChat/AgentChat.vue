@@ -79,12 +79,14 @@ const start = async () => {
 
     const enableLoadSession = acpService.hasCapability("loadSession");
 
+    debugger;
     if (enableLoadSession && props.chat && props.chat.sessionId) {
       status.value = 'streaming';
       await acpService.sessionLoad(props.chat.sessionId);
       status.value = 'ready';
     } else {
       const ret = await acpService.sessionNew();
+      debugger;
       sessionId.value = ret.sessionId;
     }
 

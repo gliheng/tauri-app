@@ -146,6 +146,10 @@ export interface AuthMethod {
 export interface Model {
   name: string;
   modelId: string;
+  description?: string;
+  meta?: {
+    contextLimit: number;
+  };
 }
 
 export interface Mode {
@@ -406,12 +410,5 @@ export class ACPService {
 
   getAuthMethods(): AuthMethod[] {
     return this.initializeResult?.authMethods ?? [];
-  }
-
-  getModes(): {
-    currentModeId: string;
-    availableModes: Mode[];
-  } | undefined {
-    return this.initializeResult?.modes;
   }
 }

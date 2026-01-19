@@ -1,5 +1,5 @@
 import { Ref, ref } from "vue";
-import { ACPService, ACPMethod, ToolCallUpdate, InitializeResult, Mode } from "@/services/acp";
+import { ACPService, ACPMethod, ToolCallUpdate, Mode, Model } from "@/services/acp";
 import { getCodeAgentConfig } from "@/llm";
 import { Agent } from "@/db-sqlite";
 import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
@@ -103,6 +103,8 @@ export function useAcp({ chatId, agent, onInvoke }: {
   const status = ref<Status>("ready");
   const currentModeId = ref<string>('');
   const availableModes = ref<Mode[]>([]);
+  const currentModelId = ref<string>('');
+  const availableModels = ref<Model[]>([]);
   const availableCommands = ref<AvailableCommand[]>([]);
   const state = {
     messages,
@@ -252,10 +254,13 @@ export function useAcp({ chatId, agent, onInvoke }: {
   const oldRpc = acpService.rpc;
   acpService.rpc = async (method, message) => {
     const rsp = await oldRpc.apply(acpService, [method, message]);
-    if (method === ACPMethod.SessionNew || method === ACPMethod.SessionLoad) {
+    // TODO: 
+    // For Qwen, modes are returned by initialize call. This is different from the protocol.
+    // Remove this after Qwen properly implements the protocol
+    if (method === ACPMethod.SessionNew || method === ACPMethod.SessionLoad || method === ACPMethod.Initialize) {
       if (rsp.models) {
-        currentModeId.value = rsp.models.currentModeId;
-        availableModes.value = rsp.models.availableModes;
+        currentModelId.value = rsp.models.currentModelId;
+        availableModels.value = rsp.models.availableModels;
       }
       if (rsp.modes) {
         currentModeId.value = rsp.modes.currentModeId;
