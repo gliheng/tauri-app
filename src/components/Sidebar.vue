@@ -5,7 +5,7 @@ import { tv } from "tailwind-variants";
 import { useColorMode } from "@vueuse/core";
 import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
-import { Agent, Document, writeAgent, writeDocument, Note, Chart } from "@/db-sqlite";
+import { Agent, writeAgent } from "@/db-sqlite";
 import { computed } from "vue";
 import AgentConfig from "./AgentChat/AgentConfig.vue";
 import DocumentConfig from "./DocumentConfig.vue";
@@ -130,7 +130,7 @@ const isMac = platform.startsWith("Mac");</script>
   >
     <template #header="{ collapsed }">
       <h1
-        class="text-3xl font-bold flex flex-row gap-4 items-center justify-center"
+        class="text-3xl font-bold flex flex-row gap-4 items-center justify-center select-none"
         :class="{ 'pt-8': isMac }"
         data-tauri-drag-region
       >

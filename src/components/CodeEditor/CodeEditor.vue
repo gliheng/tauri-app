@@ -6,9 +6,9 @@ import { listen } from "@tauri-apps/api/event";
 import { debounce } from "lodash-es";
 import FileTree from "./FileTree.vue";
 import Editor from "./Editor.vue";
-import Terminal from "./Terminal.vue";
 import { FileEntryType, type FileEntry } from "./types";
 import { EDITOR_ACTIONS } from "@/constants";
+import { eventBus } from "@/utils/eventBus";
 
 const props = defineProps({
   cwd: {
@@ -185,7 +185,9 @@ onUnmounted(async () => {
   }
 });
 
-const showTerminal = ref(false);
+function openTerminal() {
+  eventBus.emit('artifact', `terminal::${props.cwd}`);
+}
 </script>
 
 <template>
@@ -198,17 +200,17 @@ const showTerminal = ref(false);
       <div class="flex flex-col h-full">
         <SplitterGroup direction="vertical" class="flex-1">
           <SplitterPanel :default-size="60">
-            <header class="p-1 border-b border-gray-200 h-10 flex items-center" data-tauri-drag-region>
+            <header class="p-1 border-b border-gray-200 h-10 flex items-center">
               <div class="flex items-center gap-2">
                 <div v-if="externallyModified" class="flex items-center gap-1 text-amber-600" title="File modified externally">
                   <UIcon name="i-lucide-alert-triangle" class="w-4 h-4" />
                   <span class="text-xs">Modified externally</span>
                   <UButton size="xs" variant="soft" @click="reloadFile">Reload</UButton>
                 </div>
-                <h2 v-else class="text-sm font-medium truncate select-none" data-tauri-drag-region>{{ file?.name }}</h2>
+                <h2 v-else class="text-sm font-medium truncate select-none">{{ file?.name }}</h2>
               </div>
               <div class="flex-1"></div>
-              <UButton size="sm" icon="i-lucide-square-terminal" @click="showTerminal = !showTerminal" />
+              <UButton size="sm" icon="i-lucide-square-terminal" @click="openTerminal" />
             </header>
             <KeepAlive :max="10">
               <Editor v-if="file" :key="file.path" class="h-full" v-model="file.content!" />
@@ -216,15 +218,9 @@ const showTerminal = ref(false);
             <div v-if="!file" class="h-full flex flex-col items-center justify-center text-gray-400">
               <UIcon name="i-lucide-file-code" class="w-16 h-16 mb-4 opacity-50" />
               <p class="text-lg">No file selected</p>
-              <p class="text-sm mt-1">Select a file from the tree to start editing</p>
+              <p class="text-sm mt-1">Select a file to start editing</p>
             </div>
           </SplitterPanel>
-          <template v-if="showTerminal">
-            <SplitterResizeHandle class="h-0.5 splitter-handle" />
-            <SplitterPanel :default-size="40">
-              <Terminal :cwd="cwd" />
-            </SplitterPanel>
-          </template>
         </SplitterGroup>
       </div>
     </SplitterPanel>
