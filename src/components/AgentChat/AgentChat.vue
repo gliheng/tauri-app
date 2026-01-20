@@ -257,29 +257,28 @@ const mentionItems = ref<MentionItem[]>([]);
 const mentionQuery = ref("");
 const selectedIndex = ref(0);
 const mentionRange = ref<{ from: number; to: number } | null>(null);
-const mentionPosition = ref({ x: 0, y: 0 });
-const MENU_HEIGHT = 200; // Estimated max height of the menu
-const MENU_OFFSET = 10; // Offset from cursor
 
-function calculateMenuPosition(cursorCoords: { top: number; bottom: number; left: number }) {
-  const viewportHeight = window.innerHeight;
-  const spaceBelow = viewportHeight - cursorCoords.bottom;
-  const spaceAbove = cursorCoords.top;
-
-  // If there's not enough space below, show menu above the cursor
-  if (spaceBelow < MENU_HEIGHT && spaceAbove > MENU_HEIGHT) {
-    return {
-      x: cursorCoords.left,
-      y: cursorCoords.top - MENU_HEIGHT - MENU_OFFSET
-    };
-  }
-
-  // Default: show below cursor
-  return {
-    x: cursorCoords.left,
-    y: cursorCoords.bottom + MENU_OFFSET
-  };
+// Virtual element for cursor position
+interface VirtualElement {
+  getBoundingClientRect: () => DOMRect;
 }
+
+const virtualReference = ref<VirtualElement | null>(null);
+const mentionMenuRef = ref<HTMLElement | null>(null);
+
+const { floatingStyles } = useFloating(virtualReference, mentionMenuRef, {
+  placement: 'bottom-start',
+  middleware: [
+    offset(10),
+    flip({
+      fallbackPlacements: ['top-start'],
+    }),
+    shift({
+      padding: 10,
+    }),
+  ],
+  whileElementsMounted: autoUpdate,
+});
 
 const mentionExtension = Mention.configure({
   HTMLAttributes: {
@@ -307,9 +306,26 @@ const mentionExtension = Mention.configure({
           mentionRange.value = { from: props.range.from, to: props.range.to };
           const { from } = props.range;
           const { view } = props.editor;
-          const start = view.coordsAtPos(from);
-          // Calculate position with viewport awareness
-          mentionPosition.value = calculateMenuPosition(start);
+          const coords = view.coordsAtPos(from);
+
+          // Create virtual element for cursor position
+          virtualReference.value = {
+            getBoundingClientRect() {
+              return {
+                width: 0,
+                height: 0,
+                x: coords.left,
+                y: coords.top,
+                top: coords.top,
+                left: coords.left,
+                right: coords.right,
+                bottom: coords.bottom,
+                toJSON() {
+                  return this;
+                },
+              };
+            },
+          };
           mentionMenuOpen.value = true;
           editorInstance = props.editor;
         },
@@ -318,9 +334,26 @@ const mentionExtension = Mention.configure({
           mentionRange.value = { from: props.range.from, to: props.range.to };
           const { from } = props.range;
           const { view } = props.editor;
-          const start = view.coordsAtPos(from);
+          const coords = view.coordsAtPos(from);
 
-          mentionPosition.value = calculateMenuPosition(start);
+          // Update virtual element position
+          virtualReference.value = {
+            getBoundingClientRect() {
+              return {
+                width: 0,
+                height: 0,
+                x: coords.left,
+                y: coords.top,
+                top: coords.top,
+                left: coords.left,
+                right: coords.right,
+                bottom: coords.bottom,
+                toJSON() {
+                  return this;
+                },
+              };
+            },
+          };
         },
 
         onKeyDown(props: any) {
@@ -427,9 +460,10 @@ const mentionExtension = Mention.configure({
           />
           <MentionMenu
             v-if="mentionMenuOpen"
+            ref="mentionMenuRef"
             :mention-items="mentionItems"
             :selected-index="selectedIndex"
-            :position="mentionPosition"
+            :floating-styles="floatingStyles"
             @select="selectMention($event)"
           />
         </template>
