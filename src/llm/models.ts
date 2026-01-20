@@ -20,6 +20,10 @@ export const modelRepo = {
       label: "GLM 4.7",
       value: "glm-4.7",
     },
+    {
+      label: "GLM 4.7 Flash",
+      value: "glm-4.7-flash",
+    },
   ],
   openrouter: [
     {

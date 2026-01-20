@@ -130,7 +130,7 @@ const isMac = platform.startsWith("Mac");</script>
   >
     <template #header="{ collapsed }">
       <h1
-        class="text-3xl font-bold flex flex-row gap-4 items-center justify-center select-none"
+        class="text-3xl font-bold flex flex-row gap-4 items-center justify-center select-none flex-1"
         :class="{ 'pt-8': isMac }"
         data-tauri-drag-region
       >
@@ -143,7 +143,7 @@ const isMac = platform.startsWith("Mac");</script>
         <UIcon
           v-else
           name="i-lucide-message-circle"
-          class="size-8 mx-auto text-primary"
+          class="size-8 mx-auto text-primary pointer-events-none"
         />
       </h1>
     </template>
