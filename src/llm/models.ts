@@ -35,7 +35,7 @@ export const modelRepo = {
       value: "google/gemini-2.5-pro-preview",
     },
   ],
-  silliconflow: [
+  siliconflow: [
     {
       label: "Qwen3 32B",
       value: "Qwen/Qwen3-32B",

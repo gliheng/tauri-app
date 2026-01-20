@@ -24,7 +24,7 @@ const defaultModelSettings: Record<string, ChatModelConfig> = {
     apiKey: "",
     models: [],
   },
-  silliconflow: {
+  siliconflow: {
     apiKey: "",
     models: [],
   },

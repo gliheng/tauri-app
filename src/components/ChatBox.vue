@@ -116,6 +116,9 @@ function setInput(value: string) {
 defineExpose({
   insertText,
   setInput,
+  get editor() {
+    return editor.value;
+  },
 });
 
 </script>

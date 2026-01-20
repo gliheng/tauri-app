@@ -77,6 +77,24 @@ function handleCommandSelect(command: AvailableCommand) {
   chatBoxRef.value?.insertText(commandText);
 }
 
+function handleMentionInsert() {
+  if (!chatBoxRef.value) return;
+  
+  const editor = (chatBoxRef.value as any).editor;
+  if (!editor) return;
+  
+  const { state } = editor;
+  const { from } = state.selection;
+  
+  // Check if cursor is at the start or if previous character is a space
+  const textBefore = state.doc.textBetween(Math.max(0, from - 1), from);
+  const needsSpace = from > 0 && textBefore !== ' ' && textBefore !== '\n';
+  
+  // Insert space before @ if needed
+  const textToInsert = needsSpace ? ' @' : '@';
+  chatBoxRef.value.insertText(textToInsert);
+}
+
 const start = async () => {
   try {
     error.value = null;
@@ -404,8 +422,9 @@ const mentionExtension = Mention.configure({
 
 <template>
   <div class="size-full p-6 flex flex-col gap-2 justify-between">
-    <section v-if="!isInitialized" class="flex-1 flex justify-center items-center">
+    <section v-if="!isInitialized" class="flex-1 flex flex-col justify-center items-center gap-4">
       <Spinner />
+      <p class="text-gray-500 text-sm">Initializing agent...</p>
     </section>
     <template v-else>
       <UAlert
@@ -442,7 +461,7 @@ const mentionExtension = Mention.configure({
               variant="soft"
               size="sm"
               :disabled="nonInteractive"
-              @click="chatBoxRef?.insertText('@')"
+              @click="handleMentionInsert"
             />
           </UTooltip>
           <SlashCommandMenu

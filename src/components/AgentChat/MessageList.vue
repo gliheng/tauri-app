@@ -22,10 +22,7 @@ const props = defineProps({
         :key="message.id"
         v-bind="message"
       />
-      <ShinyText
-        v-if="status == 'submitted'"
-        text="Thinking ..."
-      />
+      <LoadingText v-if="status == 'submitted' || status == 'streaming'" />
     </div>
   </Scrollbar>
 </template>

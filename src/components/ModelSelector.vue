@@ -2,6 +2,32 @@
 import { computed } from "vue";
 import { useSettingsStore } from "../stores/settings";
 import { modelRepo } from "../llm/models";
+import ICustomAnthropic from '~icons/custom/anthropic';
+import ICustomOpenai from '~icons/custom/openai';
+import ICustomGemini from '~icons/custom/gemini';
+import ICustomSiliconflow from '~icons/custom/siliconflow';
+import ICustomOpenrouter from '~icons/custom/openrouter';
+import ICustomMinimax from '~icons/custom/minimax';
+import ICustomZai from '~icons/custom/zai';
+import ICustomDeepseek from '~icons/custom/deepseek';
+import ICustomOllama from '~icons/custom/ollama';
+import CircleQuestionMark from '~icons/lucide/circle-question-mark';
+
+const iconMap = {
+  anthropic: ICustomAnthropic,
+  openai: ICustomOpenai,
+  gemini: ICustomGemini,
+  siliconflow: ICustomSiliconflow,
+  openrouter: ICustomOpenrouter,
+  minimax: ICustomMinimax,
+  zai: ICustomZai,
+  deepseek: ICustomDeepseek,
+  ollama: ICustomOllama,
+}
+
+function getIcon(provider: string) {
+  return iconMap[provider as keyof typeof iconMap] ?? CircleQuestionMark;
+}
 
 const settingsStore = useSettingsStore();
 
@@ -55,7 +81,12 @@ const selectedModel = computed({
       }"
     >
       <template #item-leading="{ item }">
-        <UBadge size="xs" :label="item.provider" />
+        <UBadge
+          size="xs"
+          color="neutral"
+          variant="outline"
+          :icon="getIcon(item.provider as keyof typeof iconMap)"
+        />
       </template>
     </USelectMenu>
   </UTooltip>

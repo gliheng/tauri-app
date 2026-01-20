@@ -2,6 +2,8 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import ui from "@nuxt/ui/vite";
+import Icons from 'unplugin-icons/vite';
+import { FileSystemIconLoader } from 'unplugin-icons/loaders';
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -14,6 +16,13 @@ export default defineConfig(async () => ({
         compilerOptions: {
           isCustomElement: (tag) => false,
         },
+      },
+    }),
+    Icons({
+      autoInstall: true,
+      compiler: 'vue3',
+      customCollections: {
+        custom: FileSystemIconLoader('./src/assets/icons'),
       },
     }),
     tailwindcss(),

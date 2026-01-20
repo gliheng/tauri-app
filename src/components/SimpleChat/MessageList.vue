@@ -65,10 +65,7 @@ watch(
           @cancel-edit="() => (editingId = '')"
           @reload="actions.reload"
         />
-        <ShinyText
-          v-if="status == 'submitted'"
-          text="Thinking ..."
-        />
+        <LoadingText v-if="status == 'submitted'" />
       </div>
     </Scrollbar>
   </motion.div>

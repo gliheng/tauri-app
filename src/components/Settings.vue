@@ -38,8 +38,8 @@ const providerItems = [
     value: "openrouter",
   },
   {
-    label: "Silliconflow",
-    value: "silliconflow",
+    label: "Siliconflow",
+    value: "siliconflow",
   },
 ] satisfies TabsItem[];
 

@@ -1,12 +1,43 @@
 <script setup lang="ts">
-defineProps<{
-  text: string;
+import { ref, onMounted, onUnmounted } from 'vue';
+
+const props = defineProps<{
+  text?: string;
+  variations?: string[];
 }>();
+
+const loadingVariations = [
+  "Conjuring brilliance ✨",
+  "Weaving magic 🪄",
+  "Brewing genius 🧙‍♂️",
+  "Summoning wisdom 🔮",
+  "Crafting wonders 💫"
+];
+
+const currentIndex = ref(0);
+const displayText = ref(props.text || loadingVariations[0]);
+let intervalId: number | null = null;
+
+onMounted(() => {
+  if (!props.text && props.variations !== undefined ? props.variations.length > 1 : true) {
+    const texts = props.variations || loadingVariations;
+    intervalId = window.setInterval(() => {
+      currentIndex.value = (currentIndex.value + 1) % texts.length;
+      displayText.value = texts[currentIndex.value];
+    }, 3000);
+  }
+});
+
+onUnmounted(() => {
+  if (intervalId !== null) {
+    clearInterval(intervalId);
+  }
+});
 </script>
 
 <template>
   <div class="animate-bounce">
-    <p class="btn-shine">{{ text }}</p>
+    <p class="btn-shine">{{ displayText }}</p>
   </div>
 </template>
 
