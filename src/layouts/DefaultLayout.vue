@@ -24,7 +24,7 @@ const ui = {
   root: 'relative flex flex-col h-full',
   list: 'relative flex items-center gap-1 border-none bg-[--ui-bg-default] rounded-t-md overflow-x-auto p-1 select-none bg-elevated/50 shadow',
   indicator: 'absolute left-0 inset-y-2 w-(--reka-tabs-indicator-size) translate-x-(--reka-tabs-indicator-position) transition-[translate,width] duration-200 bg-primary rounded-md shadow-xs',
-  trigger: 'relative inline-flex items-center gap-1.5 text-default hover:bg-[var(--ui-bg-elevated)]/50 px-2 py-1.5 text-sm rounded-md disabled:cursor-not-allowed disabled:opacity-75 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ui-color-primary)] focus:outline-none transition-colors group data-[state=active]:text-white',
+  trigger: 'relative inline-flex items-center gap-1.5 text-default hover:bg-[var(--ui-bg-elevated)]/25 px-2 py-1.5 text-sm rounded-md disabled:cursor-not-allowed disabled:opacity-75 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ui-color-primary)] focus:outline-none transition-colors group data-[state=active]:text-white',
   triggerIcon: 'size-4 shrink-0',
   triggerLabel: 'truncate'
 };

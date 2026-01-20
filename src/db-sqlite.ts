@@ -30,6 +30,8 @@ export interface ChatMessage {
   siblingIndex?: number;
 }
 
+export type AgentProgram = 'codex' | 'gemini' | 'claude' | 'qwen' | 'opencode';
+
 export interface Agent {
   id: string;
   name: string;
@@ -37,9 +39,9 @@ export interface Agent {
   type: 'chat' | 'code';
   createdAt: Date;
   updatedAt: Date;
+  directory: string;
+  program?: AgentProgram;
   instructions?: string;
-  directory?: string;
-  program?: 'codex' | 'gemini' | 'qwen';
 }
 
 export interface FileStore {
@@ -241,7 +243,7 @@ export interface ChatData {
 export async function writeAgent(data: Agent): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute(
-    `INSERT OR REPLACE INTO agent (id, name, icon, type, createdAt, updatedAt, instructions, directory, program)
+    `INSERT OR REPLACE INTO agent (id, name, icon, type, createdAt, updatedAt, directory, program, instructions)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       data.id,
@@ -250,9 +252,9 @@ export async function writeAgent(data: Agent): Promise<void> {
       data.type,
       dateToString(data.createdAt),
       dateToString(data.updatedAt),
-      data.instructions ?? null,
-      data.directory ?? null,
+      data.directory,
       data.program ?? null,
+      data.instructions ?? null,
     ]
   );
 }

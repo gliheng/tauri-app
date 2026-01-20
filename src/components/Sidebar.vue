@@ -7,9 +7,9 @@ import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Agent, writeAgent } from "@/db-sqlite";
 import { computed } from "vue";
-import AgentConfig from "./AgentChat/AgentConfig.vue";
+import AgentModal from "./AgentChat/AgentModal.vue";
 import DocumentConfig from "./DocumentConfig.vue";
-import type { AgentFormData } from "./AgentChat/AgentConfig.vue";
+import type { AgentFormData } from "./AgentChat/AgentModal.vue";
 
 
 const buttonStyle = tv({
@@ -37,7 +37,7 @@ function addChat() {
 }
 
 const overlay = useOverlay();
-const agentCreateModal = overlay.create(AgentConfig);
+const agentCreateModal = overlay.create(AgentModal);
 const documentCreateModal = overlay.create(DocumentConfig);
 
 async function addAgent() {

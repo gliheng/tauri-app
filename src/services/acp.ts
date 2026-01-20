@@ -230,25 +230,25 @@ export class TauriACPClient implements acp.Client {
       availableModels: Ref<Model[]>;
       availableCommands: Ref<AvailableCommand[]>;
     },
-    private agent: Agent,
     private config: {
       programId: string;
+      directory: string;
       model?: {
         model: string;
         baseUrl: string;
         apiKey: string;
       };
+      onInvoke?: (method: string, params: any) => void,
       onConnect?: () => void;
       onDisconnect?: () => void;
     },
     private openPermission: (options: { options: any[] }) => Promise<string | null>,
-    private onInvokeCallback?: (method: string, params: any) => void,
   ) {}
 
   async requestPermission(
     params: acp.RequestPermissionRequest,
   ): Promise<acp.RequestPermissionResponse> {
-    this.onInvokeCallback?.('session/request_permission', params);
+    this.config.onInvoke?.('session/request_permission', params);
     this.appendSessionUpdate({
       sessionUpdate: 'tool_call',
       ...params.toolCall,
@@ -275,14 +275,14 @@ export class TauriACPClient implements acp.Client {
   }
 
   async sessionUpdate(params: acp.SessionNotification): Promise<void> {
-    this.onInvokeCallback?.('session/update', params);
+    this.config.onInvoke?.('session/update', params);
     this.appendSessionUpdate(params.update);
   }
 
   async readTextFile(
     params: acp.ReadTextFileRequest,
   ): Promise<acp.ReadTextFileResponse> {
-    this.onInvokeCallback?.('fs/read_text_file', params);
+    this.config.onInvoke?.('fs/read_text_file', params);
     const { path, line, limit } = params;
     try {
       let content = await invoke<string>('read_file', { path });
@@ -302,7 +302,7 @@ export class TauriACPClient implements acp.Client {
   async writeTextFile(
     params: acp.WriteTextFileRequest,
   ): Promise<acp.WriteTextFileResponse> {
-    this.onInvokeCallback?.('fs/write_text_file', params);
+    this.config.onInvoke?.('fs/write_text_file', params);
     const { path, content } = params;
     try {
       await invoke('write_file', { path, content });
@@ -315,7 +315,7 @@ export class TauriACPClient implements acp.Client {
   async createTerminal(
     params: acp.CreateTerminalRequest,
   ): Promise<acp.CreateTerminalResponse> {
-    this.onInvokeCallback?.('terminal/create', params);
+    this.config.onInvoke?.('terminal/create', params);
     const { sessionId, command, args, env, cwd, outputByteLimit } = params;
     
     const result = await invoke<{ terminalId: string }>('acp_terminal_create', {
@@ -323,7 +323,7 @@ export class TauriACPClient implements acp.Client {
       command,
       args,
       env,
-      cwd: cwd ?? this.agent.directory!,
+      cwd: cwd ?? this.config.directory,
       outputByteLimit,
     });
     
@@ -333,7 +333,7 @@ export class TauriACPClient implements acp.Client {
   async getTerminalOutput(
     params: acp.TerminalOutputRequest,
   ): Promise<acp.TerminalOutputResponse> {
-    this.onInvokeCallback?.('terminal/output', params);
+    this.config.onInvoke?.('terminal/output', params);
     const { sessionId, terminalId } = params;
     
     const result = await invoke<{
@@ -351,7 +351,7 @@ export class TauriACPClient implements acp.Client {
   async waitForTerminalExit(
     params: acp.WaitForTerminalExitRequest,
   ): Promise<acp.WaitForTerminalExitResponse> {
-    this.onInvokeCallback?.('terminal/wait_for_exit', params);
+    this.config.onInvoke?.('terminal/wait_for_exit', params);
     const { sessionId, terminalId } = params;
     
     const result = await invoke<{ exitCode: number | null; signal: string | null }>(
@@ -365,7 +365,7 @@ export class TauriACPClient implements acp.Client {
   async killTerminal(
     params: acp.KillTerminalCommandRequest,
   ): Promise<acp.KillTerminalCommandResponse> {
-    this.onInvokeCallback?.('terminal/kill', params);
+    this.config.onInvoke?.('terminal/kill', params);
     const { sessionId, terminalId } = params;
     
     await invoke('acp_terminal_kill', { sessionId, terminalId });
@@ -375,7 +375,7 @@ export class TauriACPClient implements acp.Client {
   async releaseTerminal(
     params: acp.ReleaseTerminalRequest,
   ): Promise<acp.ReleaseTerminalResponse> {
-    this.onInvokeCallback?.('terminal/release', params);
+    this.config.onInvoke?.('terminal/release', params);
     const { sessionId, terminalId } = params;
     
     await invoke('acp_terminal_release', { sessionId, terminalId });
@@ -416,7 +416,7 @@ export class TauriACPClient implements acp.Client {
 
   async sessionNew() {
     const result = await this.connection.newSession({
-      cwd: this.agent.directory!,
+      cwd: this.config.directory,
       mcpServers: [],
     });
     
@@ -435,7 +435,7 @@ export class TauriACPClient implements acp.Client {
   async sessionLoad(sessionId: string) {
     const result = await this.connection.loadSession({
       sessionId,
-      cwd: this.agent.directory!,
+      cwd: this.config.directory,
       mcpServers: [],
     });
     

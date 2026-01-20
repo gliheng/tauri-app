@@ -5,10 +5,12 @@ import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
 import { TauriACPClient } from "@/services/acp";
 import type { Message, Status, Mode, Model, AvailableCommand } from "@/services/acp";
 
-export function useAcp({ chatId, agent, onInvoke }: {
+export function useAcp({ chatId, agent, onInvoke, onConnect, onDisconnect }: {
   chatId: string,
   agent: Agent,
   onInvoke?: (method: string, params: any) => void,
+  onConnect?: () => void,
+  onDisconnect?: () => void,
 }) {
   const overlay = useOverlay();
   const permissionModal = overlay.create(PermissionModal);
@@ -43,19 +45,15 @@ export function useAcp({ chatId, agent, onInvoke }: {
   const programId = agent.program! + "::" + chatId;
   const client = new TauriACPClient(
     state,
-    agent,
     {
       programId,
       model,
-      onConnect() {
-        console.log('onConnect');
-      },
-      onDisconnect() {
-        console.log('onDisconnect');
-      },
+      directory: agent.directory,
+      onConnect,
+      onDisconnect,
+      onInvoke,
     },
     (options) => permissionModal.open(options),
-    onInvoke,
   );
 
   return {

@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AgentChat: typeof import('./src/components/AgentChat/AgentChat.vue')['default']
     AgentConfig: typeof import('./src/components/AgentChat/AgentConfig.vue')['default']
+    AgentModal: typeof import('./src/components/AgentChat/AgentModal.vue')['default']
     AgentSessionList: typeof import('./src/components/AgentSessionList.vue')['default']
     ChartCanvas: typeof import('./src/components/ChartEditor/ChartCanvas.vue')['default']
     ChatBox: typeof import('./src/components/ChatBox.vue')['default']

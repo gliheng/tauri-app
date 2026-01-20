@@ -1,6 +1,7 @@
 import { ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { defaultsDeep } from 'lodash-es';
+import { CodeAgent } from "@/db-sqlite";
 
 export interface ChatModelConfig {
   apiKey: string;
@@ -36,8 +37,6 @@ export interface CodeAgentConfig {
   model?: string;
   apiKey?: string;
 }
-
-export type CodeAgent = 'codex' | 'gemini' | 'claude' | 'qwen' | 'opencode';
 
 const defaultCodeAgentSettings: Record<CodeAgent, CodeAgentConfig> = {
   codex: {
