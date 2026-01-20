@@ -10,6 +10,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@agentclientprotocol/sdk": "^0.13.0",
     "@ai-sdk/deepseek": "^0.2.14",
     "@ai-sdk/openai-compatible": "^0.2.14",
     "@ai-sdk/vue": "^1.2.12",

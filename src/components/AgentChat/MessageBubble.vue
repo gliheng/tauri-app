@@ -144,18 +144,18 @@ function copyText() {
             class="flex flex-col gap-2 w-full"
             :unmount-on-hide="false"
             :data-part-type="part.type"
-            default-open
           >
             <UButton
               class="self-start group min-w-[200px] max-w-full"
               :label="part.title"
               color="neutral"
               variant="subtle"
+              :data-status="part.status"
               leading-icon="i-lucide-hammer"
-              trailing-icon="i-lucide-chevron-down"
+              :trailing-icon="part.status == 'completed' ? 'i-heroicons-check-circle-20-solid' : part.status == 'failed' ? 'i-heroicons-x-circle-20-solid' : 'i-lucide-chevron-down'"
               :ui="{
                 label: 'text-left truncate flex-1',
-                trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200',
+                trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200 group-data-[status=completed]:text-primary group-data-[status=failed]:text-error',
               }"
             />
             <template #content>

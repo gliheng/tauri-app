@@ -5,6 +5,15 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
+"@agentclientprotocol/sdk@npm:^0.13.0":
+  version: 0.13.0
+  resolution: "@agentclientprotocol/sdk@npm:0.13.0"
+  peerDependencies:
+    zod: ^3.25.0 || ^4.0.0
+  checksum: 10c0/30f0d281577d1a1f7e2925b2fdb2bd85ed73618d4d4b6db01420af1ca8adcbbca024a093bdc73bd1b99e103b2b1d1bdcfc5cdf97f0c3ea1013e7ce76d205b591
+  languageName: node
+  linkType: hard
+
 "@ai-sdk/deepseek@npm:^0.2.14":
   version: 0.2.16
   resolution: "@ai-sdk/deepseek@npm:0.2.16"
@@ -5487,6 +5496,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "raven@workspace:."
   dependencies:
+    "@agentclientprotocol/sdk": "npm:^0.13.0"
     "@ai-sdk/deepseek": "npm:^0.2.14"
     "@ai-sdk/openai-compatible": "npm:^0.2.14"
     "@ai-sdk/vue": "npm:^1.2.12"

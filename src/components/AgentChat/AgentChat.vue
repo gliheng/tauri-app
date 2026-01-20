@@ -8,13 +8,14 @@ import ModeSelector from "./ModeSelector.vue";
 import SlashCommandMenu from "./SlashCommandMenu.vue";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
-import { useAcp, type AvailableCommand } from "@/hooks/useAcp";
-import { ACPMethod } from "@/services/acp";
+import { useAcp } from "@/hooks/useAcp";
 import { invoke } from "@tauri-apps/api/core";
 import Mention from "@tiptap/extension-mention";
 import MentionMenu from "./MentionMenu.vue";
 import MentionItem from "./MentionItem.vue";
 import { type Editor } from "@tiptap/core";
+import { AvailableCommand } from "@agentclientprotocol/sdk";
+import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
 
 const toast = useToast();
 
@@ -39,11 +40,11 @@ const error = ref<string | null>(null);
 const sessionId = ref<string | null>(props.chat?.sessionId ?? null);
 const chatBoxRef = ref<InstanceType<typeof ChatBox> | null>(null);
 
-const { acpService, messages, status, currentModeId, availableModes, availableCommands } = useAcp({
+const { client, messages, status, currentModeId, availableModes, availableCommands } = useAcp({
   chatId: props.chatId,
   agent: props.agent,
   onInvoke(method, params) {
-    if (method === ACPMethod.SessionUpdate) {
+    if (method === 'session/update') {
       if (params.update.sessionUpdate === "agent_message_chunk") {
         status.value = 'streaming';
       }
@@ -58,10 +59,13 @@ const hasModes = computed(() => availableModes.value.length > 0);
 const hasCommands = computed(() => availableCommands.value.length > 0);
 
 async function handleModeChange(modeId: string) {
-  if (!acpService) return;
+  if (!client) return;
   try {
     currentModeId.value = modeId;
-    await acpService.sessionSetMode(modeId);
+    await client.connection.setSessionMode({
+      sessionId: sessionId.value!,
+      modeId,
+    });
   } catch (err) {
     console.error('Failed to set mode:', err);
     error.value = `Failed to set mode: ${JSON.stringify(err, null, 2)}`;
@@ -78,16 +82,23 @@ const start = async () => {
     error.value = null;
     console.log("Starting agent initialization...");
 
-    await acpService.initialize();
+    await client.initialize();
 
-    const enableLoadSession = acpService.hasCapability("loadSession");
+    const enableLoadSession = client.hasCapability("loadSession");
 
-    if (enableLoadSession && props.chat && props.chat.sessionId) {
+    if (enableLoadSession && props.chat && sessionId.value) {
       status.value = 'streaming';
-      await acpService.sessionLoad(props.chat.sessionId);
+      await client.connection.loadSession({
+        sessionId: sessionId.value!,
+        mcpServers: [],
+        cwd: props.agent.directory!,
+      });
       status.value = 'ready';
     } else {
-      const ret = await acpService.sessionNew();
+      const ret = await client.connection.newSession({
+        mcpServers: [],
+        cwd: props.agent.directory!,
+      });
       sessionId.value = ret.sessionId;
     }
 
@@ -105,8 +116,8 @@ const stop = async () => {
     error.value = null;
     console.log("Stopping agent...");
     
-    if (acpService && isInitialized.value) {
-      await acpService.dispose();
+    if (client && isInitialized.value) {
+      await client.dispose();
     }
     
     status.value = "ready";
@@ -121,7 +132,7 @@ const stop = async () => {
 };
 
 const handleSubmit = async () => {
-  if (!input.value.trim() || !isInitialized.value || !acpService) return;
+  if (!input.value.trim() || !isInitialized.value || !client) return;
   
   try {
     const text = input.value.trim();
@@ -167,7 +178,10 @@ const handleSubmit = async () => {
       })();
     }
 
-    const ret = await acpService.sessionPrompt(part)
+    const ret = await client.connection.prompt({
+      sessionId: sessionId.value!,
+      prompt: [part],
+    });
     console.log('sessionPrompt result', ret);
     
     status.value = "ready";
@@ -179,7 +193,9 @@ const handleSubmit = async () => {
 };
 
 function cancel() {
-  acpService.sessionCancel();
+  client.connection.cancel({
+    sessionId: sessionId.value!,
+  });
   status.value = 'ready';
 }
 

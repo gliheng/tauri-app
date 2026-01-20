@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PropType } from "vue";
-import type { Mode } from "@/services/acp";
+import type { Mode } from "@/hooks/useAcp";
 
 defineProps({
   availableModes: {

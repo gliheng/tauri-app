@@ -9,7 +9,7 @@ interface MentionItem {
 defineProps<{
   mentionItems: MentionItem[];
   selectedIndex: number;
-  position: { x: number; y: number };
+  floatingStyles: Record<string, string>;
 }>();
 
 const emit = defineEmits<{
@@ -18,9 +18,9 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div 
+  <div
     class="fixed z-50"
-    :style="{ left: `${position.x}px`, top: `${position.y}px` }"
+    :style="floatingStyles"
   >
     <div class="bg-white border border-gray-200 rounded-md shadow-lg w-64">
       <UScrollArea

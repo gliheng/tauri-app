@@ -6,7 +6,8 @@ import { useSidebarStore } from '@/stores/sidebar';
 import { useTabsStore } from '@/stores/tabs';
 import { AnimatePresence, motion } from 'motion-v';
 import { nanoid } from "nanoid";
-import { ACPService } from "@/services/acp";
+import * as acp from "@agentclientprotocol/sdk";
+import { createTauriAcpConnection } from "@/services/acp";
 import AgentSessionList from "@/components/AgentSessionList.vue";
 import { confirm, message } from '@tauri-apps/plugin-dialog';
 import { openPath } from '@tauri-apps/plugin-opener';
@@ -91,23 +92,41 @@ async function openDirectory() {
 
 const enableLoadSession = ref(false);
 onMounted(async () => {
-  const acpService = new ACPService({ 
-    program: agent.program!,
-    directory: agent.directory!,
-    mcpServers: [],
-    onConnect() {
-      console.log('onConnect');
-    },
-    onDisconnect() {
-      console.log('onDisconnect');
-    },
-    async onInvoke(method, params) {
-      console.log("Method", method, "invoked with params", params);
-    },
-  });
-  await acpService.initialize();
-  enableLoadSession.value = acpService.hasCapability("loadSession");
-  await acpService.dispose();
+  try {
+    const { connection, dispose } = await createTauriAcpConnection(
+      {
+        program: agent.program! + "::capability-check",
+      },
+      () => ({
+        sessionUpdate: async () => {},
+        requestPermission: async () => ({ outcome: { outcome: "cancelled" } }),
+        readTextFile: async () => ({ content: "" }),
+        writeTextFile: async () => ({}),
+        createTerminal: async () => ({ terminalId: "" }),
+        extMethod: async () => ({}),
+        extNotification: async () => {},
+      }),
+    );
+    
+    const result = await connection.initialize({
+      protocolVersion: acp.PROTOCOL_VERSION,
+      clientCapabilities: {
+        fs: { readTextFile: true, writeTextFile: true },
+        terminal: true,
+      },
+      clientInfo: {
+        name: "raven",
+        title: "Raven",
+        version: "1.0.0",
+      },
+    });
+    
+    enableLoadSession.value = result.agentCapabilities?.loadSession ?? false;
+    dispose();
+  } catch (error) {
+    console.error("Failed to check capabilities:", error);
+    enableLoadSession.value = false;
+  }
 });
 </script>
 

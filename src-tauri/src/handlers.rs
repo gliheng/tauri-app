@@ -135,7 +135,7 @@ pub async fn acp_initialize(
     let app_config_dir = app.path().app_data_dir().unwrap();
 
     // Run bun install -g for the package before starting the agent
-    println!("Installing {} globally with bun...", package_name);
+    println!("Installing package: {}", package_name);
 
     let install_command = app.shell().sidecar("bun").map_err(|e| {
         serde_json::json!({
