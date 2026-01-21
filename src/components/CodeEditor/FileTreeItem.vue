@@ -5,13 +5,15 @@ import { confirm } from '@tauri-apps/plugin-dialog';
 interface Props {
   icon?: string;
   label?: string;
+  defaultEditing?: boolean;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  rename: [newName: string];
+  edit: [newName: string];
   delete: [];
+  cancelEdit: [];
 }>();
 
 const isHovered = ref(false);
@@ -31,7 +33,7 @@ async function handleDelete() {
   }
 }
 
-function startRename() {
+function startEdit() {
   isEditing.value = true;
   editingValue.value = props.label || '';
   isOpen.value = false;
@@ -41,35 +43,38 @@ function startRename() {
   });
 }
 
-function cancelRename() {
+function cancelEdit() {
+  emit('cancelEdit');
   isEditing.value = false;
   editingValue.value = '';
 }
 
-function commitRename() {
-  if (editingValue.value && editingValue.value !== props.label) {
-    emit('rename', editingValue.value);
+function commitEdit() {
+  if (editingValue.value.trim() && editingValue.value !== props.label) {
+    emit('edit', editingValue.value);
+  } else if (!editingValue.value.trim()) {
+    emit('cancelEdit');
   }
   isEditing.value = false;
 }
 
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter') {
-    commitRename();
+    commitEdit();
   } else if (event.key === 'Escape') {
-    cancelRename();
+    cancelEdit();
   }
 }
 
 function onBlur() {
-  commitRename();
+  commitEdit();
 }
 
 const menuItems = [
   {
     label: 'Rename',
     icon: 'i-lucide-pencil',
-    onSelect: startRename
+    onSelect: startEdit
   },
   {
     label: 'Delete',
@@ -97,6 +102,19 @@ watch(isOpen, (open) => {
     isHovered.value = false;
   }
 });
+
+watch(() => props.defaultEditing, (editing) => {
+  if (editing) {
+    isEditing.value = true;
+    editingValue.value = props.label || '';
+    nextTick(() => {
+      inputRef.value?.inputRef.focus();
+      if (props.label) {
+        inputRef.value?.inputRef.select();
+      }
+    });
+  }
+}, { immediate: true });
 </script>
 
 <template>

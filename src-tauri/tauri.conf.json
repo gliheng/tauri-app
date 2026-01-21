@@ -25,7 +25,8 @@
           "x": 10,
           "y": 20
         },
-        "titleBarStyle": "Overlay"
+        "titleBarStyle": "Overlay",
+        "backgroundThrottling": "disabled"
       }
     ],
     "macOSPrivateApi": true,

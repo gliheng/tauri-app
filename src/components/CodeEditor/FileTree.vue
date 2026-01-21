@@ -8,6 +8,7 @@ import FileTreeItem from './FileTreeItem.vue';
 
 interface FileTreeItem extends TreeItem {
   file: FileEntry;
+  isCreating?: boolean;
 }
 
 const props = defineProps<{
@@ -20,8 +21,10 @@ const emit = defineEmits<{
   select: [file: FileEntry];
 }>();
 
+const selected = ref<FileTreeItem | undefined>();
 const expanded = ref<string[]>([]);
 const loadingPaths = ref<Set<string>>(new Set());
+const creatingEntry = ref<{ type: FileEntryType; parentPath: string } | null>(null);
 
 function getIcon(name: string, isFolder: boolean, isLoading: boolean = false): string {
   if (isLoading) return 'i-lucide-loader-circle';
@@ -42,7 +45,7 @@ function getIcon(name: string, isFolder: boolean, isLoading: boolean = false): s
 }
 
 function toTreeItems(entries: FileEntry[], parentPath = ''): FileTreeItem[] {
-  return entries.map((entry) => {
+  const items = entries.map((entry) => {
     const path = parentPath ? `${parentPath}/${entry.name}` : entry.name;
     const isFolder = entry.type === FileEntryType.Folder;
     const isLoading = loadingPaths.value.has(path);
@@ -60,6 +63,39 @@ function toTreeItems(entries: FileEntry[], parentPath = ''): FileTreeItem[] {
     }
     return item;
   });
+
+  // Add temporary creating entry if applicable
+  if (creatingEntry.value && creatingEntry.value.parentPath === parentPath) {
+    const tempEntry: FileEntry = {
+      name: '',
+      type: creatingEntry.value.type,
+      path: parentPath ? `${parentPath}/__creating__` : '__creating__',
+    };
+    const tempItem: FileTreeItem = {
+      label: '',
+      icon: getIcon('', creatingEntry.value.type === FileEntryType.Folder),
+      file: tempEntry,
+      value: tempEntry.path,
+      isCreating: true,
+    };
+    
+    if (creatingEntry.value.type === FileEntryType.Folder) {
+      // Folders go at the top
+      items.unshift(tempItem);
+    } else {
+      // Files go after all folders
+      const firstFileIndex = items.findIndex(item => item.file.type === FileEntryType.File);
+      if (firstFileIndex === -1) {
+        // No files exist, add at the end
+        items.push(tempItem);
+      } else {
+        // Insert before the first file
+        items.splice(firstFileIndex, 0, tempItem);
+      }
+    }
+  }
+
+  return items;
 }
 
 function findFileByPath(files: FileEntry[], segments: string[]): FileEntry | null {
@@ -101,17 +137,109 @@ async function onToggle(e: Event, item: any) {
   }
 }
 
-const selected = ref<FileTreeItem | undefined>();
-
 function onAddFile() {
-  // TODO: Add file
+  const parentPath = getSelectedFolderPath();
+  creatingEntry.value = { type: FileEntryType.File, parentPath };
+  // Ensure parent folder is expanded
+  if (parentPath && !expanded.value.includes(parentPath)) {
+    expanded.value.push(parentPath);
+  }
 }
 
 function onAddFolder() {
-  // TODO: Add folder
+  const parentPath = getSelectedFolderPath();
+  creatingEntry.value = { type: FileEntryType.Folder, parentPath };
+  // Ensure parent folder is expanded
+  if (parentPath && !expanded.value.includes(parentPath)) {
+    expanded.value.push(parentPath);
+  }
 }
 
-async function onRenameItem(item: any, newName: string) {
+function getSelectedFolderPath(): string {
+  if (!selected.value) return '';
+  
+  // If selected item is a folder, use it as parent
+  if (selected.value.file.type === FileEntryType.Folder) {
+    return selected.value.value!;
+  }
+  
+  // If selected item is a file, use its parent folder
+  const path = selected.value.value!;
+  const segments = path.split('/');
+  segments.pop(); // Remove file name
+  return segments.join('/');
+}
+
+async function onCreateEntry(name: string) {
+  if (!creatingEntry.value || !name.trim()) {
+    creatingEntry.value = null;
+    return;
+  }
+
+  const { type, parentPath } = creatingEntry.value;
+  const relativePath = parentPath ? `${parentPath}/${name}` : name;
+  const fullPath = `${props.cwd}/${relativePath}`;
+
+  try {
+    if (type === FileEntryType.File) {
+      await invoke('create_file', { path: fullPath });
+    } else {
+      await invoke('create_directory', { path: fullPath });
+    }
+
+    // Add to tree
+    const newEntry: FileEntry = {
+      name,
+      type,
+      path: fullPath,
+      children: type === FileEntryType.Folder ? [] : undefined,
+    };
+
+    addFileToTree(model.value, parentPath, newEntry);
+    creatingEntry.value = null;
+  } catch (error) {
+    console.error('Failed to create entry:', error);
+    creatingEntry.value = null;
+  }
+}
+
+function onCancelCreate() {
+  creatingEntry.value = null;
+}
+
+function addFileToTree(entries: FileEntry[], parentPath: string, newEntry: FileEntry): boolean {
+  if (!parentPath) {
+    // Add to root
+    entries.push(newEntry);
+    entries.sort((a, b) => {
+      // Folders first, then alphabetically
+      if (a.type !== b.type) {
+        return a.type === FileEntryType.Folder ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+    return true;
+  }
+
+  const segments = parentPath.split('/');
+  let parent = entries;
+  for (const segment of segments) {
+    const found = parent.find(e => e.name === segment);
+    if (!found || !found.children) return false;
+    parent = found.children;
+  }
+
+  parent.push(newEntry);
+  parent.sort((a, b) => {
+    if (a.type !== b.type) {
+      return a.type === FileEntryType.Folder ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name);
+  });
+  return true;
+}
+
+async function onRenameItem(item: FileTreeItem, newName: string) {
   const oldPath = item.value!;
   const segments = oldPath.split('/');
   segments.pop();
@@ -133,7 +261,7 @@ async function onRenameItem(item: any, newName: string) {
   }
 }
 
-async function onDeleteItem(item: any) {
+async function onDeleteItem(item: FileTreeItem) {
   const path = item.value;
 
   try {
@@ -217,10 +345,10 @@ function fileExistsInTree(entries: FileEntry[], path: string): boolean {
       <h1 class="text-lg font-semibold truncate select-none" data-tauri-drag-region>Workspace Files</h1>
       <div class="flex-1"></div>
       <UTooltip text="Add file">
-        <UButton size="sm" icon="i-lucide-file-plus" @click="onAddFile" />
+        <UButton size="sm" icon="i-lucide-file-plus" @click="onAddFile" @mousedown.prevent />
       </UTooltip>
       <UTooltip text="Add folder">
-        <UButton size="sm" icon="i-lucide-folder-plus" @click="onAddFolder" />
+        <UButton size="sm" icon="i-lucide-folder-plus" @click="onAddFolder" @mousedown.prevent />
       </UTooltip>
     </header>
     <div class="flex-1 min-h-0 overflow-auto">
@@ -234,7 +362,14 @@ function fileExistsInTree(entries: FileEntry[], path: string): boolean {
         virtualize
       >
         <template #item="{ item }">
-          <FileTreeItem :icon="item.icon" :label="item.label" @rename="(newName: string) => onRenameItem(item, newName)" @delete="() => onDeleteItem(item)" />
+          <FileTreeItem 
+            :icon="item.icon" 
+            :label="item.label" 
+            :default-editing="item.isCreating"
+            @edit="(newName: string) => item.isCreating ? onCreateEntry(newName) : onRenameItem(item, newName)" 
+            @cancel-edit="item.isCreating ? onCancelCreate() : undefined"
+            @delete="() => onDeleteItem(item)" 
+          />
         </template>
       </UTree>
     </div>
