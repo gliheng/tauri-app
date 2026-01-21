@@ -111,42 +111,25 @@ function onAddFolder() {
   // TODO: Add folder
 }
 
-function onRenameStart(item: any) {
-  item.slot = 'editing'
-  item.editingValue = item.file.name;
-}
+async function onRenameItem(item: any, newName: string) {
+  const oldPath = item.value!;
+  const segments = oldPath.split('/');
+  segments.pop();
+  segments.push(newName);
+  const newPath = segments.join('/');
 
-async function onRenameEnd(item: any) {
-  if (item.editingValue && item.editingValue !== item.file.name) {
-    const oldPath = item.value!;
-    const segments = oldPath.split('/');
-    segments.pop();
-    segments.push(item.editingValue);
-    const newPath = segments.join('/');
-
-    // Check if target path already exists in the tree
-    if (!fileExistsInTree(model.value, newPath)) {
-      try {
-        await invoke('rename_file', {
-          oldPath: `${props.cwd}/${oldPath}`,
-          newPath: `${props.cwd}/${newPath}`
-        });
-        // Only update the tree after successful rename
-        renameFileInTree(model.value, oldPath, newPath);
-      } catch (error) {
-        console.error('Failed to rename file:', error);
-      }
+  // Check if target path already exists in the tree
+  if (!fileExistsInTree(model.value, newPath)) {
+    try {
+      await invoke('rename_file', {
+        oldPath: `${props.cwd}/${oldPath}`,
+        newPath: `${props.cwd}/${newPath}`
+      });
+      // Only update the tree after successful rename
+      renameFileInTree(model.value, oldPath, newPath);
+    } catch (error) {
+      console.error('Failed to rename file:', error);
     }
-  }
-  delete (item as any).slot;
-}
-
-async function onRenameKeydown(event: KeyboardEvent, item: any) {
-  const { key } = event;
-  if (key === 'Enter') {
-    onRenameEnd(item);
-  } else if (key === 'Escape') {
-    delete (item as any).slot;
   }
 }
 
@@ -251,18 +234,7 @@ function fileExistsInTree(entries: FileEntry[], path: string): boolean {
         virtualize
       >
         <template #item="{ item }">
-          <FileTreeItem :icon="item.icon" :label="item.label" @rename="() => onRenameStart(item)" @delete="() => onDeleteItem(item)" />
-        </template>
-        <template #editing="{ item }">
-          <UInput
-            class="w-full -my-1"
-            size="xs"
-            v-model="(item as FileTreeItem).editingValue"
-            autofocus
-            @blur="() => onRenameEnd(item)"
-            @keydown.stop="(evt: KeyboardEvent) => onRenameKeydown(evt, item)"
-            @keyup.stop
-          />
+          <FileTreeItem :icon="item.icon" :label="item.label" @rename="(newName: string) => onRenameItem(item, newName)" @delete="() => onDeleteItem(item)" />
         </template>
       </UTree>
     </div>
