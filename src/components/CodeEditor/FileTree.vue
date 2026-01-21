@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
 import { FileEntryType, type FileEntry } from './types';
 import { TreeItem } from '@nuxt/ui';
 import { EDITOR_ACTIONS } from '@/constants';
+import FileTreeItem from './FileTreeItem.vue';
 
 interface FileTreeItem extends TreeItem {
   file: FileEntry;
 }
+
+const props = defineProps<{
+  cwd: string;
+}>();
 
 const model = defineModel<FileEntry[]>({ required: true });
 
@@ -98,9 +104,127 @@ async function onToggle(e: Event, item: any) {
 const selected = ref<FileTreeItem | undefined>();
 
 function onAddFile() {
+  // TODO: Add file
 }
 
 function onAddFolder() {
+  // TODO: Add folder
+}
+
+function onRenameStart(item: any) {
+  item.slot = 'editing'
+  item.editingValue = item.file.name;
+}
+
+async function onRenameEnd(item: any) {
+  if (item.editingValue && item.editingValue !== item.file.name) {
+    const oldPath = item.value!;
+    const segments = oldPath.split('/');
+    segments.pop();
+    segments.push(item.editingValue);
+    const newPath = segments.join('/');
+
+    // Check if target path already exists in the tree
+    if (!fileExistsInTree(model.value, newPath)) {
+      try {
+        await invoke('rename_file', {
+          oldPath: `${props.cwd}/${oldPath}`,
+          newPath: `${props.cwd}/${newPath}`
+        });
+        // Only update the tree after successful rename
+        renameFileInTree(model.value, oldPath, newPath);
+      } catch (error) {
+        console.error('Failed to rename file:', error);
+      }
+    }
+  }
+  delete (item as any).slot;
+}
+
+async function onRenameKeydown(event: KeyboardEvent, item: any) {
+  const { key } = event;
+  if (key === 'Enter') {
+    onRenameEnd(item);
+  } else if (key === 'Escape') {
+    delete (item as any).slot;
+  }
+}
+
+async function onDeleteItem(item: any) {
+  const path = item.value;
+
+  try {
+    await invoke('delete_file', {
+      path: `${props.cwd}/${path}`
+    });
+    deleteFileFromTree(model.value, path);
+  } catch (error) {
+    console.error('Failed to delete file:', error);
+  }
+}
+
+function updatePathsRecursively(entry: FileEntry, oldPathPrefix: string, newPathPrefix: string) {
+  if (entry.path.startsWith(oldPathPrefix)) {
+    entry.path = newPathPrefix + entry.path.slice(oldPathPrefix.length);
+  }
+  if (entry.children) {
+    for (const child of entry.children) {
+      updatePathsRecursively(child, oldPathPrefix, newPathPrefix);
+    }
+  }
+}
+
+function renameFileInTree(entries: FileEntry[], oldPath: string, newPath: string): boolean {
+  const oldSegments = oldPath.split('/');
+  const newSegments = newPath.split('/');
+  const oldName = oldSegments.pop()!;
+  const newName = newSegments.pop()!;
+  const parentSegments = oldSegments;
+
+  // Find parent directory
+  let parent = entries;
+  for (const segment of parentSegments) {
+    const found = parent.find(e => e.name === segment);
+    if (!found || !found.children) return false;
+    parent = found.children;
+  }
+
+  // Find and rename the file/folder
+  const file = parent.find(e => e.name === oldName);
+  if (file) {
+    const oldFullPath = file.path;
+    const newFullPath = file.path.slice(0, -oldName.length) + newName;
+    file.name = newName;
+    updatePathsRecursively(file, oldFullPath, newFullPath);
+    return true;
+  }
+  return false;
+}
+
+function deleteFileFromTree(entries: FileEntry[], path: string): boolean {
+  const segments = path.split('/');
+  const name = segments.pop()!;
+
+  // Find parent directory
+  let parent = entries;
+  for (const segment of segments) {
+    const found = parent.find(e => e.name === segment);
+    if (!found || !found.children) return false;
+    parent = found.children;
+  }
+
+  // Find and remove the file
+  const idx = parent.findIndex(e => e.name === name);
+  if (idx !== -1) {
+    parent.splice(idx, 1);
+    return true;
+  }
+  return false;
+}
+
+function fileExistsInTree(entries: FileEntry[], path: string): boolean {
+  const segments = path.split('/');
+  return Boolean(findFileByPath(entries, segments));
 }
 </script>
 
@@ -109,8 +233,12 @@ function onAddFolder() {
     <header class="flex items-center gap-1 p-1 h-10" data-tauri-drag-region>
       <h1 class="text-lg font-semibold truncate select-none" data-tauri-drag-region>Workspace Files</h1>
       <div class="flex-1"></div>
-      <UButton size="sm" icon="i-lucide-file-plus" @click="onAddFile" />
-      <UButton size="sm" icon="i-lucide-folder-plus" @click="onAddFolder" />
+      <UTooltip text="Add file">
+        <UButton size="sm" icon="i-lucide-file-plus" @click="onAddFile" />
+      </UTooltip>
+      <UTooltip text="Add folder">
+        <UButton size="sm" icon="i-lucide-folder-plus" @click="onAddFolder" />
+      </UTooltip>
     </header>
     <div class="flex-1 min-h-0 overflow-auto">
       <UTree
@@ -122,8 +250,19 @@ function onAddFolder() {
         @toggle="onToggle"
         virtualize
       >
+        <template #item="{ item }">
+          <FileTreeItem :icon="item.icon" :label="item.label" @rename="() => onRenameStart(item)" @delete="() => onDeleteItem(item)" />
+        </template>
         <template #editing="{ item }">
-          <UInput v-model="(item as FileTreeItem).name" />
+          <UInput
+            class="w-full -my-1"
+            size="xs"
+            v-model="(item as FileTreeItem).editingValue"
+            autofocus
+            @blur="() => onRenameEnd(item)"
+            @keydown.stop="(evt: KeyboardEvent) => onRenameKeydown(evt, item)"
+            @keyup.stop
+          />
         </template>
       </UTree>
     </div>

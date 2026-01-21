@@ -193,14 +193,14 @@ function openTerminal() {
 <template>
   <SplitterGroup class="flex-1" direction="horizontal">
     <SplitterPanel :default-size="40">
-      <FileTree v-model="fileSystem" @select="onSelect" />
+      <FileTree v-model="fileSystem" :cwd="cwd" @select="onSelect" />
     </SplitterPanel>
     <SplitterResizeHandle class="w-0.5 splitter-handle" />
     <SplitterPanel>
       <div class="flex flex-col h-full">
         <SplitterGroup direction="vertical" class="flex-1">
           <SplitterPanel :default-size="60">
-            <header class="p-1 border-b border-gray-200 h-10 flex items-center">
+            <header class="p-1 border-b border-zinc-200 dark:border-slate-800 h-10 flex items-center">
               <div class="flex items-center gap-2">
                 <div v-if="externallyModified" class="flex items-center gap-1 text-amber-600" title="File modified externally">
                   <UIcon name="i-lucide-alert-triangle" class="w-4 h-4" />
@@ -210,7 +210,9 @@ function openTerminal() {
                 <h2 v-else class="text-sm font-medium truncate select-none">{{ file?.name }}</h2>
               </div>
               <div class="flex-1"></div>
-              <UButton size="sm" icon="i-lucide-square-terminal" @click="openTerminal" />
+              <UTooltip text="Open terminal">
+                <UButton size="sm" icon="i-lucide-square-terminal" @click="openTerminal" />
+              </UTooltip>
             </header>
             <KeepAlive :max="10">
               <Editor v-if="file" :key="file.path" class="h-full" v-model="file.content!" />

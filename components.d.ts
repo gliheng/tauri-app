@@ -12,7 +12,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AgentChat: typeof import('./src/components/AgentChat/AgentChat.vue')['default']
-    AgentConfig: typeof import('./src/components/AgentChat/AgentConfig.vue')['default']
     AgentModal: typeof import('./src/components/AgentChat/AgentModal.vue')['default']
     AgentSessionList: typeof import('./src/components/AgentSessionList.vue')['default']
     ChartCanvas: typeof import('./src/components/ChartEditor/ChartCanvas.vue')['default']
@@ -27,6 +26,7 @@ declare module 'vue' {
     EditorLinkPopover: typeof import('./src/components/NoteEditor/EditorLinkPopover.vue')['default']
     FileImage: typeof import('./src/components/FileImage.vue')['default']
     FileTree: typeof import('./src/components/CodeEditor/FileTree.vue')['default']
+    FileTreeItem: typeof import('./src/components/CodeEditor/FileTreeItem.vue')['default']
     IconEdit: typeof import('./src/components/IconEdit.vue')['default']
     LoadingText: typeof import('./src/components/LoadingText.vue')['default']
     MarkdownText: typeof import('./src/components/MarkdownText.vue')['default']

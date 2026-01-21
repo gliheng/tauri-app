@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { nanoid } from 'nanoid';
 import { FitAddon } from '@xterm/addon-fit';
-import { useResizeObserver } from '@vueuse/core';
+import { useColorMode, useResizeObserver } from '@vueuse/core';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import '@xterm/xterm/css/xterm.css';
@@ -14,11 +14,61 @@ const props = defineProps({
     required: true,
   },
 });
+
+const mode = useColorMode();
 const terminalRef = ref<HTMLElement>();
 let terminal: XTerm | null = null;
 let fitAddon: FitAddon | null = null;
 let terminalId = nanoid();
 let unlisten: (() => void) | null = null;
+
+const terminalTheme = computed(() => {
+  const isDark = mode.value === 'dark';
+  
+  return isDark ? {
+    background: '#0f172b',
+    foreground: '#d4d4d4',
+    viewport: 'transparent',
+    cursor: '#d4d4d4',
+    black: '#888',
+    red: '#cd3131',
+    green: '#0dbc79',
+    yellow: '#e5e510',
+    blue: '#2472c8',
+    magenta: '#bc3fbc',
+    cyan: '#11a8cd',
+    white: '#e5e5e5',
+    brightBlack: '#666666',
+    brightRed: '#f14c4c',
+    brightGreen: '#23d18b',
+    brightYellow: '#f5f543',
+    brightBlue: '#3b8eea',
+    brightMagenta: '#d670d6',
+    brightCyan: '#29b8db',
+    brightWhite: '#e5e5e5',
+  } : {
+    background: '#ffffff',
+    foreground: '#383a42',
+    viewport: 'transparent',
+    cursor: '#383a42',
+    black: '#383a42',
+    red: '#e45649',
+    green: '#50a14f',
+    yellow: '#c18401',
+    blue: '#0184bc',
+    magenta: '#a626a4',
+    cyan: '#0997b3',
+    white: '#fafafa',
+    brightBlack: '#4f525e',
+    brightRed: '#e06c75',
+    brightGreen: '#98c379',
+    brightYellow: '#e5c07b',
+    brightBlue: '#61afef',
+    brightMagenta: '#c678dd',
+    brightCyan: '#56b6c2',
+    brightWhite: '#ffffff',
+  };
+});
 
 const sendInput = async (input: string) => {
   try {
@@ -38,27 +88,7 @@ onMounted(async () => {
     cursorBlink: true,
     fontSize: 14,
     fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-    theme: {
-      background: '#1e1e1e',
-      foreground: '#d4d4d4',
-      cursor: '#d4d4d4',
-      black: '#000000',
-      red: '#cd3131',
-      green: '#0dbc79',
-      yellow: '#e5e510',
-      blue: '#2472c8',
-      magenta: '#bc3fbc',
-      cyan: '#11a8cd',
-      white: '#e5e5e5',
-      brightBlack: '#666666',
-      brightRed: '#f14c4c',
-      brightGreen: '#23d18b',
-      brightYellow: '#f5f543',
-      brightBlue: '#3b8eea',
-      brightMagenta: '#d670d6',
-      brightCyan: '#29b8db',
-      brightWhite: '#e5e5e5',
-    },
+    theme: terminalTheme.value,
   });
 
   fitAddon = new FitAddon();
@@ -93,6 +123,12 @@ onMounted(async () => {
     if (!terminal) return;
     sendInput(data);
   });
+});
+
+watch(() => mode.value, () => {
+  if (terminal) {
+    terminal.options.theme = terminalTheme.value;
+  }
 });
 
 onUnmounted(async () => {
@@ -135,7 +171,14 @@ useResizeObserver(terminalRef, () => {
   width: 100%;
   height: 100%;
   padding: 8px;
-  background-color: #1e1e1e;
   overflow: hidden;
+}
+
+.dark .terminal-container {
+  background-color: #0f172b;
+}
+
+.light .terminal-container {
+  background-color: #ffffff;
 }
 </style>
