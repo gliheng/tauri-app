@@ -13,14 +13,19 @@
     "windows": [
       {
         "title": "Raven",
+        "hiddenTitle": true,
         "width": 1200,
         "height": 800,
         "minWidth": 800,
         "minHeight": 600,
-        "decorations": false,
-        "transparent": true,
+        "decorations": true,
         "shadow": true,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "trafficLightPosition": {
+          "x": 10,
+          "y": 20
+        },
+        "titleBarStyle": "Overlay"
       }
     ],
     "macOSPrivateApi": true,

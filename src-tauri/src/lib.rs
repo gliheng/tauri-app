@@ -29,29 +29,8 @@ pub fn run() {
             #[cfg(debug_assertions)] // only include this code on debug builds
             {
                 use tauri::Manager;
-
                 let window = app.get_webview_window("main").unwrap();
                 window.open_devtools();
-            }
-
-            // Configure window for rounded corners on macOS
-            #[cfg(target_os = "macos")]
-            {
-                use tauri::Manager;
-                let window = app.get_webview_window("main").unwrap();
-
-                use objc2::msg_send;
-                use objc2::runtime::AnyObject;
-
-                let ns_window: *mut AnyObject = window.ns_window().unwrap() as *mut AnyObject;
-                unsafe {
-                    // Make window round-cornered
-                    let content_view: *mut AnyObject = msg_send![ns_window, contentView];
-                    let _: () = msg_send![content_view, setWantsLayer: true];
-                    let layer: *mut AnyObject = msg_send![content_view, layer];
-                    let _: () = msg_send![layer, setCornerRadius: 10.0_f64];
-                    let _: () = msg_send![layer, setMasksToBounds: true];
-                }
             }
             Ok(())
         })

@@ -1,13 +1,13 @@
 
 # Features
 - [ ] Fix qwen acp edit tool error.
-- [ ] Agent change add input queue.
+- [ ] Agent chat add input queue.
 - [ ] Agent change UI improvement, show TODO as a fixed UI.
-- [ ] plan and tool call supporting modification.
+- [ ] Plan and tool call supporting modification.
 - [x] Bundle bun.
 - [ ] My Acp agent with codeact and skills.
 - [x] Chart using infinite canvas (vueflow).
-- [ ] Change acp implementation with [SDK](https://github.com/agentclientprotocol/typescript-sdk/).
+- [x] Change acp implementation with [SDK](https://github.com/agentclientprotocol/typescript-sdk/).
 - [ ] Create image using image model.
 - [ ] Move settings to a sql table.
 
