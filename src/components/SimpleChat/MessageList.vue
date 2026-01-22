@@ -25,18 +25,38 @@ const displayMessages = computed(() => {
   return list;
 });
 
-const listRef = ref<HTMLElement | null>(null);
+const listRef = ref<InstanceType<typeof Scrollbar> | null>(null);
 const editingId = ref<string>();
 
 const actions = inject(CHAT_ACTIONS) as any;
 
-// Scroll to bottom when new message is added
+// Track if auto-scroll should be enabled (user is near bottom)
+const isAutoScrollEnabled = ref(true);
+// Threshold in pixels to consider "near bottom"
+const BOTTOM_THRESHOLD = 100;
+
+const checkIsNearBottom = (): boolean => {
+  const scroller = (listRef.value as any)?.scroller;
+  if (!scroller) return true;
+
+  const { maxScrollY, scrollTop } = scroller;
+  // Consider near bottom if within threshold pixels of bottom
+  return maxScrollY - scrollTop <= BOTTOM_THRESHOLD;
+};
+
+const handleScroll = () => {
+  isAutoScrollEnabled.value = checkIsNearBottom();
+};
+
+// Scroll to bottom when new message is added (only if auto-scroll is enabled)
 watch(
   () => props.messages,
   () => {
-    const scroller = (listRef.value as any).scroller;
-    if (scroller) {
-      scroller.scrollToBottom();
+    if (isAutoScrollEnabled.value) {
+      const scroller = (listRef.value as any).scroller;
+      if (scroller) {
+        scroller.scrollToBottom();
+      }
     }
   },
 );
@@ -44,7 +64,7 @@ watch(
 
 <template>
   <motion.div class="flex-1 flex min-h-0">
-    <Scrollbar class="w-full" ref="listRef">
+    <Scrollbar class="w-full" ref="listRef" @scroll="handleScroll">
       <div
         class="px-8 flex-1 flex flex-col gap-2 min-h-0 mx-auto my-4 max"
         :style="{

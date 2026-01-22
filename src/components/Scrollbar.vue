@@ -45,12 +45,12 @@ export default defineComponent({
 });
 
 class Scrollbar {
-  scrollEl?: HTMLElement;
   scroll: number = 0;
   maxScroll: number = 0;
-  scrollStart: number = 0;
-  mouseStart: number = 0;
-  hidden = true;
+  private scrollEl?: HTMLElement;
+  private scrollStart: number = 0;
+  private mouseStart: number = 0;
+  private hidden = true;
 
   constructor(
     public scrollbarEl: HTMLElement,
@@ -234,6 +234,14 @@ class Scroller {
     this.scrollbarX.updateScrollPos(sl, cw, sw);
     this.scrollbarY.updateScrollPos(st, ch, sh);
     this.updateScrollPadding();
+  }
+
+  get scrollTop() {
+    return this.el.scrollTop;
+  }
+
+  get scrollLeft() {
+    return this.el.scrollLeft;
   }
 
   get maxScrollX() {

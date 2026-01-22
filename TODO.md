@@ -22,3 +22,4 @@
 - [ ] Image download is triggered twice in a row when clicking on the image toolbar.
 - [ ] When metion is open, pressing enter does not trigger submit.
 - [ ] Support scrolling mention menu using keyboard.
+- [x] Stop auto scroll when user is scrolling.
