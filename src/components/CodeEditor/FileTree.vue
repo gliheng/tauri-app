@@ -5,6 +5,7 @@ import { FileEntryType, type FileEntry } from './types';
 import { TreeItem } from '@nuxt/ui';
 import { EDITOR_ACTIONS } from '@/constants';
 import FileTreeItem from './FileTreeItem.vue';
+import { getFileIcon } from '@/utils/file';
 
 interface FileTreeItem extends TreeItem {
   file: FileEntry;
@@ -29,19 +30,7 @@ const creatingEntry = ref<{ type: FileEntryType; parentPath: string } | null>(nu
 function getIcon(name: string, isFolder: boolean, isLoading: boolean = false): string {
   if (isLoading) return 'i-lucide-loader-circle';
   if (isFolder) return 'i-vscode-icons:default-folder';
-  const ext = name.split('.').pop()?.toLowerCase();
-  switch (ext) {
-    case 'vue': return 'i-vscode-icons:file-type-vue';
-    case 'ts': return 'i-vscode-icons:file-type-typescript';
-    case 'tsx': return 'i-vscode-icons:file-type-typescript';
-    case 'js': return 'i-vscode-icons:file-type-js';
-    case 'json': return 'i-vscode-icons:file-type-json';
-    case 'md': return 'i-vscode-icons:file-type-markdown';
-    case 'css': return 'i-vscode-icons:file-type-css';
-    case 'scss': return 'i-vscode-icons:file-type-scss';
-    case 'html': return 'i-vscode-icons:file-type-html';
-    default: return 'i-vscode-icons:default-file';
-  }
+  return getFileIcon(name);
 }
 
 function toTreeItems(entries: FileEntry[], parentPath = ''): FileTreeItem[] {

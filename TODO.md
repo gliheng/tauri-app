@@ -8,11 +8,17 @@
 - [ ] My Acp agent with codeact and skills.
 - [x] Chart using infinite canvas (vueflow).
 - [x] Change acp implementation with [SDK](https://github.com/agentclientprotocol/typescript-sdk/).
+- [x] Append resource to the prompt.
+- [ ] MCP interaction.
 - [ ] Create image using image model.
 - [ ] Move settings to a sql table.
+- [ ] Quick agent chat on the agent task list page.
+- [ ] Optimize display of agent chat in the agent task list page, using a series of dots to show the progress.
 
 # Issues
 - [ ] Privde method to auth acp agents.
-- [x] Window controls on windows is a bit strange.
+- [ ] Window controls on windows is a bit strange.
 - [x] CommandPalette data loading is a bit laggy.
 - [ ] Image download is triggered twice in a row when clicking on the image toolbar.
+- [ ] When metion is open, pressing enter does not trigger submit.
+- [ ] Support scrolling mention menu using keyboard.

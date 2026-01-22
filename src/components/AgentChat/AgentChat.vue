@@ -17,6 +17,7 @@ import MentionItem from "./MentionItem.vue";
 import { type Editor } from "@tiptap/core";
 import { AvailableCommand } from "@agentclientprotocol/sdk";
 import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
+import mime from "mime";
 
 const toast = useToast();
 
@@ -159,30 +160,169 @@ const stop = async () => {
   }
 };
 
+/**
+ * Find all mention nodes in the editor JSON (recursive)
+ */
+function findMentions(json: any): string[] {
+  const mentions: string[] = [];
+
+  function traverse(node: any) {
+    if (!node) return;
+
+    // Check if this node is a mention
+    if (node.type === 'mention' && node.attrs?.id) {
+      mentions.push(node.attrs.id);
+    }
+
+    // Recursively traverse content array
+    if (Array.isArray(node?.content)) {
+      for (const child of node.content) {
+        traverse(child);
+      }
+    }
+  }
+
+  // Start traversal from root content
+  if (Array.isArray(json?.content)) {
+    for (const item of json.content) {
+      traverse(item);
+    }
+  }
+
+  return mentions;
+}
+
+/**
+ * Check if a MIME type represents a text file
+ */
+function isTextFile(mimeType: string): boolean {
+  // Include all text/ types
+  if (mimeType.startsWith('text/')) {
+    return true;
+  }
+
+  // Include specific application types that are text-based
+  const textApplicationTypes = [
+    'application/json',
+    'application/xml',
+    'application/x-yaml',
+    'application/yaml',
+    'application/javascript',
+    'application/x-javascript',
+    'application/typescript',
+    'application/x-typescript',
+    'application/x-sh',
+    'application/x-shellscript',
+    'application/x-python',
+    'application/x-ruby',
+    'application/x-perl',
+    'application/x-php',
+    'application/graphql',
+    'application/x-toml',
+    'application/toml',
+  ];
+
+  return textApplicationTypes.includes(mimeType);
+}
+
+/**
+ * Find and read files matching the mentioned paths
+ */
+async function findMentionedFiles(
+  mentionPaths: string[],
+  baseDirectory: string
+): Promise<Array<{ type: 'resource'; resource: { uri: string; mimeType: string; text: string; } }>> {
+  const resourceParts: Array<{ type: 'resource'; resource: { uri: string; mimeType: string; text: string; } }> = [];
+
+  for (const filePath of mentionPaths) {
+    const fullPath = `${baseDirectory}/${filePath}`;
+
+    try {
+      // Try to read the file - if it exists, this will succeed
+      const fileContent = await invoke<string>('read_file', { path: fullPath });
+
+      // Get MIME type based on file extension
+      const mimeType = getMimeType(filePath);
+
+      // Only append resource if it's a text file
+      if (!isTextFile(mimeType)) {
+        console.log(`Skipping non-text file: ${filePath} (${mimeType})`);
+        continue;
+      }
+
+      // Create resource part
+      resourceParts.push({
+        type: 'resource',
+        resource: {
+          uri: `file://${fullPath}`,
+          mimeType,
+          text: fileContent,
+        },
+      });
+    } catch {
+      // File doesn't exist or can't be read - skip it
+      console.log(`File not found or couldn't be read: ${filePath}`);
+    }
+  }
+
+  return resourceParts;
+}
+
+/**
+ * Build prompt parts from text and editor mentions
+ */
+async function buildPromptParts(
+  text: string,
+  editorJson: any,
+  baseDirectory: string
+): Promise<Array<
+  { type: 'text'; text: string } |
+  { type: 'resource'; resource: { uri: string; mimeType: string; text: string; } }
+>> {
+  const parts: Array<
+    { type: 'text'; text: string } |
+    { type: 'resource'; resource: { uri: string; mimeType: string; text: string; } }
+  > = [
+    {
+      type: 'text',
+      text,
+    },
+  ];
+
+  // Step 1: Find mentions in the editor JSON
+  const mentionPaths = findMentions(editorJson);
+  // Step 2: Find and read files matching those mentions
+  const resourceParts = await findMentionedFiles(mentionPaths, baseDirectory);
+  // Add resource parts to the parts array
+  parts.push(...resourceParts);
+  return parts;
+}
+
 const handleSubmit = async () => {
   if (!input.value.trim() || !isInitialized.value || !client) return;
-  
+
   try {
     const text = input.value.trim();
-    const part = {
-      type: 'text' as const,
-      text,
-    };
+    
+    // Get editor JSON to find mentions
+    const editor = (chatBoxRef.value as any)?.editor;
+    const json = editor?.getJSON();
+
+    // Build prompt parts with text and any file resources
+    const parts = await buildPromptParts(text, json, props.agent.directory);
 
     messages.value.push({
       id: String(messages.value.length),
       role: "user",
       content: text,
-      parts: [
-        part,
-      ],
+      parts,
     });
 
-    error.value = null;    
+    error.value = null;
     input.value = "";
     status.value = "submitted";
 
-    if (!props.chat && messages.value.length === 1) {  
+    if (!props.chat && messages.value.length === 1) {
       // Async update chat meta data
       (async () => {
         const { text: topic } = await generateTopic(messages.value[0].content);
@@ -208,10 +348,10 @@ const handleSubmit = async () => {
 
     const ret = await client.connection.prompt({
       sessionId: sessionId.value!,
-      prompt: [part],
+      prompt: parts,
     });
     console.log('sessionPrompt result', ret);
-    
+
     status.value = "ready";
   } catch (err) {
     console.error("Failed to send message:", err);
@@ -219,6 +359,11 @@ const handleSubmit = async () => {
     status.value = "error";
   }
 };
+
+// Helper function to get MIME type based on file extension
+function getMimeType(filePath: string): string {
+  return mime.getType(filePath) || 'text/plain';
+}
 
 function cancel() {
   client.connection.cancel({
@@ -437,16 +582,14 @@ const mentionExtension = Mention.configure({
       <p class="text-gray-500 text-sm">Initializing agent...</p>
     </section>
     <template v-else>
-      <div class="relative">
-        <header class="absolute top-2 right-2 z-10">
-          <UButton
-            icon="i-mdi-arrow-expand-horizontal"
-            color="neutral"
-            variant="subtle"
-            @click="expanded = !expanded"
-          />
-        </header>
-      </div>
+      <header class="absolute top-2 right-2 z-10">
+        <UButton
+          icon="i-mdi-arrow-expand-horizontal"
+          color="neutral"
+          variant="subtle"
+          @click="expanded = !expanded"
+        />
+      </header>
       <UAlert
         v-if="error"
         title="Error!"

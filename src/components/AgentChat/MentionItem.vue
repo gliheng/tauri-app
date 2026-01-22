@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PropType } from 'vue';
+import { getFileIcon } from '@/utils/file';
 
 interface MentionItem {
   id: string;
@@ -21,31 +22,9 @@ const props = defineProps({
 
 const getIcon = () => {
   if (props.item.is_dir) {
-    return 'i-lucide-folder';
+    return 'i-vscode-icons:default-folder';
   }
-  
-  const extension = props.item.label.split('.').pop()?.toLowerCase();
-  switch (extension) {
-    case 'js':
-    case 'jsx':
-    case 'ts':
-    case 'tsx':
-      return 'i-lucide-code';
-    case 'json':
-      return 'i-lucide-braces';
-    case 'md':
-      return 'i-lucide-file-text';
-    case 'png':
-    case 'jpg':
-    case 'jpeg':
-    case 'gif':
-    case 'svg':
-      return 'i-lucide-image';
-    case 'pdf':
-      return 'i-lucide-file-text';
-    default:
-      return 'i-lucide-file';
-  }
+  return getFileIcon(props.item.label);
 };
 </script>
 
@@ -60,8 +39,7 @@ const getIcon = () => {
   >
     <UIcon :name="getIcon()" class="flex-shrink-0 w-4 h-4 text-gray-500" />
     <div class="flex-1 min-w-0">
-      <div class="text-sm font-medium truncate">{{ item.label }}</div>
-      <div class="text-xs text-gray-500 truncate">{{ item.path }}</div>
+      <div class="text-sm font-medium truncate">{{ item.path }}</div>
     </div>
   </div>
 </template>

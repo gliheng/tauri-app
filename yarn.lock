@@ -4955,6 +4955,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mime@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "mime@npm:4.1.0"
+  bin:
+    mime: bin/cli.js
+  checksum: 10c0/3b8602e50dff1049aea8bb2d4c65afc55bf7f3eb5c17fd2bcb315b8c8ae225a7553297d424d3621757c24cdba99e930ecdc4108467009cdc7ed55614cd55031d
+  languageName: node
+  linkType: hard
+
 "mimic-fn@npm:^4.0.0":
   version: 4.0.0
   resolution: "mimic-fn@npm:4.0.0"
@@ -5759,6 +5768,7 @@ __metadata:
     lodash-es: "npm:^4.17.21"
     marked: "npm:^15.0.12"
     marked-highlight: "npm:^2.2.1"
+    mime: "npm:^4.1.0"
     mitt: "npm:^3.0.1"
     moment: "npm:^2.30.1"
     motion-v: "npm:^1.1.1"

@@ -1,5 +1,28 @@
 import { Attachment } from "ai";
 
+export function getFileIcon(name: string): string {
+  const ext = name.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'vue': return 'i-vscode-icons:file-type-vue';
+    case 'ts': return 'i-vscode-icons:file-type-typescript';
+    case 'tsx': return 'i-vscode-icons:file-type-typescript';
+    case 'jsx': return 'i-vscode-icons:file-type-react';
+    case 'js': return 'i-vscode-icons:file-type-js';
+    case 'json': return 'i-vscode-icons:file-type-json';
+    case 'md': return 'i-vscode-icons:file-type-markdown';
+    case 'css': return 'i-vscode-icons:file-type-css';
+    case 'scss': return 'i-vscode-icons:file-type-scss';
+    case 'html': return 'i-vscode-icons:file-type-html';
+    case 'png':
+    case 'jpg':
+    case 'jpeg':
+    case 'gif':
+    case 'svg': return 'i-vscode-icons:file-type-image';
+    case 'pdf': return 'i-vscode-icons:file-type-pdf';
+    default: return 'i-vscode-icons:default-file';
+  }
+}
+
 export function file2DataUrl(file: File): Promise<Attachment> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
