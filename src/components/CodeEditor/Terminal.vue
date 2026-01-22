@@ -21,6 +21,9 @@ let terminal: XTerm | null = null;
 let fitAddon: FitAddon | null = null;
 let terminalId = nanoid();
 let unlisten: (() => void) | null = null;
+const showResizeTip = ref(false);
+const resizeTipText = ref('');
+let resizeTipTimeout: number | null = null;
 
 const terminalTheme = computed(() => {
   const isDark = mode.value === 'dark';
@@ -144,6 +147,10 @@ onUnmounted(async () => {
     console.error('Failed to kill terminal session:', error);
   }
   
+  if (resizeTipTimeout !== null) {
+    clearTimeout(resizeTipTimeout);
+  }
+  
   fitAddon?.dispose();
   terminal?.dispose();
   fitAddon = null;
@@ -153,6 +160,14 @@ onUnmounted(async () => {
 useResizeObserver(terminalRef, () => {
   fitAddon?.fit();
   if (terminal) {
+    resizeTipText.value = `${terminal.cols} cols × ${terminal.rows} rows`;
+    showResizeTip.value = true;
+    if (resizeTipTimeout !== null) {
+      clearTimeout(resizeTipTimeout);
+    }
+    resizeTipTimeout = setTimeout(() => {
+      showResizeTip.value = false;
+    }, 2000);
     invoke('terminal_resize', {
       terminalId,
       cols: terminal.cols,
@@ -163,7 +178,9 @@ useResizeObserver(terminalRef, () => {
 </script>
 
 <template>
-  <div ref="terminalRef" class="terminal-container"></div>
+  <div ref="terminalRef" class="terminal-container">
+    <div v-if="showResizeTip" class="resize-tip">{{ resizeTipText }}</div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -172,6 +189,7 @@ useResizeObserver(terminalRef, () => {
   height: 100%;
   padding: 8px;
   overflow: hidden;
+  position: relative;
 }
 
 .dark .terminal-container {
@@ -180,5 +198,20 @@ useResizeObserver(terminalRef, () => {
 
 .light .terminal-container {
   background-color: #ffffff;
+}
+
+.resize-tip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 12px 20px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace;
+  pointer-events: none;
+  z-index: 10;
 }
 </style>
