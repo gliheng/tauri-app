@@ -9,13 +9,17 @@ const props = defineProps({
     default: () => [],
   },
   status: String,
+  width: Number,
 });
 </script>
 
 <template>
   <Scrollbar class="w-full" ref="listRef">
     <div
-      class="px-8 flex-1 flex flex-col gap-2 min-h-0 mx-auto my-4 max"
+      class="px-8 flex-1 flex flex-col gap-2 min-h-0 mx-auto my-4"
+      :style="{
+        maxWidth: width ? `${width}px` : '100%',
+      }"
     >
       <MessageBubble
         v-for="message in messages"

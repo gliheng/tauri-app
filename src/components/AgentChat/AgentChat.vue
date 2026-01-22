@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted, PropType, computed } from "vue";
+import { AnimatePresence } from "motion-v";
 import { Chat, updateChat, writeChat, type Agent } from "@/db-sqlite";
 import ChatBox from "@/components/ChatBox.vue";
 import Spinner from "@/components/Spinner.vue";
@@ -39,6 +40,7 @@ const input = ref("");
 const error = ref<string | null>(null);
 const sessionId = ref<string | null>(props.chat?.sessionId ?? null);
 const chatBoxRef = ref<InstanceType<typeof ChatBox> | null>(null);
+const expanded = ref(false);
 
 const { client, messages, status, currentModeId, availableModes, availableCommands } = useAcp({
   chatId: props.chatId,
@@ -57,6 +59,14 @@ const nonInteractive = computed(
 );
 const hasModes = computed(() => availableModes.value.length > 0);
 const hasCommands = computed(() => availableCommands.value.length > 0);
+
+const viewWidth = computed(() =>
+  expanded.value ? undefined : Math.min(screen.width / 3, 600),
+);
+
+const showMessageList = computed(() => {
+  return messages.value.length || status.value != "ready";
+});
 
 async function handleModeChange(modeId: string) {
   if (!client) return;
@@ -421,12 +431,22 @@ const mentionExtension = Mention.configure({
 </script>
 
 <template>
-  <div class="size-full p-6 flex flex-col gap-2 justify-between">
+  <div class="flex-1 flex flex-col min-h-0 justify-center relative">
     <section v-if="!isInitialized" class="flex-1 flex flex-col justify-center items-center gap-4">
       <Spinner />
       <p class="text-gray-500 text-sm">Initializing agent...</p>
     </section>
     <template v-else>
+      <div class="relative">
+        <header class="absolute top-2 right-2 z-10">
+          <UButton
+            icon="i-mdi-arrow-expand-horizontal"
+            color="neutral"
+            variant="subtle"
+            @click="expanded = !expanded"
+          />
+        </header>
+      </div>
       <UAlert
         v-if="error"
         title="Error!"
@@ -437,56 +457,73 @@ const mentionExtension = Mention.configure({
           icon: 'size-10'
         }"
       />
-      <div class="flex-1 overflow-y-auto min-h-0 flex">
-        <MessageList :messages="messages" :status="status" />
-      </div>
-      <ChatBox
-        ref="chatBoxRef"
-        class="chat-box"
-        :style="{ width: '100%' }"
-        v-model="input"
-        :status="status"
-        :messages="messages"
-        @submit="handleSubmit"
-        @stop="cancel"
-        :extensions="[
-          mentionExtension,
-        ]"
-      >
-        <template #left-addons>
-          <UTooltip text="Add files as context">
-            <UButton
-              icon="i-lucide-at-sign"
-              color="primary"
-              variant="soft"
-              size="sm"
+      <AnimatePresence>
+        <div v-if="showMessageList" class="flex-1 overflow-y-auto min-h-0 flex justify-center">
+          <MessageList
+            key="message-list"
+            animate="visible"
+            :messages="messages"
+            :status="status"
+            :width="viewWidth"
+            :variants="{
+              visible: { maxHeight: '100%' },
+              hidden: { maxHeight: '0' },
+            }"
+          />
+        </div>
+        <header v-else class="mx-auto text-3xl font-semibold mb-3">
+          How can I help you?
+        </header>
+      </AnimatePresence>
+      <div class="px-8 my-4">
+        <ChatBox
+          ref="chatBoxRef"
+          class="chat-box mx-auto"
+          :style="{ width: viewWidth ? `${viewWidth}px` : '100%' }"
+          v-model="input"
+          :status="status"
+          :messages="messages"
+          @submit="handleSubmit"
+          @stop="cancel"
+          :extensions="[
+            mentionExtension,
+          ]"
+        >
+          <template #left-addons>
+            <UTooltip text="Add files as context">
+              <UButton
+                icon="i-lucide-at-sign"
+                color="primary"
+                variant="soft"
+                size="sm"
+                :disabled="nonInteractive"
+                @click="handleMentionInsert"
+              />
+            </UTooltip>
+            <SlashCommandMenu
+              v-if="hasCommands"
+              :available-commands="availableCommands"
               :disabled="nonInteractive"
-              @click="handleMentionInsert"
+              @select="handleCommandSelect"
             />
-          </UTooltip>
-          <SlashCommandMenu
-            v-if="hasCommands"
-            :available-commands="availableCommands"
-            :disabled="nonInteractive"
-            @select="handleCommandSelect"
-          />
-          <ModeSelector
-            v-if="hasModes" 
-            v-model="currentModeId"
-            :available-modes="availableModes"
-            :disabled="nonInteractive"
-            @update:modelValue="handleModeChange"
-          />
-          <MentionMenu
-            v-if="mentionMenuOpen"
-            ref="mentionMenuRef"
-            :mention-items="mentionItems"
-            :selected-index="selectedIndex"
-            :floating-styles="floatingStyles"
-            @select="selectMention($event)"
-          />
-        </template>
-      </ChatBox>
+            <ModeSelector
+              v-if="hasModes" 
+              v-model="currentModeId"
+              :available-modes="availableModes"
+              :disabled="nonInteractive"
+              @update:modelValue="handleModeChange"
+            />
+            <MentionMenu
+              v-if="mentionMenuOpen"
+              ref="mentionMenuRef"
+              :mention-items="mentionItems"
+              :selected-index="selectedIndex"
+              :floating-styles="floatingStyles"
+              @select="selectMention($event)"
+            />
+          </template>
+        </ChatBox>
+      </div>
     </template>
   </div>
 </template>

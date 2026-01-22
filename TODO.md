@@ -13,6 +13,6 @@
 
 # Issues
 - [ ] Privde method to auth acp agents.
-- [ ] Window controls on windows is a bit strange.
+- [x] Window controls on windows is a bit strange.
 - [x] CommandPalette data loading is a bit laggy.
 - [ ] Image download is triggered twice in a row when clicking on the image toolbar.
