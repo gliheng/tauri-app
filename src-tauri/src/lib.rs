@@ -43,6 +43,8 @@ pub fn run() {
             handlers::read_directory,
             handlers::read_file,
             handlers::write_file,
+            handlers::read_binary_file,
+            handlers::write_binary_file,
             handlers::create_file,
             handlers::create_directory,
             handlers::rename_file,

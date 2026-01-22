@@ -494,6 +494,26 @@ pub async fn write_file(path: &str, content: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn read_binary_file(path: &str) -> Result<Vec<u8>, String> {
+    fs::read(path).map_err(|e| format!("Failed to read file: {}", e))
+}
+
+#[tauri::command]
+pub async fn write_binary_file(path: &str, content: Vec<u8>) -> Result<(), String> {
+    let path_buf = Path::new(path);
+
+    // Check if the parent directory exists, create it if it doesn't
+    if let Some(parent) = path_buf.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create parent directory: {}", e))?;
+        }
+    }
+
+    fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))
+}
+
+#[tauri::command]
 pub async fn create_file(path: &str) -> Result<(), String> {
     fs::write(path, "").map_err(|e| format!("Failed to create file: {}", e))
 }
