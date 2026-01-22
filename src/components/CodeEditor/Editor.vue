@@ -6,7 +6,7 @@ import { EditorState } from '@codemirror/state'
 
 interface Props {
   modelValue: string
-  language?: 'py' | 'js' | 'ts' | 'tsx' | 'json'
+  language?: string
   theme?: 'light' | 'dark'
   height?: string
   readonly?: boolean
@@ -32,17 +32,50 @@ const getLanguageExtension = async () => {
       const pythonLang = await import('@codemirror/lang-python')
       return pythonLang.python()
     case 'js':
+    case 'mjs':
       const jsLang = await import('@codemirror/lang-javascript')
       return jsLang.javascript({ typescript: false })
     case 'ts':
+    case 'mts':
       const tsLang = await import('@codemirror/lang-javascript')
       return tsLang.javascript({ typescript: true })
+    case 'jsx':
+      const jsxLang = await import('@codemirror/lang-javascript')
+      return jsxLang.javascript({ jsx: true })
     case 'tsx':
       const tsxLang = await import('@codemirror/lang-javascript')
       return tsxLang.javascript({ typescript: true, jsx: true })
     case 'json':
       const jsonLang = await import('@codemirror/lang-json')
       return jsonLang.json()
+    case 'html':
+      const htmlLang = await import('@codemirror/lang-html')
+      return htmlLang.html()
+    case 'css':
+      const cssLang = await import('@codemirror/lang-css')
+      return cssLang.css()
+    case 'less':
+      const lessLang = await import('@codemirror/lang-less')
+      return lessLang.less()
+    case 'scss':
+    case 'sass':
+      const sassLang = await import('@codemirror/lang-sass')
+      return sassLang.sass()
+    case 'markdown':
+      const mdLang = await import('@codemirror/lang-markdown')
+      return mdLang.markdown()
+    case 'sql':
+      const sqlLang = await import('@codemirror/lang-sql')
+      return sqlLang.sql()
+    case 'cpp':
+      const cppLang = await import('@codemirror/lang-cpp')
+      return cppLang.cpp()
+    case 'java':
+      const javaLang = await import('@codemirror/lang-java')
+      return javaLang.java()
+    case 'rust':
+      const rustLang = await import('@codemirror/lang-rust')
+      return rustLang.rust()
     default:
       return null
   }
@@ -161,6 +194,6 @@ watch(
 
 :deep(.cm-content) {
   padding: 8px;
-  font-family: Monaco, Menlo, "Ubuntu Mono", monospace;
+  font-family: Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace;
 }
 </style>

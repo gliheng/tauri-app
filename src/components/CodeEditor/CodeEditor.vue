@@ -4,6 +4,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { debounce } from "lodash-es";
+import { useColorMode } from "@vueuse/core";
 import FileTree from "./FileTree.vue";
 import Editor from "./Editor.vue";
 import { FileEntryType, type FileEntry } from "./types";
@@ -19,6 +20,7 @@ const props = defineProps({
 
 const file = ref<FileEntry>();
 const fileSystem = ref<FileEntry[]>([]);
+const colorMode = useColorMode();
 
 interface FileNode {
   name: string;
@@ -215,7 +217,14 @@ function openTerminal() {
               </UTooltip>
             </header>
             <KeepAlive :max="10">
-              <Editor v-if="file" :key="file.path" class="h-full" v-model="file.content!" />
+              <Editor
+                v-if="file"
+                :key="file.path"
+                class="h-full"
+                v-model="file.content!"
+                :language="(file.name.split('.').pop()?.toLowerCase() || 'py') as 'py' | 'js' | 'ts' | 'tsx' | 'json'"
+                :theme="colorMode === 'dark' ? 'dark' : 'light'"
+              />
             </KeepAlive>
             <div v-if="!file" class="h-full flex flex-col items-center justify-center text-gray-400">
               <UIcon name="i-lucide-file-code" class="w-16 h-16 mb-4 opacity-50" />

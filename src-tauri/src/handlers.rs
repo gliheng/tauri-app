@@ -63,7 +63,7 @@ pub async fn acp_initialize(
                 env_vars.insert("OPENAI_BASE_URL".into(), ms.base_url);
                 env_vars.insert("OPENAI_MODEL".into(), ms.model);
             }
-            args.push("--experimental-acp".into());
+            args.push("--acp".into());
             "@qwen-code/qwen-code"
         }
         "codex" => {
@@ -108,7 +108,7 @@ pub async fn acp_initialize(
                 env_vars.insert("GOOGLE_GEMINI_BASE_URL".into(), ms.base_url);
                 env_vars.insert("GEMINI_API_KEY".into(), ms.api_key);
             }
-            args.push("--experimental-acp".into());
+            args.push("--acp".into());
             "@google/gemini-cli"
         }
         "opencode" => {

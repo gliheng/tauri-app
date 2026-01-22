@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { isTauri } from "@tauri-apps/api/core";
 import Tabs from "@/components/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
 import { storeToRefs } from "pinia";
 
-const tauri = isTauri();
 const platform = navigator.platform;
 
 const tabsStore = useTabsStore();
@@ -36,7 +34,7 @@ function toggleArtifactView() {
             <UButton
               icon="i-mdi-history"
               color="neutral"
-              variant="ghost"
+              variant="soft"
             />
             <template #content>
               <Suspense>
@@ -53,13 +51,13 @@ function toggleArtifactView() {
           <UButton
             :icon="showArtifactView ? 'i-lucide-panel-left-open' : 'i-lucide-panel-left-close'"
             color="neutral"
-            variant="ghost"
+            variant="soft"
             @click="toggleArtifactView"
           />
+          <WindowControls v-if="platform === 'Win32'" />
         </slot>
       </template>
     </Tabs>
-    <WindowControls v-if="tauri && platform === 'Win32'" />
   </header>
 </template>
 

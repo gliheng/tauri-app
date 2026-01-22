@@ -87,7 +87,7 @@ onMounted(async () => {
   terminal = new XTerm({
     cursorBlink: true,
     fontSize: 14,
-    fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+    fontFamily: 'Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace',
     theme: terminalTheme.value,
   });
 

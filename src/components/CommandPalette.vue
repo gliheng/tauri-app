@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 import moment from "moment";
 import { useTabsStore } from "@/stores/tabs";
@@ -15,10 +15,6 @@ const router = useRouter();
 const emit = defineEmits<{
   (e: "close"): void;
 }>();
-
-onMounted(() => {
-  chatsStore.loadChats();
-});
 
 interface ChatHistoryItem {
   chatId: string;

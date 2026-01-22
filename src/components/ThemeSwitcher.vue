@@ -7,7 +7,7 @@ const mode = useColorMode();
 <template>
   <UButton
     color="neutral"
-    variant="ghost"
+    variant="soft"
     :icon="mode === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'"
     @click="mode = mode === 'dark' ? 'light' : 'dark'"
   />

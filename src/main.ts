@@ -1,11 +1,11 @@
 import { createApp } from "vue";
-import { createPinia } from "pinia";
+import { createPinia, Pinia } from "pinia";
 import ui from "@nuxt/ui/vue-plugin";
-import { isTauri } from "@tauri-apps/api/core";
 import { init as initNative } from "./native";
 import { router } from "./router";
 import App from "./App.vue";
 import { init as initDb } from "./db-sqlite";
+import { useChatsStore } from "./stores/chats";
 import "./assets/style.css";
 
 (async () => {
@@ -18,7 +18,11 @@ import "./assets/style.css";
   app.use(ui);
   app.mount("#app");
   
-  if (isTauri()) {
-    initNative();
-  }
+  initNative();
+  initDataStores(pinia);
 })();
+
+function initDataStores(pinia: Pinia) {
+  const chatsStore = useChatsStore(pinia);
+  chatsStore.loadChats();
+}

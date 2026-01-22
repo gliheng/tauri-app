@@ -11,10 +11,10 @@ export interface Artifact {
 
 export const useArtifactsStore = defineStore("artifacts", () => {
   const artifacts = ref<Artifact[]>([]);
-  const activeArtifactKey = ref<string | null>(null);
+  const activeArtifactKey = ref<string | undefined>(undefined);
 
-  const activeArtifact = computed(() => 
-    artifacts.value.find(a => a.key === activeArtifactKey.value) || null
+  const activeArtifact = computed(() =>
+    artifacts.value.find(a => a.key === activeArtifactKey.value) || undefined
   );
 
   function addArtifact(id: string, type: ArtifactType) {
@@ -36,9 +36,9 @@ export const useArtifactsStore = defineStore("artifacts", () => {
     artifacts.value.splice(index, 1);
     
     if (activeArtifactKey.value === removedKey) {
-      activeArtifactKey.value = artifacts.value.length > 0 
-        ? artifacts.value[artifacts.value.length - 1].key 
-        : null;
+      activeArtifactKey.value = artifacts.value.length > 0
+        ? artifacts.value[artifacts.value.length - 1]!.key
+        : undefined;
     }
   }
 
