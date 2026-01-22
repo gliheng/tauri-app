@@ -11,14 +11,18 @@
   height: 16px;
   background:
     radial-gradient(
-      circle 8px at 8px center,
-      var(--ui-color-primary-500) 100%,
-      transparent 0
+      circle at 8px 8px,
+      var(--ui-color-primary-500) 0%,
+      var(--ui-color-primary-500) 8px,
+      transparent 8px,
+      transparent 100%
     ),
     radial-gradient(
-      circle 8px at 8px center,
-      var(--ui-color-primary-500) 100%,
-      transparent 0
+      circle at 8px 8px,
+      var(--ui-color-primary-500) 0%,
+      var(--ui-color-primary-500) 8px,
+      transparent 8px,
+      transparent 100%
     );
   background-size: 16px 16px;
   background-repeat: no-repeat;
