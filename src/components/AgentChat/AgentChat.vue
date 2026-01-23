@@ -15,9 +15,10 @@ import Mention from "@tiptap/extension-mention";
 import MentionMenu from "./MentionMenu.vue";
 import MentionItem from "./MentionItem.vue";
 import { type Editor } from "@tiptap/core";
-import { AvailableCommand } from "@agentclientprotocol/sdk";
+import { AvailableCommand, type EmbeddedResourceResource, type ContentBlock, type ImageContent, type AudioContent } from "@agentclientprotocol/sdk";
 import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
 import mime from "mime";
+import { Attachment } from "ai";
 
 const toast = useToast();
 
@@ -231,8 +232,8 @@ function isTextFile(mimeType: string): boolean {
 async function findMentionedFiles(
   mentionPaths: string[],
   baseDirectory: string
-): Promise<Array<{ type: 'resource'; resource: { uri: string; mimeType: string; text: string; } }>> {
-  const resourceParts: Array<{ type: 'resource'; resource: { uri: string; mimeType: string; text: string; } }> = [];
+): Promise<Array<{ type: 'resource'; resource: EmbeddedResourceResource }>> {
+  const resourceParts: Array<{ type: 'resource'; resource: EmbeddedResourceResource }> = [];
 
   for (const filePath of mentionPaths) {
     const fullPath = `${baseDirectory}/${filePath}`;
@@ -269,47 +270,105 @@ async function findMentionedFiles(
 }
 
 /**
- * Build prompt parts from text and editor mentions
+ * Build content blocks from text, mentions, and attachments
  */
-async function buildPromptParts(
+async function buildContentBlocks({
+  text, attachments, editorJson, baseDirectory
+}: {
   text: string,
+  attachments?: Attachment[],
   editorJson: any,
   baseDirectory: string
-): Promise<Array<
-  { type: 'text'; text: string } |
-  { type: 'resource'; resource: { uri: string; mimeType: string; text: string; } }
->> {
-  const parts: Array<
-    { type: 'text'; text: string } |
-    { type: 'resource'; resource: { uri: string; mimeType: string; text: string; } }
-  > = [
+}): Promise<ContentBlock[]> {
+  const parts: ContentBlock[] = [
     {
       type: 'text',
       text,
     },
   ];
 
-  // Step 1: Find mentions in the editor JSON
+  // Step 1: Append attachments as content blocks if provided
+  if (attachments?.length) {
+    for (const attachment of attachments) {
+      if (attachment.contentType && attachment.url) {
+        // Handle URL-based attachments (data URLs, blob URLs, etc.)
+        if (attachment.url.startsWith('data:')) {
+          // Parse data URL: data:mimeType;base64,data
+          const [meta, base64Data] = attachment.url.split(',', 2);
+          const mimeType = meta.split(':')[1].split(';')[0];
+
+          if (mimeType.startsWith('image/')) {
+            // For images, use ImageContent
+            parts.push({
+              type: 'image',
+              data: base64Data,
+              mimeType,
+            } satisfies ContentBlock);
+          } else if (mimeType.startsWith('audio/')) {
+            // For audio, use AudioContent
+            parts.push({
+              type: 'audio',
+              data: base64Data,
+              mimeType,
+            } satisfies ContentBlock);
+          } else if (isTextFile(mimeType)) {
+            // For text files, use EmbeddedResource with 'text' field
+            const textContent = atob(base64Data);
+            parts.push({
+              type: 'resource',
+              resource: {
+                uri: attachment.name || attachment.url,
+                mimeType,
+                text: textContent,
+              },
+            } satisfies ContentBlock);
+          } else {
+            // For other binary files, use EmbeddedResource with 'blob' field
+            parts.push({
+              type: 'resource',
+              resource: {
+                uri: attachment.name || attachment.url,
+                mimeType,
+                blob: base64Data,
+              },
+            } satisfies ContentBlock);
+          }
+        } else {
+          // For regular URL attachments, we'd need to fetch the content
+          // For now, skip as we need the actual content
+          console.log(`Skipping URL attachment without content: ${attachment.url}`);
+        }
+      }
+    }
+  }
+
+  // Step 2: Find mentions in the editor JSON
   const mentionPaths = findMentions(editorJson);
-  // Step 2: Find and read files matching those mentions
+  // Step 3: Find and read files matching those mentions
   const resourceParts = await findMentionedFiles(mentionPaths, baseDirectory);
   // Add resource parts to the parts array
   parts.push(...resourceParts);
+
   return parts;
 }
 
-const handleSubmit = async () => {
+const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) => {
   if (!input.value.trim() || !isInitialized.value || !client) return;
 
   try {
     const text = input.value.trim();
-    
+
     // Get editor JSON to find mentions
     const editor = (chatBoxRef.value as any)?.editor;
     const json = editor?.getJSON();
 
-    // Build prompt parts with text and any file resources
-    const parts = await buildPromptParts(text, json, props.agent.directory);
+    // Build content blocks with text, mentions, and attachments
+    const parts = await buildContentBlocks({
+      text,
+      attachments: data.experimental_attachments,
+      editorJson: json,
+      baseDirectory: props.agent.directory,
+    });
 
     messages.value.push({
       id: String(messages.value.length),
@@ -553,6 +612,7 @@ const mentionExtension = Mention.configure({
           const key = props.event.key;
           // Allow tab and enter to pass through to the editor for navigation
           if (key === 'Tab' || key === 'Enter') {
+            props.event.stopPropagation();
             const item = mentionItems.value[selectedIndex.value];
             if (item) {
               selectMention(selectedIndex.value);
@@ -572,7 +632,6 @@ const mentionExtension = Mention.configure({
     },
   },
 });
-
 </script>
 
 <template>

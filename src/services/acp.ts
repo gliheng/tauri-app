@@ -2,12 +2,11 @@ import { Ref } from "vue";
 import * as acp from "@agentclientprotocol/sdk";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { Agent } from "@/db-sqlite";
 
 export type Role = 'user' | 'assistant';
 
 export interface BlockBase {
-  annotations?: Record<string, any>;
+  annotations?: Record<string, any> | null;
 }
 
 export interface TextBlock extends BlockBase {
@@ -30,12 +29,7 @@ export interface AudioBlock extends BlockBase {
 
 export interface ResourceBlock extends BlockBase {
   type: 'resource';
-  resource: {
-    uri: string;
-    mimeType?: string;
-    text?: string;
-    blob?: string;
-  };
+  resource: acp.EmbeddedResourceResource;
 }
 
 export interface ResourceLinkBlock extends BlockBase {

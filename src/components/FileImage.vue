@@ -17,6 +17,7 @@ watch(
       fileUrl.value = attachment.url;
     }
   },
+  { immediate: true }
 );
 </script>
 

@@ -21,6 +21,10 @@ export const modelRepo = {
       value: "glm-4.7",
     },
     {
+      label: "GLM 4.6v",
+      value: "glm-4.6v",
+    },
+    {
       label: "GLM 4.7 Flash",
       value: "glm-4.7-flash",
     },
