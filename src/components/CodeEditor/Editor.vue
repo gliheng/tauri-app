@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { basicSetup } from 'codemirror'
 import { EditorView, ViewUpdate } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
+import { debounce } from 'lodash-es'
 
 interface Props {
   modelValue: string
@@ -19,8 +20,14 @@ const props = withDefaults(defineProps<Props>(), {
   readonly: false,
 })
 
+interface SelectionData {
+  cursor: { line: number; column: number }
+  selection?: { start: number; end: number }
+}
+
 const emit = defineEmits<{
   'update:modelValue': [value: string]
+  'selection': [data: SelectionData]
 }>()
 
 const editorContainer = ref<HTMLElement>()
@@ -97,6 +104,36 @@ const initializeEditor = async () => {
     getThemeExtension(),
   ])
 
+  // Debounced selection update function
+  const debouncedSelectionUpdate = debounce(() => {
+    if (!editorView) return
+    const selection = editorView.state.selection.main
+    const pos = selection.head
+
+    // Get line number (1-indexed)
+    const line = editorView.state.doc.lineAt(pos)
+    const lineNumber = line.number
+
+    // Get column number (1-indexed, relative to line start)
+    const column = pos - line.from + 1
+
+    // Check if there's a text selection
+    let selectionRange: { start: number; end: number } | undefined
+    if (selection.from !== selection.to) {
+      const startLine = editorView.state.doc.lineAt(selection.from)
+      const endLine = editorView.state.doc.lineAt(selection.to)
+      selectionRange = {
+        start: startLine.number,
+        end: endLine.number,
+      }
+    }
+
+    emit('selection', {
+      cursor: { line: lineNumber, column },
+      selection: selectionRange
+    })
+  }, 150)
+
   const extensions = [
     basicSetup,
     themeExtension,
@@ -104,6 +141,9 @@ const initializeEditor = async () => {
       if (update.docChanged) {
         const newValue = update.state.doc.toString()
         emit('update:modelValue', newValue)
+      }
+      if (update.selectionSet) {
+        debouncedSelectionUpdate()
       }
     }),
     EditorView.theme({

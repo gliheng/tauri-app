@@ -7,6 +7,7 @@ import { TreeItem } from '@nuxt/ui';
 import { EDITOR_ACTIONS } from '@/constants';
 import FileTreeItem from './FileTreeItem.vue';
 import { getFileIcon } from '@/utils/file';
+import { useArtifactsStore } from '@/stores/artifacts';
 
 interface FileTreeItem extends TreeItem {
   file: FileEntry;
@@ -15,6 +16,7 @@ interface FileTreeItem extends TreeItem {
 
 const props = defineProps<{
   cwd: string;
+  artifactKey: string;
 }>();
 
 const model = defineModel<FileEntry[]>({ required: true });
@@ -24,6 +26,7 @@ const emit = defineEmits<{
 }>();
 
 const selected = ref<FileTreeItem | undefined>();
+const artifactsStore = useArtifactsStore();
 const expanded = ref<string[]>([]);
 const loadingPaths = ref<Set<string>>(new Set());
 const creatingEntry = ref<{ type: FileEntryType; parentPath: string } | null>(null);
@@ -124,6 +127,21 @@ async function onToggle(e: Event, item: any) {
     }
   } else {
     emit('select', entry);
+  }
+
+  // Set context for both files and folders when selected
+  if ((e as any).detail.isSelected) {
+    artifactsStore.setContext(props.artifactKey, {
+      file: { path: entry.path },
+      cursor: undefined,
+      selection: undefined,
+    });
+  } else {
+    artifactsStore.setContext(props.artifactKey, {
+      file: undefined,
+      cursor: undefined,
+      selection: undefined,
+    });
   }
 }
 

@@ -10,6 +10,7 @@ import Editor from "./Editor.vue";
 import { FileEntryType, type FileEntry } from "./types";
 import { EDITOR_ACTIONS } from "@/constants";
 import { eventBus } from "@/utils/eventBus";
+import { useArtifactsStore } from "@/stores/artifacts";
 
 const props = defineProps({
   cwd: {
@@ -21,6 +22,8 @@ const props = defineProps({
 const file = ref<FileEntry>();
 const fileSystem = ref<FileEntry[]>([]);
 const colorMode = useColorMode();
+const artifactsStore = useArtifactsStore();
+const artifactKey = `workspace::${props.cwd}`;
 
 interface FileNode {
   name: string;
@@ -190,12 +193,20 @@ onUnmounted(async () => {
 function openTerminal() {
   eventBus.emit('artifact', `terminal::${props.cwd}`);
 }
+
+function onSelectionChange(selectionData: { cursor: { line: number; column: number }; selection?: { start: number; end: number } }) {
+  artifactsStore.setContext(artifactKey, {
+    file: file.value ? { path: file.value.path } : undefined,
+    cursor: selectionData.cursor,
+    selection: selectionData.selection
+  });
+}
 </script>
 
 <template>
   <SplitterGroup class="flex-1" direction="horizontal">
     <SplitterPanel :default-size="40">
-      <FileTree v-model="fileSystem" :cwd="cwd" @select="onSelect" />
+      <FileTree v-model="fileSystem" :cwd="cwd" :artifact-key="`workspace::${cwd}`" @select="onSelect" />
     </SplitterPanel>
     <SplitterResizeHandle class="w-0.5 splitter-handle" />
     <SplitterPanel>
@@ -224,6 +235,7 @@ function openTerminal() {
                 v-model="file.content!"
                 :language="(file.name.split('.').pop()?.toLowerCase() || 'py') as 'py' | 'js' | 'ts' | 'tsx' | 'json'"
                 :theme="colorMode === 'dark' ? 'dark' : 'light'"
+                @selection="onSelectionChange"
               />
             </KeepAlive>
             <div v-if="!file" class="h-full flex flex-col items-center justify-center text-gray-400">

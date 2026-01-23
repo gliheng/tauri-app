@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, PropType, computed } from "vue";
+import { ref, onUnmounted, onMounted, PropType, computed, useTemplateRef } from "vue";
 import { AnimatePresence } from "motion-v";
 import { Chat, updateChat, writeChat, type Agent } from "@/db-sqlite";
 import ChatBox from "@/components/ChatBox.vue";
@@ -7,6 +7,7 @@ import Spinner from "@/components/Spinner.vue";
 import MessageList from "./MessageList.vue";
 import ModeSelector from "./ModeSelector.vue";
 import SlashCommandMenu from "./SlashCommandMenu.vue";
+import ContextDisplay from "./ContextDisplay.vue";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 import { useAcp } from "@/hooks/useAcp";
@@ -15,7 +16,13 @@ import Mention from "@tiptap/extension-mention";
 import MentionMenu from "./MentionMenu.vue";
 import MentionItem from "./MentionItem.vue";
 import { type Editor } from "@tiptap/core";
-import { AvailableCommand, type EmbeddedResourceResource, type ContentBlock, type ImageContent, type AudioContent } from "@agentclientprotocol/sdk";
+import {
+  AvailableCommand,
+  type EmbeddedResourceResource,
+  type ContentBlock,
+  type ImageContent,
+  type AudioContent,
+} from "@agentclientprotocol/sdk";
 import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
 import mime from "mime";
 import { Attachment } from "ai";
@@ -43,6 +50,7 @@ const error = ref<string | null>(null);
 const sessionId = ref<string | null>(props.chat?.sessionId ?? null);
 const chatBoxRef = ref<InstanceType<typeof ChatBox> | null>(null);
 const expanded = ref(false);
+const selectionContextRef = useTemplateRef<InstanceType<typeof ContextDisplay> | null>("selectionContextRef");
 
 const { client, messages, status, currentModeId, availableModes, availableCommands } = useAcp({
   chatId: props.chatId,
@@ -69,6 +77,8 @@ const viewWidth = computed(() =>
 const showMessageList = computed(() => {
   return messages.value.length || status.value != "ready";
 });
+
+const artifactKey = computed(() => `workspace::${props.agent.directory}`);
 
 async function handleModeChange(modeId: string) {
   if (!client) return;
@@ -238,32 +248,16 @@ async function findMentionedFiles(
   for (const filePath of mentionPaths) {
     const fullPath = `${baseDirectory}/${filePath}`;
 
-    try {
-      // Try to read the file - if it exists, this will succeed
-      const fileContent = await invoke<string>('read_file', { path: fullPath });
-
-      // Get MIME type based on file extension
-      const mimeType = getMimeType(filePath);
-
-      // Only append resource if it's a text file
-      if (!isTextFile(mimeType)) {
-        console.log(`Skipping non-text file: ${filePath} (${mimeType})`);
-        continue;
-      }
-
-      // Create resource part
-      resourceParts.push({
-        type: 'resource',
-        resource: {
-          uri: `file://${fullPath}`,
-          mimeType,
-          text: fileContent,
-        },
-      });
-    } catch {
-      // File doesn't exist or can't be read - skip it
-      console.log(`File not found or couldn't be read: ${filePath}`);
-    }
+    // Get MIME type based on file extension
+    const mimeType = getMimeType(filePath);
+    resourceParts.push({
+      type: 'resource',
+      resource: {
+        uri: `file://${fullPath}`,
+        mimeType,
+        [isTextFile(mimeType) ? 'text' : 'blob']: '', // Data omitted to save token
+      } as any,
+    });
   }
 
   return resourceParts;
@@ -361,20 +355,37 @@ const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) =
     // Get editor JSON to find mentions
     const editor = (chatBoxRef.value as any)?.editor;
     const json = editor?.getJSON();
+    const baseDirectory = props.agent.directory;
 
     // Build content blocks with text, mentions, and attachments
     const parts = await buildContentBlocks({
       text,
       attachments: data.experimental_attachments,
       editorJson: json,
-      baseDirectory: props.agent.directory,
+      baseDirectory,
     });
+
+    // Add selection context if visible
+    const ctx = selectionContextRef.value?.getContext();
+    if (ctx) {
+      if (ctx.file?.path) {
+        const mimeType = getMimeType(ctx.file.path);
+        parts.push({
+          type: 'resource',
+          resource: {
+            uri: `file://${baseDirectory}/${ctx.file.path}`,
+            mimeType,
+            [isTextFile(mimeType) ? 'text' : 'blob']: '',
+          } as any,
+        });
+      }
+    }
 
     messages.value.push({
       id: String(messages.value.length),
       role: "user",
       content: text,
-      parts,
+      parts: parts as any,
     });
 
     error.value = null;
@@ -709,12 +720,13 @@ const mentionExtension = Mention.configure({
               @select="handleCommandSelect"
             />
             <ModeSelector
-              v-if="hasModes" 
+              v-if="hasModes"
               v-model="currentModeId"
               :available-modes="availableModes"
               :disabled="nonInteractive"
               @update:modelValue="handleModeChange"
             />
+            <ContextDisplay ref="selectionContextRef" v-if="artifactKey" :artifact-key="artifactKey" />
             <MentionMenu
               v-if="mentionMenuOpen"
               ref="mentionMenuRef"

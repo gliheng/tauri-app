@@ -134,25 +134,6 @@ onMounted(async () => {
   <div class="size-full p-4 flex flex-col relative overflow-y-auto"
     :class="enableLoadSession ? 'justify-start' : 'justify-center'"
   >
-    <!-- Hover menu in top-right corner -->
-    <div class="absolute top-4 right-4 z-10">
-      <UDropdownMenu :items="[[
-        {
-          label: 'Delete Agent',
-          icon: 'i-lucide-trash-2',
-          color: 'error',
-          onSelect: onDelete
-        }
-      ]]">
-        <UButton
-          icon="i-heroicons-ellipsis-vertical"
-          color="neutral"
-          variant="outline"
-          size="sm"
-        />
-      </UDropdownMenu>
-    </div>
-
     <!-- Agent header section -->
     <div class="flex flex-row gap-2 px-4 sticky top-0 rounded bg-elevated">
       <div
@@ -173,9 +154,29 @@ onMounted(async () => {
         </div>
       </div>
       <div class="flex-2 py-8">
-        <UCard>
+        <UCard :ui="{
+          header: 'relative',
+        }">
           <template #header>
             <h3 class="text-lg font-semibold">Agent Details</h3>
+            <!-- Hover menu in top-right corner -->
+            <div class="absolute top-4 right-4 z-10">
+              <UDropdownMenu :items="[[
+                {
+                  label: 'Delete Agent',
+                  icon: 'i-lucide-trash-2',
+                  color: 'error',
+                  onSelect: onDelete
+                }
+              ]]">
+                <UButton
+                  icon="i-heroicons-ellipsis-vertical"
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                />
+              </UDropdownMenu>
+            </div>
           </template>
           
           <div class="space-y-3">
