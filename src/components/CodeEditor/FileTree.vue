@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
+import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { FileEntryType, type FileEntry } from './types';
 import { TreeItem } from '@nuxt/ui';
 import { EDITOR_ACTIONS } from '@/constants';
@@ -263,6 +264,16 @@ async function onDeleteItem(item: FileTreeItem) {
   }
 }
 
+async function onRevealItem(item: FileTreeItem) {
+  const path = `${props.cwd}/${item.value}`;
+
+  try {
+    await revealItemInDir(path);
+  } catch (error) {
+    console.error('Failed to reveal item:', error);
+  }
+}
+
 function updatePathsRecursively(entry: FileEntry, oldPathPrefix: string, newPathPrefix: string) {
   if (entry.path.startsWith(oldPathPrefix)) {
     entry.path = newPathPrefix + entry.path.slice(oldPathPrefix.length);
@@ -351,13 +362,14 @@ function fileExistsInTree(entries: FileEntry[], path: string): boolean {
         virtualize
       >
         <template #item="{ item }">
-          <FileTreeItem 
-            :icon="item.icon" 
-            :label="item.label" 
+          <FileTreeItem
+            :icon="item.icon"
+            :label="item.label"
             :default-editing="item.isCreating"
-            @edit="(newName: string) => item.isCreating ? onCreateEntry(newName) : onRenameItem(item, newName)" 
+            @edit="(newName: string) => item.isCreating ? onCreateEntry(newName) : onRenameItem(item, newName)"
             @cancel-edit="item.isCreating ? onCancelCreate() : undefined"
-            @delete="() => onDeleteItem(item)" 
+            @delete="() => onDeleteItem(item)"
+            @reveal="() => onRevealItem(item)"
           />
         </template>
       </UTree>

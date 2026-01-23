@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { Motion, AnimatePresence } from 'motion-v';
 
 const props = defineProps<{
   text?: string;
@@ -37,7 +38,24 @@ onUnmounted(() => {
 
 <template>
   <div class="animate-bounce">
-    <p class="btn-shine">{{ displayText }}</p>
+    <AnimatePresence :mode="'wait'">
+      <Motion
+        v-if="!props.text"
+        :key="displayText"
+        :initial="{ opacity: 0, y: 20, scale: 0.95 }"
+        :enter="{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut' } }"
+        :exit="{ opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.3, ease: 'easeIn' } }"
+      >
+        <p class="btn-shine">{{ displayText }}</p>
+      </Motion>
+      <Motion
+        v-else
+        :initial="{ opacity: 0, y: 20, scale: 0.95 }"
+        :enter="{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut' } }"
+      >
+        <p class="btn-shine">{{ props.text }}</p>
+      </Motion>
+    </AnimatePresence>
   </div>
 </template>
 

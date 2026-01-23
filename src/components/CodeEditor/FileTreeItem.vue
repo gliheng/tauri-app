@@ -14,6 +14,7 @@ const emit = defineEmits<{
   edit: [newName: string];
   delete: [];
   cancelEdit: [];
+  reveal: [];
 }>();
 
 const isHovered = ref(false);
@@ -70,7 +71,17 @@ function onBlur() {
   commitEdit();
 }
 
+function handleReveal() {
+  emit('reveal');
+  isOpen.value = false;
+}
+
 const menuItems = [
+  {
+    label: 'Reveal',
+    icon: 'i-lucide-folder-open',
+    onSelect: handleReveal
+  },
   {
     label: 'Rename',
     icon: 'i-lucide-pencil',
