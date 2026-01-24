@@ -7,9 +7,8 @@ import { AgentProgram } from "@/db-sqlite";
 export interface AgentFormData {
   name: string;
   icon: string;
-  type: "chat" | "code";
+  program: AgentProgram;
   directory: string;
-  program?: AgentProgram;
   instructions?: string;
 }
 
@@ -20,10 +19,9 @@ const emit = defineEmits<{
 const agent = ref<AgentFormData>({
   name: 'New Agent',
   icon: 'i-lucide-brain',
-  type: 'code' as const,
-  instructions: '',
-  directory: '',
   program: 'codex' as const,
+  directory: '',
+  instructions: '',
 });
 
 // Directory selection
@@ -58,16 +56,19 @@ const createAgent = () => {
           <IconEdit v-model:icon="agent.icon" />
           <UInput class="flex-1" v-model="agent.name" />
         </hgroup>
-        <div class="flex flex-row gap-2 items-center">
-          <h2 class="text-lg">Type</h2>
+        <section>
+          <h2 class="text-lg mb-2">Agent Program</h2>
           <ToggleButtonGroup
-            v-model="agent.type"
+            v-model="agent.program"
             :options="[
-              { value: 'chat', label: 'Chat' },
-              { value: 'code', label: 'Code' }
+              { value: 'codex', label: 'Codex' },
+              { value: 'gemini', label: 'Gemini CLI' },
+              { value: 'claude', label: 'Claude Code' },
+              { value: 'qwen', label: 'Qwen Code' },
+              { value: 'opencode', label: 'OpenCode' }
             ]"
           />
-        </div>
+        </section>
         <section>
           <h2 class="text-lg mb-2">Working Directory</h2>
           <div class="flex gap-2">
@@ -84,27 +85,14 @@ const createAgent = () => {
             />
           </div>
         </section>
-                <section v-if="agent.type === 'chat'">
+        <section>
           <h2 class="text-lg mb-2">Instructions</h2>
           <UTextarea
             v-model.optional="agent.instructions"
             class="w-full"
-            :rows="10"
-            :maxrows="25"
+            :rows="6"
+            :maxrows="12"
             placeholder="Agent instructions"
-          />
-        </section>
-        <section v-if="agent.type === 'code'">
-          <h2 class="text-lg mb-2">Code Program</h2>
-          <ToggleButtonGroup
-            v-model="agent.program"
-            :options="[
-              { value: 'codex', label: 'Codex' },
-              { value: 'gemini', label: 'Gemini CLI' },
-              { value: 'claude', label: 'Claude Code' },
-              { value: 'qwen', label: 'Qwen Code' },
-              { value: 'opencode', label: 'OpenCode' }
-            ]"
           />
         </section>
         <section class="flex justify-center mt-10">

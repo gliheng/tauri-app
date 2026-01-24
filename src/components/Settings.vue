@@ -3,8 +3,9 @@ import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
 import { ref, watch, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { CodeAgent, useSettingsStore } from "@/stores/settings";
+import { useSettingsStore } from "@/stores/settings";
 import { modelRepo } from "@/llm/models";
+import { AgentProgram } from "@/db-sqlite";
 
 const tabItems = [
   {
@@ -45,7 +46,7 @@ const providerItems = [
 
 const defaultProvider = "deepseek";
 
-const codeAgentItems = [
+const agentItems = [
   {
     label: "Codex",
     value: "codex",
@@ -68,9 +69,9 @@ const codeAgentItems = [
   // },
 ] satisfies TabsItem[];
 
-const defaultCodeAgent = "codex";
+const defaultAgent = "codex";
 
-const { modelSettings, codeAgentSettings, chatSettings } = storeToRefs(useSettingsStore());
+const { modelSettings, agentSettings, chatSettings } = storeToRefs(useSettingsStore());
 
 const modelList = computed(() => {
   const models: Array<{ label: string; value: string; provider: string }> = [];
@@ -128,7 +129,7 @@ const toggleModel = (provider: string, modelValue: string) => {
   }
 };
 
-const currentTab = ref(defaultCodeAgent);
+const currentTab = ref(defaultAgent);
 const opencodeModels = ref<{ label: string; value: string }[]>([]);
 const loadingOpencodeModels = ref(false);
 
@@ -265,25 +266,25 @@ watch(currentTab, async (tab) => {
                 </UForm>
               </template>
             </UTabs>
-            <h2 class="text-lg font-semibold">Code Agents</h2>
+            <h2 class="text-lg font-semibold">Agent Program</h2>
             <UTabs
               orientation="vertical"
               variant="link"
               class="w-full items-start"
               v-model="currentTab"
-              :default-value="defaultCodeAgent"
-              :items="codeAgentItems"
+              :default-value="defaultAgent"
+              :items="agentItems"
             >
               <template #content="{ item }">
                 <UForm
-                  :state="codeAgentSettings"
+                  :state="agentSettings"
                   class="flex flex-col relative gap-4"
                 >
                   <div class="flex items-center justify-between">
                     <p class="text-center font-medium">{{ item.label }}</p>
                     <USwitch
                       v-model="
-                        codeAgentSettings[item.value as CodeAgent].useCustomModel
+                        agentSettings[item.value as AgentProgram].useCustomModel
                       "
                       label="Use custom model"
                     />
@@ -293,12 +294,12 @@ watch(currentTab, async (tab) => {
                     <UFormField label="Base URL" name="baseUrl">
                       <UInput
                         v-model.trim="
-                          codeAgentSettings[item.value as CodeAgent].baseUrl
+                          agentSettings[item.value as AgentProgram].baseUrl
                         "
                         placeholder="https://api.example.com"
                         class="w-full"
                         :disabled="
-                          !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                          !agentSettings[item.value as AgentProgram].useCustomModel
                         "
                       />
                     </UFormField>
@@ -306,12 +307,12 @@ watch(currentTab, async (tab) => {
                     <UFormField label="Model" name="model">
                       <UInput
                         v-model.trim="
-                          codeAgentSettings[item.value as CodeAgent].model
+                          agentSettings[item.value as AgentProgram].model
                         "
                         placeholder="gpt-4, claude-3, etc."
                         class="w-full"
                         :disabled="
-                          !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                          !agentSettings[item.value as AgentProgram].useCustomModel
                         "
                       />
                     </UFormField>
@@ -319,12 +320,12 @@ watch(currentTab, async (tab) => {
                     <UFormField label="API Key" name="apiKey">
                       <UInput
                         v-model.trim="
-                          codeAgentSettings[item.value as CodeAgent].apiKey
+                          agentSettings[item.value as AgentProgram].apiKey
                         "
                         placeholder="Your API key"
                         class="w-full"
                         :disabled="
-                          !codeAgentSettings[item.value as CodeAgent].useCustomModel
+                          !agentSettings[item.value as AgentProgram].useCustomModel
                         "
                       />
                     </UFormField>
@@ -333,11 +334,11 @@ watch(currentTab, async (tab) => {
                   <template v-else-if="item.value === 'opencode'">
                     <UFormField label="Select Model">
                       <USelectMenu
-                        v-model="codeAgentSettings.opencode.model"
+                        v-model="agentSettings.opencode.model"
                         :items="opencodeModels"
                         :loading="loadingOpencodeModels"
                         :disabled="
-                          !codeAgentSettings.opencode?.useCustomModel
+                          !agentSettings.opencode?.useCustomModel
                         "
                         virtualize
                         valueKey="value"

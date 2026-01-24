@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { getCodeAgentConfig } from "@/llm";
+import { getAgentConfig } from "@/llm";
 import { Agent } from "@/db-sqlite";
 import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
 import { TauriACPClient } from "@/services/acp";
@@ -32,7 +32,7 @@ export function useAcp({ chatId, agent, onInvoke, onConnect, onDisconnect }: {
     availableCommands,
   };
 
-  const { useCustomModel, ...modelConfig } = getCodeAgentConfig(agent.program!);
+  const { useCustomModel, ...modelConfig } = getAgentConfig(agent.program);
   const model = useCustomModel ? {
     model: '',
     baseUrl: '',

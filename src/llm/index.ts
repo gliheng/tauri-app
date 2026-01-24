@@ -1,7 +1,8 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { CodeAgent, loadCodeAgentSettings, loadModelSettings } from "@/stores/settings";
+import { loadAgentSettings, loadModelSettings } from "@/stores/settings";
+import { AgentProgram } from "@/db-sqlite";
 
 export function getModel(model?: string) {
   model = model ?? "deepseek::deepseek-chat";
@@ -48,8 +49,8 @@ export function getModelConfig(model?: string) {
   };
 };
 
-export function getCodeAgentConfig(type: CodeAgent) {
-  const settings = loadCodeAgentSettings();
+export function getAgentConfig(type: AgentProgram) {
+  const settings = loadAgentSettings();
   return settings[type];
 }
 

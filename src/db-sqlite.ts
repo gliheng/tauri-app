@@ -36,11 +36,10 @@ export interface Agent {
   id: string;
   name: string;
   icon: string;
-  type: 'chat' | 'code';
   createdAt: Date;
   updatedAt: Date;
+  program: AgentProgram;
   directory: string;
-  program?: AgentProgram;
   instructions?: string;
 }
 
@@ -243,17 +242,16 @@ export interface ChatData {
 export async function writeAgent(data: Agent): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute(
-    `INSERT OR REPLACE INTO agent (id, name, icon, type, createdAt, updatedAt, directory, program, instructions)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    `INSERT OR REPLACE INTO agent (id, name, icon, createdAt, updatedAt, program, directory, instructions)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
     [
       data.id,
       data.name,
       data.icon,
-      data.type,
       dateToString(data.createdAt),
       dateToString(data.updatedAt),
+      data.program,
       data.directory,
-      data.program ?? null,
       data.instructions ?? null,
     ]
   );

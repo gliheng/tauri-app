@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from 'motion-v';
 import { nanoid } from "nanoid";
 import * as acp from "@agentclientprotocol/sdk";
 import { createTauriAcpConnection } from "@/services/acp";
-import AgentSessionList from "@/components/AgentSessionList.vue";
+import AgentSessionList from "@/components/AgentChat/AgentSessionList.vue";
 import { confirm, message } from '@tauri-apps/plugin-dialog';
 import { openPath } from '@tauri-apps/plugin-opener';
 
@@ -179,11 +179,6 @@ onMounted(async () => {
           </template>
           
           <div class="space-y-3">
-            <div class="flex items-start">
-              <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Type:</span>
-              <span class="font-medium">{{ agent.type }}</span>
-            </div>
-            
             <div v-if="agent.program" class="flex items-start">
               <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Program:</span>
               <span class="font-medium">{{ agent.program }}</span>

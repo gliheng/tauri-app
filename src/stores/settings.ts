@@ -1,7 +1,7 @@
 import { ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { defaultsDeep } from 'lodash-es';
-import { CodeAgent } from "@/db-sqlite";
+import { Agent } from "@/db-sqlite";
 
 export interface ChatModelConfig {
   apiKey: string;
@@ -31,14 +31,14 @@ const defaultModelSettings: Record<string, ChatModelConfig> = {
   },
 };
 
-export interface CodeAgentConfig {
+export interface AgentConfig {
   useCustomModel?: boolean;
   baseUrl?: string;
   model?: string;
   apiKey?: string;
 }
 
-const defaultCodeAgentSettings: Record<CodeAgent, CodeAgentConfig> = {
+const defaultAgentSettings: Record<string, AgentConfig> = {
   codex: {
     useCustomModel: false,
     baseUrl: "",
@@ -73,10 +73,10 @@ const defaultChatSettings = {
   chatModel: 'deepseek::deepseek-chat',
 };
 
-export function loadCodeAgentSettings() {
-  const stored = localStorage.getItem("codeAgentSettings");
+export function loadAgentSettings() {
+  const stored = localStorage.getItem("agentSettings");
   const storedSettings = stored ? JSON.parse(stored) : {};
-  return defaultsDeep({}, storedSettings, defaultCodeAgentSettings) as Record<CodeAgent, CodeAgentConfig>;
+  return defaultsDeep({}, storedSettings, defaultAgentSettings) as Record<string, AgentConfig>;
 }
 
 export function loadModelSettings() {
@@ -93,7 +93,7 @@ export function loadChatSettings() {
 
 export const useSettingsStore = defineStore("settings", () => {
   const modelSettings = ref(loadModelSettings());
-  const codeAgentSettings = ref(loadCodeAgentSettings());
+  const agentSettings = ref(loadAgentSettings());
   const chatSettings = ref(loadChatSettings());
   
   watch(modelSettings, (v) => {
@@ -102,8 +102,8 @@ export const useSettingsStore = defineStore("settings", () => {
     deep: true,
   });
   
-  watch(codeAgentSettings, (v) => {
-    localStorage.setItem("codeAgentSettings", JSON.stringify(v));
+  watch(agentSettings, (v) => {
+    localStorage.setItem("agentSettings", JSON.stringify(v));
   }, {
     deep: true,
   });
@@ -116,7 +116,7 @@ export const useSettingsStore = defineStore("settings", () => {
 
   return {
     modelSettings,
-    codeAgentSettings,
+    agentSettings,
     chatSettings,
   };
 });

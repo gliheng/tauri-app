@@ -28,12 +28,11 @@ CREATE TABLE IF NOT EXISTS agent (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   icon TEXT NOT NULL,
-  type TEXT NOT NULL,
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL,
-  instructions TEXT,
-  directory TEXT,
-  program TEXT
+  program TEXT NOT NULL,
+  directory TEXT NOT NULL,
+  instructions TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_updated_at ON agent(updatedAt);
