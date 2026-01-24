@@ -1,6 +1,5 @@
 
 # Features
-- [ ] Fix qwen acp edit tool error.
 - [ ] Agent chat add input queue.
 - [ ] Agent change UI improvement, show TODO as a fixed UI.
 - [ ] Plan and tool call supporting modification.
@@ -18,10 +17,15 @@
 - [ ] Able to control "Ask before edit" & "Edit automaticly"
 - [x] Reveal file in finder.
 - [ ] Acp log debug page.
+- [x] Support bun agent package upgrade.
+- [ ] Web search.
+- [ ] Deep research.
+- [ ] Share message history.
 
 # Issues
+- [ ] Fix qwen acp edit tool error.
 - [ ] Privde method to auth acp agents.
-- [ ] Window controls on windows is a bit strange.
+- [ ] Window controls on windows is not perfect.
 - [x] CommandPalette data loading is a bit laggy.
 - [ ] Image download is triggered twice in a row when clicking on the image toolbar.
 - [x] When metion is open, pressing enter does not trigger submit.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import Spinner from '@/components/Spinner.vue';
@@ -19,7 +19,28 @@ const props = defineProps<{
 
 const installStatus = ref<PackageInstallEvent | null>(null);
 const isUpgrading = ref(false);
+const hasCheckedForUpdates = ref(false);
 let unlisten: (() => void) | null = null;
+
+// Watch for changes to installStatus and check for updates when package is already installed
+watch(installStatus, async (status) => {
+  if (
+    status &&
+    status.current_version &&
+    status.status === 'already_installed' &&
+    !hasCheckedForUpdates.value
+  ) {
+    hasCheckedForUpdates.value = true;
+    try {
+      await invoke('check_for_updates', {
+        agentName: props.agent,
+        packageName: status.package,
+      });
+    } catch (error) {
+      console.error('Failed to check for updates:', error);
+    }
+  }
+});
 
 onMounted(async () => {
   // Listen to the specific agent's event

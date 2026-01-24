@@ -151,43 +151,16 @@ pub async fn acp_initialize(
             }
         };
 
-        // Check for updates
-        let update_available = match get_latest_version(package_name).await {
-            Ok(Some(latest)) => {
-                if installed_version != "unknown" && installed_version != latest {
-                    Some(latest)
-                } else {
-                    None
-                }
-            }
-            Ok(None) => None,
-            Err(e) => {
-                println!("Failed to check for updates: {:?}", e);
-                None
-            }
-        };
-
-        let status = if update_available.is_some() {
-            "update_available"
-        } else {
-            "already_installed"
-        };
-
-        let message = if let Some(ref latest) = update_available {
-            format!("{} v{} is installed (v{} available)", package_name, installed_version, latest)
-        } else {
-            format!("{} v{} is installed (up to date)", package_name, installed_version)
-        };
-
+        // Emit already_installed status without checking for updates
+        // The frontend will call check_for_updates separately when mounted
         let event_name = format!("package_install_status::{}", agent_name);
         let _ = window.emit(
             &event_name,
             serde_json::json!({
                 "package": package_name,
-                "status": status,
-                "message": message,
-                "current_version": installed_version,
-                "latest_version": update_available
+                "status": "already_installed",
+                "message": format!("{} v{} is installed", package_name, installed_version),
+                "current_version": installed_version
             }),
         );
     } else {
@@ -911,6 +884,73 @@ async fn get_latest_version(package_name: &str) -> Result<Option<String>, serde_
     } else {
         Ok(None)
     }
+}
+
+#[tauri::command]
+pub async fn check_for_updates(
+    agent_name: String,
+    package_name: String,
+    app: tauri::AppHandle,
+    window: tauri::Window,
+) -> Result<serde_json::Value, serde_json::Value> {
+    let app_config_dir = app.path().app_data_dir().unwrap();
+    let event_name = format!("package_install_status::{}", agent_name);
+
+    // Get the installed version
+    let installed_version = match get_installed_version(&package_name, &app_config_dir).await {
+        Ok(Some(v)) => v,
+        Ok(None) => "unknown".to_string(),
+        Err(e) => {
+            println!("Failed to get installed version: {:?}", e);
+            "unknown".to_string()
+        }
+    };
+
+    // Check for updates
+    let update_available = match get_latest_version(&package_name).await {
+        Ok(Some(latest)) => {
+            if installed_version != "unknown" && installed_version != latest {
+                Some(latest)
+            } else {
+                None
+            }
+        }
+        Ok(None) => None,
+        Err(e) => {
+            println!("Failed to check for updates: {:?}", e);
+            None
+        }
+    };
+
+    let status = if update_available.is_some() {
+        "update_available"
+    } else {
+        "already_installed"
+    };
+
+    let message = if let Some(ref latest) = update_available {
+        format!("{} v{} is installed (v{} available)", package_name, installed_version, latest)
+    } else {
+        format!("{} v{} is installed (up to date)", package_name, installed_version)
+    };
+
+    let _ = window.emit(
+        &event_name,
+        serde_json::json!({
+            "package": package_name,
+            "status": status,
+            "message": message,
+            "current_version": installed_version,
+            "latest_version": update_available
+        }),
+    );
+
+    Ok(serde_json::json!({
+        "code": 0,
+        "status": status,
+        "current_version": installed_version,
+        "latest_version": update_available
+    }))
 }
 
 // ACP Terminal RPC Methods
