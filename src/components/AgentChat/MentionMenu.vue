@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useTemplateRef, watch } from 'vue';
+
 interface MentionItem {
   id: string;
   label: string;
@@ -6,7 +8,7 @@ interface MentionItem {
   is_dir: boolean;
 }
 
-defineProps<{
+const props = defineProps<{
   mentionItems: MentionItem[];
   selectedIndex: number;
   floatingStyles: Record<string, string>;
@@ -15,6 +17,12 @@ defineProps<{
 const emit = defineEmits<{
   select: [index: number];
 }>();
+
+const scrollArea = useTemplateRef('scrollArea');
+
+watch(() => props.selectedIndex, (index) => {
+  scrollArea.value?.virtualizer?.scrollToIndex(index, { align: 'auto' });
+});
 </script>
 
 <template>
@@ -24,6 +32,7 @@ const emit = defineEmits<{
   >
     <div class="bg-white border border-gray-200 rounded-md shadow-lg w-64">
       <UScrollArea
+        ref="scrollArea"
         v-if="mentionItems.length > 0"
         v-slot="{ item, index }"
         :items="mentionItems"

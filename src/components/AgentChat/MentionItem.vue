@@ -26,6 +26,9 @@ const getIcon = () => {
   }
   return getFileIcon(props.item.label);
 };
+
+const { item } = props;
+const dir = item.path.endsWith(item.label) ? item.path.slice(0, -item.label.length) : item.path;
 </script>
 
 <template>
@@ -38,8 +41,9 @@ const getIcon = () => {
     ]"
   >
     <UIcon :name="getIcon()" class="flex-shrink-0 w-4 h-4 text-gray-500" />
-    <div class="flex-1 min-w-0">
-      <div class="text-sm font-medium truncate">{{ item.path }}</div>
+    <div class="flex-1 min-w-0 flex flex-row gap-2 items-center">
+      <div class="text-sm font-medium whitespace-nowrap">{{ item.label }}</div>
+      <div class="text-xs truncate">{{ dir }}</div>
     </div>
   </div>
 </template>

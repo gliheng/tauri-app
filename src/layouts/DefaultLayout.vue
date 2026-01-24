@@ -17,7 +17,6 @@ const mountArtifactView = ref(false);
 const artifactsStore = useArtifactsStore();
 const { artifacts } = storeToRefs(artifactsStore);
 
-
 watch(showArtifactView, (show) => {
   if (show) {
     if (!mountArtifactView.value) {

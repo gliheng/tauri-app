@@ -3,7 +3,7 @@ import { ref, onUnmounted, onMounted, PropType, computed, useTemplateRef } from 
 import { AnimatePresence } from "motion-v";
 import { Chat, updateChat, writeChat, type Agent } from "@/db-sqlite";
 import ChatBox from "@/components/ChatBox.vue";
-import Spinner from "@/components/Spinner.vue";
+import Loader from "@/components/Loader.vue";
 import MessageList from "./MessageList.vue";
 import ModeSelector from "./ModeSelector.vue";
 import SlashCommandMenu from "./SlashCommandMenu.vue";
@@ -512,7 +512,7 @@ const mentionMenuRef = ref<HTMLElement | null>(null);
 const { floatingStyles } = useFloating(virtualReference, mentionMenuRef, {
   placement: 'bottom-start',
   middleware: [
-    offset(10),
+    offset(25),
     flip({
       fallbackPlacements: ['top-start'],
     }),
@@ -648,7 +648,7 @@ const mentionExtension = Mention.configure({
 <template>
   <div class="flex-1 flex flex-col min-h-0 justify-center relative">
     <section v-if="!isInitialized" class="flex-1 flex flex-col justify-center items-center gap-4">
-      <Spinner />
+      <Loader />
       <p class="text-gray-500 text-sm">Initializing agent...</p>
     </section>
     <template v-else>

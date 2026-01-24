@@ -3,7 +3,7 @@ import { ref, computed } from "vue";
 import { TabsContent, TabsIndicator, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 import { useArtifactsStore } from "@/stores/artifacts";
 import { storeToRefs } from "pinia";
-import Spinner from "@/components/Spinner.vue";
+import Loader from "@/components/Loader.vue";
 import CodeEditor from "@/components/CodeEditor/CodeEditor.vue";
 import Terminal from "@/components/CodeEditor/Terminal.vue";
 
@@ -108,7 +108,7 @@ function getArtifactDisplayName(id: string): string {
     </div>
     <template #fallback>
       <div class="h-30 flex items-center justify-center">
-        <Spinner />
+        <Loader />
       </div>
     </template>
   </Suspense>

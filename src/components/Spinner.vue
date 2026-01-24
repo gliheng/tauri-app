@@ -1,69 +1,49 @@
+<script setup lang="ts">
+withDefaults(defineProps<{
+  size?: 'sm' | 'md' | 'lg';
+}>(), {
+  size: 'md',
+})
+
+const containerSize = {
+  'sm': 'size-4',
+  'md': 'size-8',
+  'lg': 'size-10',
+};
+
+const borderSize = {
+  'sm': 'border-2',
+  'md': 'border-3',
+  'lg': 'border-4',
+};
+</script>
+
 <template>
-  <div class="loader"></div>
-  <slot />
+  <div class="relative flex" :class="containerSize[size]">
+    <i class="border-primary animate-spinner-ease-spin absolute h-full w-full rounded-full border-solid border-t-transparent border-r-transparent border-l-transparent"
+      :class="borderSize[size]">
+    </i>
+    <i class="border-primary animate-spinner-linear-spin absolute h-full w-full rounded-full border-dotted border-t-transparent border-r-transparent border-l-transparent opacity-75"
+      :class="borderSize[size]">
+    </i>
+  </div>
 </template>
 
-<script lang="ts" setup></script>
-
 <style lang="scss" scoped>
-.loader {
-  width: 108px;
-  height: 16px;
-  background:
-    radial-gradient(
-      circle at 8px 8px,
-      var(--ui-color-primary-500) 0%,
-      var(--ui-color-primary-500) 8px,
-      transparent 8px,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle at 8px 8px,
-      var(--ui-color-primary-500) 0%,
-      var(--ui-color-primary-500) 8px,
-      transparent 8px,
-      transparent 100%
-    );
-  background-size: 16px 16px;
-  background-repeat: no-repeat;
-  position: relative;
-  animation: ballX 1s linear infinite;
+.animate-spinner-ease-spin {
+  animation: spinner-spin .8s infinite;
 }
-.loader:before {
-  content: "";
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--ui-color-primary-500);
-  inset: 0;
-  margin: auto;
-  animation: moveX 1s cubic-bezier(0.5, 300, 0.5, -300) infinite;
+
+.animate-spinner-linear-spin {
+  animation: spinner-spin .8s linear infinite
 }
-@keyframes ballX {
-  0%,
-  25%,
-  50%,
-  75%,
-  100% {
-    background-position:
-      25% 0,
-      75% 0;
+
+@keyframes spinner-spin {
+  0% {
+    transform:rotate(0)
   }
-  40% {
-    background-position:
-      25% 0,
-      85% 0;
-  }
-  90% {
-    background-position:
-      15% 0,
-      75% 0;
-  }
-}
-@keyframes moveX {
-  100% {
-    transform: translate(0.15px);
+  to {
+    transform:rotate(1turn)
   }
 }
 </style>
