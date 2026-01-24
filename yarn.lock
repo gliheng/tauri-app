@@ -2211,6 +2211,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tiptap/extension-document@npm:^3.17.0":
+  version: 3.17.0
+  resolution: "@tiptap/extension-document@npm:3.17.0"
+  peerDependencies:
+    "@tiptap/core": ^3.17.0
+  checksum: 10c0/11cb867c27d9e9b04f53650d0fdd53f31d17527425efc1eebad4cfe226b6f24337baabf5c62b3aa77f13ba72a8906e7f8350d1bb22a066522483d2a2999565c2
+  languageName: node
+  linkType: hard
+
 "@tiptap/extension-drag-handle-vue-3@npm:3.13.0":
   version: 3.13.0
   resolution: "@tiptap/extension-drag-handle-vue-3@npm:3.13.0"
@@ -2310,6 +2319,15 @@ __metadata:
   peerDependencies:
     "@tiptap/core": ^3.15.1
   checksum: 10c0/9e2af245aa1678944829df43ff333accc8a10159f77c798cce886953b9b5a98898eb6b6793fc1c0d10bc25e59d5a62bce894495824004dd33c64f78ddabcc4f9
+  languageName: node
+  linkType: hard
+
+"@tiptap/extension-hard-break@npm:^3.17.0":
+  version: 3.17.0
+  resolution: "@tiptap/extension-hard-break@npm:3.17.0"
+  peerDependencies:
+    "@tiptap/core": ^3.17.0
+  checksum: 10c0/6e697d3a486796c923bdaec73abe8427fea3b48e9fcf1b3da71cc47cab4c3ba806a09ef84bb8e6dbcad096715f655674ff6c349111f2f02ac159be3f6970ad80
   languageName: node
   linkType: hard
 
@@ -2450,6 +2468,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tiptap/extension-paragraph@npm:^3.17.0":
+  version: 3.17.0
+  resolution: "@tiptap/extension-paragraph@npm:3.17.0"
+  peerDependencies:
+    "@tiptap/core": ^3.17.0
+  checksum: 10c0/e444affc88aa27a7003af8f8b03beb7c3bac3cd6a0019d1f90557ba3b6e0290edfae1185bb2a2c2b2e4bb0ed3411be3275a97fe6635c24466b220c4cc1cccd1f
+  languageName: node
+  linkType: hard
+
 "@tiptap/extension-placeholder@npm:3.13.0":
   version: 3.13.0
   resolution: "@tiptap/extension-placeholder@npm:3.13.0"
@@ -2483,6 +2510,15 @@ __metadata:
   peerDependencies:
     "@tiptap/core": ^3.15.1
   checksum: 10c0/04f0d5037f3dd6dfa03a7d8b8aa634b4eb04cad58adb1397efb530d5bbe464a0c28b41edc9c604134f7f481948cfa3596c90783dedf7397e3fd37c144be01bc4
+  languageName: node
+  linkType: hard
+
+"@tiptap/extension-text@npm:^3.17.0":
+  version: 3.17.0
+  resolution: "@tiptap/extension-text@npm:3.17.0"
+  peerDependencies:
+    "@tiptap/core": ^3.17.0
+  checksum: 10c0/cee740634518455a1904d2024f1f53ed3aa7069c87ceabec59dc917a182f8d183c852d3ff5eab3df6ffce4c0166c69961cba7ef5fa8ab0e33afbbe4e5e6d7659
   languageName: node
   linkType: hard
 
@@ -4607,7 +4643,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lib0@npm:^0.2.100, lib0@npm:^0.2.99":
+"lib0@npm:^0.2.100, lib0@npm:^0.2.85, lib0@npm:^0.2.99":
   version: 0.2.117
   resolution: "lib0@npm:0.2.117"
   dependencies:
@@ -5739,10 +5775,14 @@ __metadata:
     "@tauri-apps/plugin-sql": "npm:~2"
     "@tiptap/core": "npm:^3.15.3"
     "@tiptap/extension-collaboration": "npm:^3.15.3"
+    "@tiptap/extension-document": "npm:^3.17.0"
     "@tiptap/extension-drag-handle": "npm:^3.15.3"
     "@tiptap/extension-emoji": "npm:^3.15.3"
+    "@tiptap/extension-hard-break": "npm:^3.17.0"
     "@tiptap/extension-mention": "npm:^3.15.3"
     "@tiptap/extension-node-range": "npm:^3.15.3"
+    "@tiptap/extension-paragraph": "npm:^3.17.0"
+    "@tiptap/extension-text": "npm:^3.17.0"
     "@tiptap/extension-text-align": "npm:^3.15.3"
     "@tiptap/extensions": "npm:^3.15.3"
     "@tiptap/pm": "npm:^3.15.3"
@@ -5791,6 +5831,7 @@ __metadata:
     vue-easy-lightbox: "npm:^1.19.0"
     vue-router: "npm:^4.5.1"
     vue-tsc: "npm:^2.1.10"
+    y-protocols: "npm:^1.0.7"
     yjs: "npm:^13.6.29"
     zod: "npm:^3.25.67"
   languageName: unknown
@@ -7230,6 +7271,17 @@ __metadata:
   bin:
     node-which: bin/which.js
   checksum: 10c0/fe9d6463fe44a76232bb6e3b3181922c87510a5b250a98f1e43a69c99c079b3f42ddeca7e03d3e5f2241bf2d334f5a7657cfa868b97c109f3870625842f4cc15
+  languageName: node
+  linkType: hard
+
+"y-protocols@npm:^1.0.7":
+  version: 1.0.7
+  resolution: "y-protocols@npm:1.0.7"
+  dependencies:
+    lib0: "npm:^0.2.85"
+  peerDependencies:
+    yjs: ^13.0.0
+  checksum: 10c0/70e14ab50b9200e97602c5effc3e14ae4ea0f51479a1628569af7cc12a6739fbc02484335828f5c508a4bf6fa0c3ef5ae1c17e13346b7a6093abeb9627f59021
   languageName: node
   linkType: hard
 
