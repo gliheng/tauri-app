@@ -64,6 +64,7 @@ pub fn run() {
             handlers::stop_watching,
             handlers::get_opencode_models,
             handlers::glob_files,
+            handlers::upgrade_package,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

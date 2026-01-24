@@ -43,6 +43,7 @@ pub async fn acp_initialize(
     agent: &str,
     settings: Option<ModelSettings>,
     app: tauri::AppHandle,
+    window: tauri::Window,
 ) -> Result<serde_json::Value, serde_json::Value> {
     println!(
         "acp_initialize called with agent: {}, settings: {:?}",
@@ -112,14 +113,14 @@ pub async fn acp_initialize(
             "@google/gemini-cli"
         }
         "opencode" => {
-            args.push("@opencode-ai/opencode".into());
+            args.push("opencode-ai".into());
             args.push("acp".into());
             if let Some(ms) = settings {
                 if !ms.model.is_empty() {
                     args.extend(["--model".into(), ms.model.clone()]);
                 }
             }
-            "@opencode-ai/opencode"
+            "opencode-ai"
         }
         _ => {
             return Err(serde_json::json!({
@@ -134,31 +135,125 @@ pub async fn acp_initialize(
 
     let app_config_dir = app.path().app_data_dir().unwrap();
 
-    // Run bun install -g for the package before starting the agent
-    println!("Installing package: {}", package_name);
+    // Check if package is already installed
+    let is_installed = check_package_installed(package_name, &app_config_dir).await.unwrap_or(false);
 
-    let install_command = app.shell().sidecar("bun").map_err(|e| {
-        serde_json::json!({
-            "code": 10,
-            "message": format!("Failed to load bun sidecar for install: {}", e)
-        })
-    })?;
+    if is_installed {
+        println!("Package {} is already installed", package_name);
 
-    let (_install_rx, _install_child) = install_command
-        .args(["install", "-g", package_name])
-        .env("BUN_INSTALL", app_config_dir.clone())
-        .spawn()
-        .map_err(|e| {
+        // Get the installed version
+        let installed_version = match get_installed_version(package_name, &app_config_dir).await {
+            Ok(Some(v)) => v,
+            Ok(None) => "unknown".to_string(),
+            Err(e) => {
+                println!("Failed to get installed version: {:?}", e);
+                "unknown".to_string()
+            }
+        };
+
+        // Check for updates
+        let update_available = match get_latest_version(package_name).await {
+            Ok(Some(latest)) => {
+                if installed_version != "unknown" && installed_version != latest {
+                    Some(latest)
+                } else {
+                    None
+                }
+            }
+            Ok(None) => None,
+            Err(e) => {
+                println!("Failed to check for updates: {:?}", e);
+                None
+            }
+        };
+
+        let status = if update_available.is_some() {
+            "update_available"
+        } else {
+            "already_installed"
+        };
+
+        let message = if let Some(ref latest) = update_available {
+            format!("{} v{} is installed (v{} available)", package_name, installed_version, latest)
+        } else {
+            format!("{} v{} is installed (up to date)", package_name, installed_version)
+        };
+
+        let event_name = format!("package_install_status::{}", agent_name);
+        let _ = window.emit(
+            &event_name,
             serde_json::json!({
-                "code": 11,
-                "message": format!("Failed to run bun install: {}", e)
+                "package": package_name,
+                "status": status,
+                "message": message,
+                "current_version": installed_version,
+                "latest_version": update_available
+            }),
+        );
+    } else {
+        // Run bun install -g for the package before starting the agent
+        println!("Installing package: {}", package_name);
+
+        let event_name = format!("package_install_status::{}", agent_name);
+        let _ = window.emit(
+            &event_name,
+            serde_json::json!({
+                "package": package_name,
+                "status": "installing",
+                "message": format!("Installing {}...", package_name)
+            }),
+        );
+
+        let install_command = app.shell().sidecar("bun").map_err(|e| {
+            let _ = window.emit(
+                "package_install_status",
+                serde_json::json!({
+                    "package": package_name,
+                    "status": "error",
+                    "message": format!("Failed to load bun sidecar: {}", e)
+                }),
+            );
+            serde_json::json!({
+                "code": 10,
+                "message": format!("Failed to load bun sidecar for install: {}", e)
             })
         })?;
 
-    // Wait a moment for installation to complete
-    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        let (_install_rx, _install_child) = install_command
+            .args(["install", "-g", package_name])
+            .env("BUN_INSTALL", app_config_dir.clone())
+            .spawn()
+            .map_err(|e| {
+                let _ = window.emit(
+                    "package_install_status",
+                    serde_json::json!({
+                        "package": package_name,
+                        "status": "error",
+                        "message": format!("Failed to run bun install: {}", e)
+                    }),
+                );
+                serde_json::json!({
+                    "code": 11,
+                    "message": format!("Failed to run bun install: {}", e)
+                })
+            })?;
 
-    println!("Installation command started for {}", package_name);
+        // Wait a moment for installation to complete
+        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+        println!("Installation command started for {}", package_name);
+
+        // Emit success event
+        let event_name = format!("package_install_status::{}", agent_name);
+        let _ = window.emit(
+            &event_name,
+            serde_json::json!({
+                "package": package_name,
+                "status": "success",
+                "message": format!("Successfully installed {}", package_name)
+            }),
+        );
+    }
 
     // Create the sidecar command with environment variables
     let command = app.shell().sidecar("bun").map_err(|e| {
@@ -728,6 +823,96 @@ struct ACPTerminal {
 static ACP_TERMINALS: std::sync::LazyLock<Arc<Mutex<HashMap<String, ACPTerminal>>>> =
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
+// Helper function to check if a package is already installed
+async fn check_package_installed(package_name: &str, app_config_dir: &PathBuf) -> Result<bool, serde_json::Value> {
+    let output = TokioCommand::new("bun")
+        .args(["pm", "ls", "-g", package_name])
+        .env("BUN_INSTALL", app_config_dir)
+        .output()
+        .await
+        .map_err(|e| {
+            serde_json::json!({
+                "code": 12,
+                "message": format!("Failed to check package installation: {}", e)
+            })
+        })?;
+
+    // Check if the package is listed in the output
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Ok(stdout.contains(package_name))
+}
+
+// Helper function to get the installed package version
+async fn get_installed_version(package_name: &str, app_config_dir: &PathBuf) -> Result<Option<String>, serde_json::Value> {
+    let output = TokioCommand::new("bun")
+        .args(["pm", "ls", "-g", package_name])
+        .env("BUN_INSTALL", app_config_dir)
+        .output()
+        .await
+        .map_err(|e| {
+            serde_json::json!({
+                "code": 13,
+                "message": format!("Failed to get package version: {}", e)
+            })
+        })?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Parse the version from the output
+    // The output format is typically: "package_name@version"
+    // For scoped packages like @qwen-code/qwen-code@0.7.2, the version is the last part
+    for line in stdout.lines() {
+        if line.contains(package_name) && line.contains('@') {
+            let parts: Vec<&str> = line.split('@').collect();
+            if parts.len() >= 2 {
+                let version = parts.last().unwrap().trim().to_string();
+                return Ok(Some(version));
+            }
+        }
+    }
+
+    Ok(None)
+}
+
+// Helper function to get the latest version from npm registry
+async fn get_latest_version(package_name: &str) -> Result<Option<String>, serde_json::Value> {
+    let url = format!("https://registry.npmjs.org/{}", package_name);
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .map_err(|e| {
+            serde_json::json!({
+                "code": 14,
+                "message": format!("Failed to create HTTP client: {}", e)
+            })
+        })?;
+
+    let response = client.get(&url).send().await.map_err(|e| {
+        serde_json::json!({
+            "code": 15,
+            "message": format!("Failed to fetch package info: {}", e)
+        })
+    })?;
+
+    if !response.status().is_success() {
+        return Ok(None);
+    }
+
+    let json: serde_json::Value = response.json().await.map_err(|e| {
+        serde_json::json!({
+            "code": 16,
+            "message": format!("Failed to parse response: {}", e)
+        })
+    })?;
+
+    if let Some(latest) = json["dist-tags"]["latest"].as_str() {
+        Ok(Some(latest.to_string()))
+    } else {
+        Ok(None)
+    }
+}
+
 // ACP Terminal RPC Methods
 
 #[derive(Deserialize, Debug)]
@@ -1212,4 +1397,89 @@ pub async fn glob_files(directory: &str, pattern: Option<&str>) -> Result<Vec<Fi
     }
 
     Ok(results)
+}
+
+#[tauri::command]
+pub async fn upgrade_package(
+    agent_name: String,
+    package_name: String,
+    app: tauri::AppHandle,
+    window: tauri::Window,
+) -> Result<serde_json::Value, serde_json::Value> {
+    let app_config_dir = app.path().app_data_dir().unwrap();
+    let event_name = format!("package_install_status::{}", agent_name);
+
+    // Emit upgrading event
+    let _ = window.emit(
+        &event_name,
+        serde_json::json!({
+            "package": package_name,
+            "status": "upgrading",
+            "message": format!("Upgrading {}...", package_name)
+        }),
+    );
+
+    // Run bun update -g for the package
+    let update_command = app.shell().sidecar("bun").map_err(|e| {
+        let _ = window.emit(
+            &event_name,
+            serde_json::json!({
+                "package": package_name,
+                "status": "error",
+                "message": format!("Failed to load bun sidecar: {}", e)
+            }),
+        );
+        serde_json::json!({
+            "code": 17,
+            "message": format!("Failed to load bun sidecar for upgrade: {}", e)
+        })
+    })?;
+
+    let (_update_rx, _update_child) = update_command
+        .args(["update", "-g", &package_name])
+        .env("BUN_INSTALL", &app_config_dir)
+        .spawn()
+        .map_err(|e| {
+            let _ = window.emit(
+                &event_name,
+                serde_json::json!({
+                    "package": package_name,
+                    "status": "error",
+                    "message": format!("Failed to run bun update: {}", e)
+                }),
+            );
+            serde_json::json!({
+                "code": 18,
+                "message": format!("Failed to run bun update: {}", e)
+            })
+        })?;
+
+    // Wait a moment for update to complete
+    tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+
+    println!("Update command started for {}", package_name);
+
+    // Get the new version
+    let new_version = get_installed_version(&package_name, &app_config_dir).await.ok().flatten();
+
+    let message = if let Some(ref v) = new_version {
+        format!("Successfully upgraded {} to v{}", package_name, v)
+    } else {
+        format!("Successfully upgraded {}", package_name)
+    };
+
+    let _ = window.emit(
+        &event_name,
+        serde_json::json!({
+            "package": package_name,
+            "status": "upgrade_success",
+            "message": message,
+            "version": new_version
+        }),
+    );
+
+    Ok(serde_json::json!({
+        "code": 0,
+        "version": new_version
+    }))
 }
