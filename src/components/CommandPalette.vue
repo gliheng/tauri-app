@@ -81,6 +81,18 @@ const groups = computed(() => {
             emit("close");
           },
         },
+        {
+          label: "Open ACP debug",
+          suffix: "Test ACP",
+          icon: "i-lucide-list",
+          onSelect() {
+            tabsStore.openTab('/acpdebug', "ACP debug");
+            router.push({
+              name: "acpdebug",
+            });
+            emit("close");
+          },
+        },
       ],
     },
   ];

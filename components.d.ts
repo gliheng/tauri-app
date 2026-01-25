@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AcpDebugMessageModal: typeof import('./src/components/AcpDebugMessageModal.vue')['default']
     AgentChat: typeof import('./src/components/AgentChat/AgentChat.vue')['default']
     AgentModal: typeof import('./src/components/AgentChat/AgentModal.vue')['default']
     AgentSessionList: typeof import('./src/components/AgentChat/AgentSessionList.vue')['default']

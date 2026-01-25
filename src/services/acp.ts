@@ -2,6 +2,7 @@ import { Ref } from "vue";
 import * as acp from "@agentclientprotocol/sdk";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { eventBus } from "@/utils/eventBus";
 
 export type Role = 'user' | 'assistant';
 
@@ -159,6 +160,11 @@ export async function createTauriAcpConnection(
       const text = new TextDecoder().decode(chunk);
       const message = JSON.parse(text);
       console.log('Sending to Tauri:', message);
+      eventBus.emit('acp_message_sent', {
+        program,
+        message,
+        timestamp: Date.now()
+      });
       await invoke("acp_send_message", {
         agent: program,
         message,
@@ -171,17 +177,22 @@ export async function createTauriAcpConnection(
       await invoke("acp_start_listening", { agent: program });
       
       unlisten = await listen("acp_message::" + program, (event) => {
-        const { type, message } = event.payload as { 
-          agent: string; 
-          type: string; 
-          message: string 
+        const { type, message } = event.payload as {
+          agent: string;
+          type: string;
+          message: string
         };
-        
+
         if (type === 'connect') {
           console.debug('ACP connected', program);
           onConnect?.();
         } else if (type === 'message') {
           console.debug('Received from Tauri:', message);
+          eventBus.emit('acp_message_received', {
+            program,
+            message,
+            timestamp: Date.now()
+          });
           const encoded = new TextEncoder().encode(message + '\n');
           controller.enqueue(encoded);
         } else if (type === 'disconnect') {

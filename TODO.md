@@ -16,7 +16,7 @@
 - [ ] Optimize display of agent chat in the agent task list page, using a series of dots to show the progress.
 - [ ] Able to control "Ask before edit" & "Edit automaticly"
 - [x] Reveal file in finder.
-- [ ] Acp log debug page.
+- [x] Acp log debug page.
 - [x] Support bun agent package upgrade.
 - [ ] Web search.
 - [ ] Deep research.
