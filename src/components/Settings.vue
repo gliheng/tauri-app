@@ -14,6 +14,11 @@ const tabItems = [
     slot: "models" as const,
   },
   {
+    label: "Web Search",
+    icon: "i-lucide-search",
+    slot: "tavily" as const,
+  },
+  {
     label: "MCP",
     icon: "i-mdi-server",
     description: "",
@@ -71,7 +76,7 @@ const agentItems = [
 
 const defaultAgent = "codex";
 
-const { modelSettings, agentSettings, chatSettings } = storeToRefs(useSettingsStore());
+const { modelSettings, agentSettings, chatSettings, webSearchSettings } = storeToRefs(useSettingsStore());
 
 const modelList = computed(() => {
   const models: Array<{ label: string; value: string; provider: string }> = [];
@@ -353,6 +358,25 @@ watch(currentTab, async (tab) => {
           </div>
         </div>
       </Scrollbar>
+    </template>
+    <template #tavily>
+      <h1 class="text-xl font-semibold py-4">Tavily Search</h1>
+      <div class="flex-1 flex flex-col gap-4 min-h-0 overflow-auto">
+        <UForm :state="webSearchSettings" class="flex flex-col gap-4">
+          <UFormField label="API Key" name="apiKey">
+            <UInput
+              v-model.trim="webSearchSettings.apiKey"
+              placeholder="tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              type="password"
+              class="w-full"
+            />
+          </UFormField>
+          <p class="text-sm text-muted">
+            Enter your Tavily API key to enable web search in chat.
+            Get your API key from <a href="https://tavily.com" target="_blank" class="text-primary underline">tavily.com</a>
+          </p>
+        </UForm>
+      </div>
     </template>
     <template #mcp>
       <h1 class="text-xl font-semibold py-4">MCP</h1>

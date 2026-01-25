@@ -18,7 +18,7 @@
 - [x] Reveal file in finder.
 - [x] Acp log debug page.
 - [x] Support bun agent package upgrade.
-- [ ] Web search.
+- [x] Web search.
 - [ ] Deep research.
 - [ ] Share message history.
 

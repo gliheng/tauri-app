@@ -80,6 +80,7 @@ function copyText() {
               label="Show Thinking"
               color="neutral"
               variant="subtle"
+              leading-icon="i-lucide-brain"
               trailing-icon="i-lucide-chevron-down"
               :ui="{
                 base: i === displayParts.length - 1 ? 'animate-pulse' : '',
@@ -90,6 +91,50 @@ function copyText() {
             </UButton>
             <template #content>
               <MarkdownText class="text-zinc-400" :markdown="part.reasoning" />
+            </template>
+          </UCollapsible>
+          <UCollapsible
+            v-else-if="part.type == 'tool-invocation'"
+            class="flex flex-col gap-2"
+            :unmount-on-hide="false"
+          >
+            <UButton
+              class="self-start group"
+              :label="`Tool: ${(part as any).toolInvocation?.toolName}`"
+              color="neutral"
+              variant="subtle"
+              leading-icon="i-lucide-terminal"
+              trailing-icon="i-lucide-chevron-down"
+              :ui="{
+                base: i === displayParts.length - 1 ? 'animate-pulse' : '',
+                trailingIcon:
+                  'group-data-[state=open]:rotate-180 transition-transform duration-200',
+              }"
+            >
+            </UButton>
+            <template #content>
+              <div class="flex flex-col gap-3 text-sm">
+                <div v-if="(part as any).toolInvocation?.args" class="flex flex-col gap-1">
+                  <span class="font-semibold">Arguments:</span>
+                  <pre class="p-2 rounded overflow-x-auto text-xs">{{ JSON.stringify((part as any).toolInvocation.args, null, 2) }}</pre>
+                </div>
+                <div v-if="(part as any).toolInvocation?.result" class="flex flex-col gap-1">
+                  <span class="font-semibold">Result:</span>
+                  <div class="p-2 rounded overflow-x-auto">
+                    <template v-if="typeof (part as any).toolInvocation.result === 'string'">
+                      <pre class="text-xs whitespace-pre-wrap break-words">{{ (part as any).toolInvocation.result }}</pre>
+                    </template>
+                    <template v-else>
+                      <pre class="text-xs">{{ JSON.stringify((part as any).toolInvocation.result, null, 2) }}</pre>
+                    </template>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-zinc-400">
+                  <span>State: {{ (part as any).toolInvocation?.state }}</span>
+                  <span v-if="(part as any).toolInvocation?.step !== undefined">Step: {{ (part as any).toolInvocation.step }}</span>
+                  <span v-if="(part as any).toolInvocation?.toolCallId" class="font-mono text-[10px] opacity-70">{{ (part as any).toolInvocation.toolCallId }}</span>
+                </div>
+              </div>
             </template>
           </UCollapsible>
         </div>

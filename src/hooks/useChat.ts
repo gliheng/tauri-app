@@ -9,6 +9,7 @@ import { useChat as aiUseChat, UseChatOptions } from "@ai-sdk/vue";
 import { updateChat, writeChat, writeMessages } from "@/db-sqlite";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
+import { tavilySearchTool, tavilyExtractTool } from "@/llm/tools/tavily";
 
 export function useChat(opts: {
   id: string;
@@ -24,6 +25,8 @@ export function useChat(opts: {
       const { messages, data } = JSON.parse(req!.body as unknown as string);
       const userMessage = messages[messages.length - 1];
       const prevAssistantMessage = messages[messages.length - 2];
+      const webSearch = data?.webSearch === true;
+      
       // Async update chat meta data
       (async () => {
         if (messages.length === 1) {
@@ -45,6 +48,11 @@ export function useChat(opts: {
       const ret = streamText({
         model: getModel(data?.model),
         messages: convertToCoreMessages(messages),
+        maxSteps: 30,
+        tools: webSearch ? {
+          web_search: tavilySearchTool,
+          web_extract: tavilyExtractTool,
+        } : undefined,
         onFinish: async ({ response }) => {
           const messages = appendResponseMessages({
             messages: [userMessage],

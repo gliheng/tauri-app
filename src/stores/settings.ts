@@ -73,6 +73,10 @@ const defaultChatSettings = {
   chatModel: 'deepseek::deepseek-chat',
 };
 
+const defaultWebSearchSettings = {
+  apiKey: '',
+};
+
 export function loadAgentSettings() {
   const stored = localStorage.getItem("agentSettings");
   const storedSettings = stored ? JSON.parse(stored) : {};
@@ -96,6 +100,14 @@ export const useSettingsStore = defineStore("settings", () => {
   const agentSettings = ref(loadAgentSettings());
   const chatSettings = ref(loadChatSettings());
   
+  function loadWebSearchSettings() {
+    const stored = localStorage.getItem("webSearchSettings");
+    const storedSettings = stored ? JSON.parse(stored) : {};
+    return defaultsDeep({}, storedSettings, defaultWebSearchSettings) as typeof defaultWebSearchSettings;
+  }
+  
+  const webSearchSettings = ref(loadWebSearchSettings());
+  
   watch(modelSettings, (v) => {
     localStorage.setItem("modelSettings", JSON.stringify(v));
   }, {
@@ -113,10 +125,17 @@ export const useSettingsStore = defineStore("settings", () => {
   }, {
     deep: true,
   });
+  
+  watch(webSearchSettings, (v) => {
+    localStorage.setItem("webSearchSettings", JSON.stringify(v));
+  }, {
+    deep: true,
+  });
 
   return {
     modelSettings,
     agentSettings,
     chatSettings,
+    webSearchSettings,
   };
 });

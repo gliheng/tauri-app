@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { provide, computed, ref, PropType } from "vue";
 import { AnimatePresence } from "motion-v";
-import { omit } from "lodash-es";
+import { merge, omit } from "lodash-es";
 import ChatBox from "@/components/ChatBox.vue";
 import MessageList from "./MessageList.vue";
 import { useChat } from "@/hooks/useChat";
@@ -24,6 +24,7 @@ const initialMessages = props.chat ? await getChatMessages(props.chatId) : [];
 const expanded = ref(false);
 const messageGraph = ref<Record<string, any>>({});
 const pathSelection: Record<string, number> = {};
+const webSearch = ref(true);
 
 function addMessageToGraph(id: string, parent?: string) {
   const graph = messageGraph.value;
@@ -112,6 +113,7 @@ provide(CHAT_ACTIONS, {
     return reload({
       data: {
         model: settingsStore.chatSettings.chatModel,
+        webSearch: webSearch.value,
       }
     });
   },
@@ -119,6 +121,7 @@ provide(CHAT_ACTIONS, {
     return append(message, {
       data: {
         model: settingsStore.chatSettings.chatModel,
+        webSearch: webSearch.value,
       }
     });
   },
@@ -139,6 +142,16 @@ provide(MESSAGE_GRAPH, {
     loadMessages(messages);
   },
 });
+
+function onSubmit(data: any) {
+  handleSubmit(undefined, merge(data, {
+    data: {
+      model: settingsStore.chatSettings.chatModel,
+      webSearch: webSearch.value,
+    }
+  }));
+}
+
 </script>
 
 <template>
@@ -220,9 +233,22 @@ provide(MESSAGE_GRAPH, {
         :status="status"
         :style="{ width: viewWidth ? `${viewWidth}px` : '100%' }"
         :addons="['model-select']"
-        @submit="(data) => handleSubmit(undefined, data)"
+        @submit="onSubmit"
         @stop="stop"
-      />
+      >
+        <template #left-addons>
+          <UTooltip v-if="!!settingsStore.webSearchSettings.apiKey" text="Web search">
+            <UButton
+              :icon="webSearch ? 'i-lucide-globe' : 'i-lucide-globe'"
+              :color="webSearch ? 'primary' : 'neutral'"
+              variant="soft"
+              size="sm"
+              :disabled="status == 'submitted' || status == 'streaming'"
+              @click="webSearch = !webSearch"
+            />
+          </UTooltip>
+        </template>
+      </ChatBox>
     </div>
   </div>
 </template>
