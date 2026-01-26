@@ -360,7 +360,7 @@ function fileExistsInTree(entries: FileEntry[], path: string): boolean {
 <template>
   <div class="h-full flex flex-col">
     <header class="flex items-center gap-1 p-1 h-10" data-tauri-drag-region>
-      <h1 class="text-lg font-semibold truncate select-none" data-tauri-drag-region>Workspace Files</h1>
+      <h1 class="text-lg font-semibold truncate select-none" data-tauri-drag-region>Files</h1>
       <div class="flex-1"></div>
       <UTooltip text="Add file">
         <UButton size="sm" icon="i-lucide-file-plus" @click="onAddFile" @mousedown.prevent />

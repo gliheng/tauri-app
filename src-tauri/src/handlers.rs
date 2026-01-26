@@ -1542,3 +1542,50 @@ pub async fn upgrade_package(
         "version": new_version
     }))
 }
+
+#[tauri::command]
+pub async fn is_git_repo(path: &str) -> Result<bool, String> {
+    let path_buf = Path::new(path);
+    git2::Repository::open(path_buf)
+        .map(|_| true)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_git_diff_all(base_path: &str) -> Result<String, String> {
+    let repo = git2::Repository::open(base_path)
+        .map_err(|e| format!("Failed to open repository: {}", e))?;
+
+    let head = repo.head()
+        .map_err(|e| format!("Failed to get HEAD: {}", e))?;
+
+    let head_commit = head.peel_to_commit()
+        .map_err(|e| format!("Failed to peel to commit: {}", e))?;
+
+    let head_tree = head_commit.tree()
+        .map_err(|e| format!("Failed to get tree: {}", e))?;
+
+    let index = repo.index()
+        .map_err(|e| format!("Failed to get index: {}", e))?;
+
+    let mut opts = git2::DiffOptions::new();
+    let diff = repo.diff_tree_to_index(
+        Some(&head_tree),
+        Some(&index),
+        Some(&mut opts)
+    ).map_err(|e| format!("Failed to create diff: {}", e))?;
+
+    let mut diff_text = String::new();
+    diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+        match line.origin() {
+            '+' | '-' | ' ' => {
+                diff_text.push(line.origin());
+                diff_text.push_str(std::str::from_utf8(line.content()).unwrap_or(""));
+            }
+            _ => {}
+        }
+        true
+    }).map_err(|e| format!("Failed to print diff: {}", e))?;
+
+    Ok(diff_text)
+}

@@ -77,9 +77,10 @@ function copyText() {
           >
             <UButton
               class="self-start group"
-              label="Show Thinking"
+              label="Thinking"
               color="neutral"
               variant="subtle"
+              size="sm"
               leading-icon="i-lucide-brain"
               trailing-icon="i-lucide-chevron-down"
               :ui="{
@@ -90,7 +91,7 @@ function copyText() {
             >
             </UButton>
             <template #content>
-              <MarkdownText class="text-zinc-400" :markdown="part.reasoning" />
+              <MarkdownText class="opacity-50" :markdown="part.reasoning" />
             </template>
           </UCollapsible>
           <UCollapsible
@@ -103,6 +104,7 @@ function copyText() {
               :label="`Tool: ${(part as any).toolInvocation?.toolName}`"
               color="neutral"
               variant="subtle"
+              size="sm"
               leading-icon="i-lucide-terminal"
               trailing-icon="i-lucide-chevron-down"
               :ui="{

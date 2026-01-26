@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="h-screen">
+  <div class="h-full">
     <Suspense>
       <CodeEditor cwd="/Users/juju/Develop/tauri-app" />
       <template #fallback>

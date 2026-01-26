@@ -220,7 +220,7 @@ watch(
 </script>
 
 <template>
-  <div ref="editorContainer" class="w-full h-full"></div>
+  <div ref="editorContainer"></div>
 </template>
 
 <style lang="scss" scoped>

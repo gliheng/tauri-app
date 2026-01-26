@@ -20,7 +20,8 @@
 - [x] Support bun agent package upgrade.
 - [x] Web search.
 - [ ] Deep research.
-- [ ] Share message history.
+- [ ] Share message history online.
+- [x] Code editor support diff view.
 
 # Issues
 - [ ] Fix qwen acp edit tool error.
@@ -32,3 +33,4 @@
 - [ ] Support scrolling mention menu using keyboard.
 - [x] Stop auto scroll when user is scrolling.
 - [ ] Each chat has its own model setting. Now changing one will affect another.
+- [ ] Unify scroller experience.

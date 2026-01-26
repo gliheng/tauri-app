@@ -67,6 +67,8 @@ pub fn run() {
             handlers::glob_files,
             handlers::upgrade_package,
             handlers::check_for_updates,
+            handlers::is_git_repo,
+            handlers::get_git_diff_all,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -86,6 +86,7 @@ function copyText() {
               })()"
               color="neutral"
               variant="subtle"
+              size="sm"
               leading-icon="i-lucide-list-checks"
               trailing-icon="i-lucide-chevron-down"
               :ui="{
@@ -150,6 +151,7 @@ function copyText() {
               :label="part.title"
               color="neutral"
               variant="subtle"
+              size="sm"
               :data-status="part.status"
               leading-icon="i-lucide-hammer"
               :trailing-icon="part.status == 'completed' ? 'i-heroicons-check-circle-20-solid' : part.status == 'failed' ? 'i-heroicons-x-circle-20-solid' : 'i-lucide-chevron-down'"
