@@ -48,8 +48,9 @@ export const useArtifactsStore = defineStore("artifacts", () => {
     }
   }
 
-  function removeArtifact(id: string) {
-    const index = artifacts.value.findIndex(a => a.id === id);
+  function removeArtifact(id: string, type: ArtifactType) {
+    const key = `${type}::${id}`;
+    const index = artifacts.value.findIndex(a => a.key === key);
     if (index === -1) return;
 
     const removedKey = artifacts.value[index].key;

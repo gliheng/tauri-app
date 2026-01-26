@@ -34,3 +34,5 @@
 - [x] Stop auto scroll when user is scrolling.
 - [ ] Each chat has its own model setting. Now changing one will affect another.
 - [ ] Unify scroller experience.
+- [x] Workspace files tab removed when clicking x on terminal tab.
+- [ ] Agent version gone in prod build.

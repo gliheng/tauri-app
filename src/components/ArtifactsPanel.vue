@@ -80,7 +80,7 @@ function getArtifactDisplayName(id: string): string {
             <UIcon v-else name="i-lucide-folder" :class="ui.triggerIcon" />
             <span :class="ui.triggerLabel">{{ artifact.type === 'terminal' ? 'Terminal' : getArtifactDisplayName(artifact.id) }}</span>
             <button
-              @click.stop="artifactsStore.removeArtifact(artifact.id)"
+              @click.stop="artifactsStore.removeArtifact(artifact.id, artifact.type)"
               :class="ui.triggerIcon"
               class="group-hover:opacity-100 opacity-0 transition-opacity hover:bg-elevated rounded p-0.5"
             >
