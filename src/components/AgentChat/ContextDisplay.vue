@@ -21,14 +21,12 @@ const contextText = computed(() => {
     parts.push(`${ctx.file.path}`);
   }
 
-  if (ctx.cursor) {
-    const { line, column } = ctx.cursor;
-    parts.push(`Ln ${line}, Col ${column}`);
-  }
-
   if (ctx.selection) {
     const { start, end } = ctx.selection;
     parts.push(`Sel: ${start}-${end}`);
+  } else if (ctx.cursor) {
+    const { line } = ctx.cursor;
+    parts.push(`Sel: ${line}`);
   }
 
   return parts.length > 0 ? parts.join(' • ') : null;

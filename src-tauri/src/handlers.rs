@@ -582,6 +582,25 @@ pub async fn write_binary_file(path: &str, content: Vec<u8>) -> Result<(), Strin
 }
 
 #[tauri::command]
+pub async fn read_file_by_range(path: &str, start: usize, end: usize) -> Result<String, String> {
+    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
+
+    let lines: Vec<&str> = content.lines().collect();
+
+    // Ensure start and end are within bounds
+    let start = start.min(lines.len());
+    let end = end.min(lines.len());
+
+    if start >= end {
+        return Ok(String::new());
+    }
+
+    // Extract the line range (start is inclusive, end is exclusive)
+    let range_lines = &lines[start..end];
+    Ok(range_lines.join("\n"))
+}
+
+#[tauri::command]
 pub async fn create_file(path: &str) -> Result<(), String> {
     fs::write(path, "").map_err(|e| format!("Failed to create file: {}", e))
 }

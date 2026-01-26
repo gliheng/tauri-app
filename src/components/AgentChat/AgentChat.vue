@@ -26,6 +26,7 @@ import {
 import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
 import mime from "mime";
 import { Attachment } from "ai";
+import dedent from "dedent";
 
 const toast = useToast();
 
@@ -368,7 +369,32 @@ const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) =
     // Add selection context if visible
     const ctx = selectionContextRef.value?.getContext();
     if (ctx) {
-      if (ctx.file?.path) {
+      if ((ctx.cursor || ctx.selection) && ctx.file) {
+        let start, end
+        if (ctx.selection) {
+          start = ctx.selection.start - 1;
+          end = ctx.selection.end;
+        } else if (ctx.cursor) {
+          start = ctx.cursor.line - 1;
+          end = ctx.cursor.line;
+        }
+        // Read file content and extract selection range
+        const fileContent = await invoke('read_file_by_range', {
+          path: `${baseDirectory}/${ctx.file.path}`,
+          start,
+          end,
+        });
+
+        parts.push({
+          type: 'text',
+          text: dedent`
+            @${ctx.file.path}
+            \`\`\`
+            ${fileContent}
+            \`\`\`
+          `,
+        });
+      } else if (ctx.file) {
         const mimeType = getMimeType(ctx.file.path);
         parts.push({
           type: 'resource',

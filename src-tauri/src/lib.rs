@@ -42,6 +42,7 @@ pub fn run() {
             handlers::acp_dispose,
             handlers::read_directory,
             handlers::read_file,
+            handlers::read_file_by_range,
             handlers::write_file,
             handlers::read_binary_file,
             handlers::write_binary_file,
