@@ -52,6 +52,9 @@ const getLanguageExtension = async () => {
     case 'tsx':
       const tsxLang = await import('@codemirror/lang-javascript')
       return tsxLang.javascript({ typescript: true, jsx: true })
+    case 'vue':
+      const vueLang = await import('@codemirror/lang-vue')
+      return vueLang.vue()
     case 'json':
       const jsonLang = await import('@codemirror/lang-json')
       return jsonLang.json()
