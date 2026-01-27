@@ -11,7 +11,7 @@
 - [ ] MCP interaction.
 - [x] Support sending attachments.
 - [ ] Create image using image model.
-- [ ] Move settings to a sql table.
+- [x] Move settings to a sql table.
 - [ ] Quick agent chat on the agent task list page.
 - [ ] Optimize display of agent chat in the agent task list page, using a series of dots to show the progress.
 - [ ] Able to control "Ask before edit" & "Edit automaticly"
@@ -38,3 +38,5 @@
 - [x] Workspace files tab removed when clicking x on terminal tab.
 - [x] Agent version gone in prod build.
 - [ ] Tavily still added even if no key is configured.
+- [ ] Clicking outside the code editor should remove cursor and selection.
+- [ ] 
