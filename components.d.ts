@@ -53,6 +53,7 @@ declare module 'vue' {
     Settings: typeof import('./src/components/Settings.vue')['default']
     Sidebar: typeof import('./src/components/Sidebar.vue')['default']
     SimpleChat: typeof import('./src/components/SimpleChat/SimpleChat.vue')['default']
+    SlashCommandItem: typeof import('./src/components/AgentChat/SlashCommandItem.vue')['default']
     SlashCommandMenu: typeof import('./src/components/AgentChat/SlashCommandMenu.vue')['default']
     Spinner: typeof import('./src/components/Spinner.vue')['default']
     Tabs: typeof import('./src/components/Tabs.vue')['default']

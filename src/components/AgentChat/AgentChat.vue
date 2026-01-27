@@ -14,7 +14,6 @@ import { useAcp } from "@/hooks/useAcp";
 import { invoke } from "@tauri-apps/api/core";
 import Mention from "@tiptap/extension-mention";
 import MentionMenu from "./MentionMenu.vue";
-import MentionItem from "./MentionItem.vue";
 import { type Editor } from "@tiptap/core";
 import {
   AvailableCommand,
@@ -95,11 +94,6 @@ async function handleModeChange(modeId: string) {
   }
 }
 
-function handleCommandSelect(command: AvailableCommand) {
-  const commandText = `/${command.name}`;
-  chatBoxRef.value?.insertText(commandText);
-}
-
 function handleMentionInsert() {
   if (!chatBoxRef.value) return;
   
@@ -115,6 +109,24 @@ function handleMentionInsert() {
   
   // Insert space before @ if needed
   const textToInsert = needsSpace ? ' @' : '@';
+  chatBoxRef.value.insertText(textToInsert);
+}
+
+function handleSlashInsert() {
+  if (!chatBoxRef.value) return;
+  
+  const editor = (chatBoxRef.value as any).editor;
+  if (!editor) return;
+  
+  const { state } = editor;
+  const { from } = state.selection;
+  
+  // Check if cursor is at the start or if previous character is a space
+  const textBefore = state.doc.textBetween(Math.max(0, from - 1), from);
+  const needsSpace = from > 0 && textBefore !== ' ' && textBefore !== '\n';
+  
+  // Insert space before / if needed
+  const textToInsert = needsSpace ? ' /' : '/';
   chatBoxRef.value.insertText(textToInsert);
 }
 
@@ -491,6 +503,17 @@ function selectMention(index: number) {
   }
 }
 
+function selectSlashCommand(index: number) {
+  const item = slashCommandItems.value[index];
+  if (item && slashRange.value && editorInstance) {
+    editorInstance.chain()
+      .focus()
+      .insertContentAt(slashRange.value, `/${item.name}`)
+      .run();
+    slashMenuOpen.value = false;
+  }
+}
+
 interface FileSuggestion {
   name: string;
   path: string;
@@ -520,13 +543,20 @@ const mentionQuery = ref("");
 const selectedIndex = ref(0);
 const mentionRange = ref<{ from: number; to: number } | null>(null);
 
+const slashMenuOpen = ref(false);
+const slashCommandItems = ref<{ name: string; description: string }[]>([]);
+const slashSelectedIndex = ref(0);
+const slashRange = ref<{ from: number; to: number } | null>(null);
+const slashQuery = ref("");
+
 // Click outside handler
 const handleClickOutside = (event: MouseEvent) => {
   // mentionMenuRef is a component ref, so we need $el to get the DOM element
   const menuEl = mentionMenuRef.value?.$el;
+  const slashMenuEl = slashMenuRef.value?.$el;
   const chatBoxEl = chatBoxRef.value?.$el;
 
-  // Check if click is outside both mention menu and chatbox
+  // Check if click is outside mention menu and chatbox
   if (
     menuEl &&
     !menuEl.contains(event.target as Node) &&
@@ -535,11 +565,21 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     mentionMenuOpen.value = false;
   }
+
+  // Check if click is outside slash menu and chatbox
+  if (
+    slashMenuEl &&
+    !slashMenuEl.contains(event.target as Node) &&
+    chatBoxEl &&
+    !chatBoxEl.contains(event.target as Node)
+  ) {
+    slashMenuOpen.value = false;
+  }
 };
 
 // Add click listener with { once: true } when menu opens
-watch(mentionMenuOpen, (isOpen) => {
-  if (isOpen) {
+watch([mentionMenuOpen, slashMenuOpen], ([isMentionOpen, isSlashOpen]) => {
+  if (isMentionOpen || isSlashOpen) {
     document.addEventListener('click', handleClickOutside, { once: true });
   }
 });
@@ -551,8 +591,24 @@ interface VirtualElement {
 
 const virtualReference = ref<VirtualElement | null>(null);
 const mentionMenuRef = ref<any>(null);
+const virtualReferenceSlash = ref<VirtualElement | null>(null);
+const slashMenuRef = ref<any>(null);
 
 const { floatingStyles } = useFloating(virtualReference, mentionMenuRef, {
+  placement: 'bottom-start',
+  middleware: [
+    offset(25),
+    flip({
+      fallbackPlacements: ['top-start'],
+    }),
+    shift({
+      padding: 10,
+    }),
+  ],
+  whileElementsMounted: autoUpdate,
+});
+
+const { floatingStyles: floatingStylesSlash } = useFloating(virtualReferenceSlash, slashMenuRef, {
   placement: 'bottom-start',
   middleware: [
     offset(25),
@@ -687,6 +743,128 @@ const mentionExtension = Mention.configure({
     },
   },
 });
+
+const slashExtension = Mention.configure({
+  HTMLAttributes: {
+    class: 'slash',
+  },
+  suggestion: {
+    char: '/',
+    items: async ({ query }) => {
+      slashQuery.value = query;
+      const filteredCommands = availableCommands.value
+        .filter(cmd => cmd.name.toLowerCase().includes(query.toLowerCase()) || 
+                     cmd.description.toLowerCase().includes(query.toLowerCase()));
+      slashCommandItems.value = filteredCommands.map(cmd => ({
+        name: cmd.name,
+        description: cmd.description,
+      }));
+      slashSelectedIndex.value = 0;
+      return slashCommandItems.value;
+    },
+    render: () => {
+      return {
+        onStart: (props: any) => {
+          if (!props.clientRect) {
+            return
+          }
+          slashRange.value = { from: props.range.from, to: props.range.to };
+          const { from } = props.range;
+          const { view } = props.editor;
+          const coords = view.coordsAtPos(from);
+
+          // Create virtual element for cursor position
+          virtualReferenceSlash.value = {
+            getBoundingClientRect() {
+              return {
+                width: 0,
+                height: 0,
+                x: coords.left,
+                y: coords.top,
+                top: coords.top,
+                left: coords.left,
+                right: coords.right,
+                bottom: coords.bottom,
+                toJSON() {
+                  return this;
+                },
+              };
+            },
+          };
+          slashMenuOpen.value = true;
+          editorInstance = props.editor;
+        },
+
+        onUpdate(props: any) {
+          slashRange.value = { from: props.range.from, to: props.range.to };
+          const { from } = props.range;
+          const { view } = props.editor;
+          const coords = view.coordsAtPos(from);
+
+          // Update virtual element position
+          virtualReferenceSlash.value = {
+            getBoundingClientRect() {
+              return {
+                width: 0,
+                height: 0,
+                x: coords.left,
+                y: coords.top,
+                top: coords.top,
+                left: coords.left,
+                right: coords.right,
+                bottom: coords.bottom,
+                toJSON() {
+                  return this;
+                },
+              };
+            },
+          };
+        },
+
+        onKeyDown(props: any) {
+          if (props.event.key === 'Escape') {
+            slashMenuOpen.value = false;
+            return true;
+          }
+
+          if (props.event.key === 'ArrowUp') {
+            slashSelectedIndex.value = (slashSelectedIndex.value - 1 + slashCommandItems.value.length) % slashCommandItems.value.length;
+            return true;
+          }
+
+          if (props.event.key === 'ArrowDown') {
+            slashSelectedIndex.value = (slashSelectedIndex.value + 1) % slashCommandItems.value.length;
+            return true;
+          }
+
+          if (props.event.key === 'ArrowLeft' || props.event.key === 'ArrowRight') {
+            // Allow arrow keys to pass through to the editor for navigation
+            return false;
+          }
+
+          const key = props.event.key;
+          // Allow tab and enter to pass through to the editor for navigation
+          if (key === 'Tab' || key === 'Enter') {
+            props.event.stopPropagation();
+            const item = slashCommandItems.value[slashSelectedIndex.value];
+            if (item) {
+              selectSlashCommand(slashSelectedIndex.value);
+            }
+            return true;
+          }
+
+          return false;
+        },
+
+        onExit() {
+          slashMenuOpen.value = false;
+          slashCommandItems.value = [];
+          slashRange.value = null;
+        },
+      };
+    },
+  },
+});
 </script>
 
 <template>
@@ -744,6 +922,7 @@ const mentionExtension = Mention.configure({
           @stop="cancel"
           :extensions="[
             mentionExtension,
+            slashExtension,
           ]"
         >
           <template #left-addons>
@@ -754,15 +933,19 @@ const mentionExtension = Mention.configure({
                 variant="soft"
                 size="sm"
                 :disabled="nonInteractive"
-                @click="handleMentionInsert"
+                @click.stop="handleMentionInsert"
               />
             </UTooltip>
-            <SlashCommandMenu
-              v-if="hasCommands"
-              :available-commands="availableCommands"
-              :disabled="nonInteractive"
-              @select="handleCommandSelect"
-            />
+            <UTooltip text="Run command">
+              <UButton
+                icon="i-lucide-command"
+                color="primary"
+                variant="soft"
+                size="sm"
+                :disabled="nonInteractive"
+                @click.stop="handleSlashInsert"
+              />
+            </UTooltip>
             <ModeSelector
               v-if="hasModes"
               v-model="currentModeId"
@@ -779,6 +962,14 @@ const mentionExtension = Mention.configure({
               :floating-styles="floatingStyles"
               @select="selectMention($event)"
             />
+            <SlashCommandMenu
+              v-if="slashMenuOpen"
+              ref="slashMenuRef"
+              :command-items="slashCommandItems"
+              :selected-index="slashSelectedIndex"
+              :floating-styles="floatingStylesSlash"
+              @select="selectSlashCommand($event)"
+            />
           </template>
         </ChatBox>
       </div>
@@ -791,6 +982,13 @@ const mentionExtension = Mention.configure({
   :deep(.mention) {
     background: rgba(59, 130, 246, 0.1);
     color: #3b82f6;
+    border-radius: 0.25rem;
+    padding: 0 0.25rem;
+    font-weight: 500;
+  }
+  :deep(.slash) {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
     border-radius: 0.25rem;
     padding: 0 0.25rem;
     font-weight: 500;

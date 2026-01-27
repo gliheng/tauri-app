@@ -41,3 +41,7 @@
 - [ ] Clicking outside the code editor should remove cursor and selection.
 - [ ] Clicking outside chatbox dismiss @ menu.
 - [ ] / command's description is too long.
+- [ ] Autoscroll does not work.
+- [ ] Editor save does not work.
+- [ ] Diff apply/reject does not work.
+
