@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, PropType, computed, useTemplateRef } from "vue";
+import { ref, onMounted, onUnmounted, PropType, computed, useTemplateRef, watch } from "vue";
 import { AnimatePresence } from "motion-v";
 import { Chat, updateChat, writeChat, type Agent } from "@/db";
 import ChatBox from "@/components/ChatBox.vue";
@@ -520,13 +520,37 @@ const mentionQuery = ref("");
 const selectedIndex = ref(0);
 const mentionRange = ref<{ from: number; to: number } | null>(null);
 
+// Click outside handler
+const handleClickOutside = (event: MouseEvent) => {
+  // mentionMenuRef is a component ref, so we need $el to get the DOM element
+  const menuEl = mentionMenuRef.value?.$el;
+  const chatBoxEl = chatBoxRef.value?.$el;
+
+  // Check if click is outside both mention menu and chatbox
+  if (
+    menuEl &&
+    !menuEl.contains(event.target as Node) &&
+    chatBoxEl &&
+    !chatBoxEl.contains(event.target as Node)
+  ) {
+    mentionMenuOpen.value = false;
+  }
+};
+
+// Add click listener with { once: true } when menu opens
+watch(mentionMenuOpen, (isOpen) => {
+  if (isOpen) {
+    document.addEventListener('click', handleClickOutside, { once: true });
+  }
+});
+
 // Virtual element for cursor position
 interface VirtualElement {
   getBoundingClientRect: () => DOMRect;
 }
 
 const virtualReference = ref<VirtualElement | null>(null);
-const mentionMenuRef = ref<HTMLElement | null>(null);
+const mentionMenuRef = ref<any>(null);
 
 const { floatingStyles } = useFloating(virtualReference, mentionMenuRef, {
   placement: 'bottom-start',
@@ -547,6 +571,7 @@ const mentionExtension = Mention.configure({
     class: 'mention',
   },
   suggestion: {
+    char: '@',
     items: async ({ query }) => {
       mentionQuery.value = query;
       const files = await globFiles(props.agent.directory!, query);

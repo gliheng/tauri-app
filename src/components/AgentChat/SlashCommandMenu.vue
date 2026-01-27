@@ -22,7 +22,6 @@ const emit = defineEmits<{
 <template>
   <UPopover
     :disabled="disabled || availableCommands.length === 0"
-    position=""
   >
     <UTooltip text="Select command to run">
       <UButton
@@ -35,25 +34,31 @@ const emit = defineEmits<{
       />
     </UTooltip>
     <template #content>
-      <div class="flex flex-col gap-1 p-1">
+      <div class="bg-white border border-gray-200 rounded-md shadow-lg w-64">
+      <UScrollArea
+        v-if="availableCommands.length > 0"
+        v-slot="{ item }"
+        :items="availableCommands"
+        :virtualize="{ estimateSize: 64 }"
+        class="max-h-64"
+        :ui="{ viewport: 'p-1' }"
+      >
         <UButton
-          v-for="command in availableCommands"
-          :key="command.name"
           variant="ghost"
           color="neutral"
-          class="justify-start"
-          @mousedown.prevent
-          @click="emit('select', command)"
+          class="justify-start w-full"
+          @click="emit('select', item)"
         >
           <template #default>
             <span data-slot="itemWrapper" class="flex-1 flex flex-col text-start min-w-0">
-              <span data-slot="itemLabel" class="truncate">/{{ command.name }}</span>
-              <span data-slot="itemDescription" class="truncate text-muted">{{ command.description }}</span>
+              <span data-slot="itemLabel" class="truncate">/{{ item.name }}</span>
+              <span data-slot="itemDescription" class="truncate text-muted">{{ item.description }}</span>
             </span>
             <span data-slot="itemTrailing" class="ms-auto inline-flex gap-1.5 items-center">
             </span>
           </template>
         </UButton>
+      </UScrollArea>
       </div>
     </template>
   </UPopover>
