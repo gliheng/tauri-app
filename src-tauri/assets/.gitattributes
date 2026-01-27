@@ -1,0 +1,2 @@
+binaries/bun-x86_64-pc-windows-msvc.exe filter=lfs diff=lfs merge=lfs -text
+binaries/bun-aarch64-apple-darwin filter=lfs diff=lfs merge=lfs -text
