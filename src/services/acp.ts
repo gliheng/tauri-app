@@ -456,26 +456,6 @@ export class TauriACPClient implements acp.Client {
     return result;
   }
 
-  async sessionPrompt(message: { type: 'text'; text: string }) {
-    return this.connection.prompt({
-      sessionId: '',
-      prompt: [message],
-    });
-  }
-
-  async sessionCancel() {
-    return this.connection.cancel({
-      sessionId: '',
-    });
-  }
-
-  async sessionSetMode(modeId: string) {
-    return (this.connection as any).extMethod('session/set_mode', {
-      sessionId: '',
-      modeId,
-    });
-  }
-
   async dispose() {
     this.onDispose?.();
   }

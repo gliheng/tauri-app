@@ -129,17 +129,10 @@ const start = async () => {
 
     if (enableLoadSession && props.chat && sessionId.value) {
       status.value = 'streaming';
-      await client.connection.loadSession({
-        sessionId: sessionId.value!,
-        mcpServers: [],
-        cwd: props.agent.directory!,
-      });
+      await client.sessionLoad(sessionId.value!);
       status.value = 'ready';
     } else {
-      const ret = await client.connection.newSession({
-        mcpServers: [],
-        cwd: props.agent.directory!,
-      });
+      const ret = await client.sessionNew();
       sessionId.value = ret.sessionId;
     }
 
