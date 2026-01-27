@@ -23,6 +23,7 @@ const selectedModeId = defineModel<string>({ required: true });
       label-key="name"
       value-key="id"
       variant="soft"
+      size="sm"
       placeholder="Select mode"
       :items="availableModes"
       :disabled="disabled"

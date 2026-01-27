@@ -41,6 +41,7 @@ watch(() => props.selectedIndex, (index) => {
         :ui="{ viewport: 'p-1' }"
       >
         <MentionItem
+          :key="item.id"
           :item="item"
           :selected="index === selectedIndex"
           @click="emit('select', index)"

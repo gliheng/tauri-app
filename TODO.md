@@ -39,4 +39,5 @@
 - [x] Agent version gone in prod build.
 - [ ] Tavily still added even if no key is configured.
 - [ ] Clicking outside the code editor should remove cursor and selection.
-- [ ] 
+- [ ] Clicking outside chatbox dismiss @ menu.
+- [ ] / command's description is too long.

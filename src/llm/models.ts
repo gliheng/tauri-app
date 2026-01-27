@@ -35,8 +35,32 @@ export const modelRepo = {
   ],
   openrouter: [
     {
+      label: "Claude haiku 4.5",
+      value: "anthropic/claude-haiku-4.5",
+    },
+    {
+      label: "Claude opus 4.5",
+      value: "anthropic/claude-opus-4.5",
+    },
+    {
+      label: "Claude sonnet 4.5",
+      value: "anthropic/claude-sonnet-4.5",
+    },
+    {
+      label: "Claude haiku 4",
+      value: "anthropic/claude-haiku-4",
+    },
+    {
       label: "Claude opus 4",
       value: "anthropic/claude-opus-4",
+    },
+    {
+      label: "Claude sonnet 4",
+      value: "anthropic/claude-sonnet-4",
+    },
+    {
+      label: "Gemini 2.5 flash",
+      value: "google/gemini-2.5-flash",
     },
     {
       label: "Gemini 2.5 pro",
