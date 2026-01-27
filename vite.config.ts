@@ -3,7 +3,7 @@ import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import ui from "@nuxt/ui/vite";
 import Icons from 'unplugin-icons/vite';
-import { FileSystemIconLoader } from 'unplugin-icons/loaders';
+import { ExternalPackageIconLoader, FileSystemIconLoader } from 'unplugin-icons/loaders';
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -22,6 +22,7 @@ export default defineConfig(async () => ({
       autoInstall: true,
       compiler: 'vue3',
       customCollections: {
+        ...ExternalPackageIconLoader('@iconify-json'),
         custom: FileSystemIconLoader('./src/assets/icons'),
       },
     }),
@@ -36,6 +37,9 @@ export default defineConfig(async () => ({
       '@nuxt/ui > prosemirror-model',
       '@nuxt/ui > prosemirror-view',
       '@nuxt/ui > prosemirror-gapcursor',
+      '@iconify-json/heroicons',
+      '@iconify-json/lucide',
+      '@iconify-json/vscode-icons',
     ],
   },
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

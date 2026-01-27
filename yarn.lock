@@ -2057,7 +2057,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tauri-apps/plugin-dialog@npm:2.5.0":
+"@tauri-apps/plugin-dialog@npm:^2.5.0":
   version: 2.5.0
   resolution: "@tauri-apps/plugin-dialog@npm:2.5.0"
   dependencies:
@@ -5651,7 +5651,7 @@ __metadata:
     "@tailwindcss/vite": "npm:^4.1.8"
     "@tauri-apps/api": "npm:^2.9.1"
     "@tauri-apps/cli": "npm:^2"
-    "@tauri-apps/plugin-dialog": "npm:2.5.0"
+    "@tauri-apps/plugin-dialog": "npm:^2.5.0"
     "@tauri-apps/plugin-fs": "npm:^2.4.5"
     "@tauri-apps/plugin-opener": "npm:^2.5.3"
     "@tauri-apps/plugin-shell": "npm:^2.3.4"

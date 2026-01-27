@@ -136,13 +136,13 @@ pub async fn acp_initialize(
     let app_config_dir = app.path().app_data_dir().unwrap();
 
     // Check if package is already installed
-    let is_installed = check_package_installed(package_name, &app_config_dir).await.unwrap_or(false);
+    let is_installed = check_package_installed(package_name, &app_config_dir, &app).await.unwrap_or(false);
 
     if is_installed {
         println!("Package {} is already installed", package_name);
 
         // Get the installed version
-        let installed_version = match get_installed_version(package_name, &app_config_dir).await {
+        let installed_version = match get_installed_version(package_name, &app_config_dir, &app).await {
             Ok(Some(v)) => v,
             Ok(None) => "unknown".to_string(),
             Err(e) => {
@@ -192,13 +192,13 @@ pub async fn acp_initialize(
             })
         })?;
 
-        let (_install_rx, _install_child) = install_command
+        let (mut install_rx, _install_child) = install_command
             .args(["install", "-g", package_name])
             .env("BUN_INSTALL", app_config_dir.clone())
             .spawn()
             .map_err(|e| {
                 let _ = window.emit(
-                    "package_install_status",
+                    &event_name,
                     serde_json::json!({
                         "package": package_name,
                         "status": "error",
@@ -211,19 +211,63 @@ pub async fn acp_initialize(
                 })
             })?;
 
-        // Wait a moment for installation to complete
-        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        // Wait for the installation process to complete
+        let mut install_failed = false;
+        while let Some(event) = install_rx.recv().await {
+            match event {
+                CommandEvent::Stderr(line) => {
+                    let text = String::from_utf8_lossy(&line);
+                    println!("Install stderr: {}", text);
+                    if text.contains("error") || text.contains("failed") {
+                        install_failed = true;
+                    }
+                }
+                CommandEvent::Terminated(payload) => {
+                    if let Some(code) = payload.code {
+                        if code != 0 {
+                            install_failed = true;
+                        }
+                    }
+                    break;
+                }
+                _ => {}
+            }
+        }
 
-        println!("Installation command started for {}", package_name);
+        if install_failed {
+            let _ = window.emit(
+                &event_name,
+                serde_json::json!({
+                    "package": package_name,
+                    "status": "error",
+                    "message": format!("Failed to install {}", package_name)
+                }),
+            );
+            return Err(serde_json::json!({
+                "code": 20,
+                "message": format!("Failed to install {}", package_name)
+            }));
+        }
+
+        println!("Installation command completed for {}", package_name);
+
+        // Get the installed version
+        let installed_version = get_installed_version(package_name, &app_config_dir, &app).await.ok().flatten();
+
+        let message = if let Some(ref v) = installed_version {
+            format!("Successfully installed {} v{}", package_name, v)
+        } else {
+            format!("Successfully installed {}", package_name)
+        };
 
         // Emit success event
-        let event_name = format!("package_install_status::{}", agent_name);
         let _ = window.emit(
             &event_name,
             serde_json::json!({
                 "package": package_name,
                 "status": "success",
-                "message": format!("Successfully installed {}", package_name)
+                "message": message,
+                "current_version": installed_version
             }),
         );
     }
@@ -816,12 +860,18 @@ static ACP_TERMINALS: std::sync::LazyLock<Arc<Mutex<HashMap<String, ACPTerminal>
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 // Helper function to check if a package is already installed
-async fn check_package_installed(package_name: &str, app_config_dir: &PathBuf) -> Result<bool, serde_json::Value> {
-    let output = TokioCommand::new("bun")
+async fn check_package_installed(package_name: &str, app_config_dir: &PathBuf, app: &tauri::AppHandle) -> Result<bool, serde_json::Value> {
+    let sidecar_command = app.shell().sidecar("bun").map_err(|e| {
+        serde_json::json!({
+            "code": 12,
+            "message": format!("Failed to load bun sidecar: {}", e)
+        })
+    })?;
+
+    let (mut rx, _child) = sidecar_command
         .args(["pm", "ls", "-g", package_name])
         .env("BUN_INSTALL", app_config_dir)
-        .output()
-        .await
+        .spawn()
         .map_err(|e| {
             serde_json::json!({
                 "code": 12,
@@ -829,18 +879,33 @@ async fn check_package_installed(package_name: &str, app_config_dir: &PathBuf) -
             })
         })?;
 
-    // Check if the package is listed in the output
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut stdout_data = Vec::new();
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Stdout(line) => stdout_data.extend_from_slice(&line),
+            CommandEvent::Terminated(_) => break,
+            _ => {}
+        }
+    }
+
+    let stdout = String::from_utf8_lossy(&stdout_data);
     Ok(stdout.contains(package_name))
 }
 
 // Helper function to get the installed package version
-async fn get_installed_version(package_name: &str, app_config_dir: &PathBuf) -> Result<Option<String>, serde_json::Value> {
-    let output = TokioCommand::new("bun")
+async fn get_installed_version(package_name: &str, app_config_dir: &PathBuf, app: &tauri::AppHandle) -> Result<Option<String>, serde_json::Value> {
+    let sidecar_command = app.shell().sidecar("bun").map_err(|e| {
+        serde_json::json!({
+            "code": 13,
+            "message": format!("Failed to load bun sidecar: {}", e)
+        })
+    })?;
+
+    let (mut rx, _child) = sidecar_command
         .args(["pm", "ls", "-g", package_name])
         .env("BUN_INSTALL", app_config_dir)
-        .output()
-        .await
+        .spawn()
         .map_err(|e| {
             serde_json::json!({
                 "code": 13,
@@ -848,7 +913,17 @@ async fn get_installed_version(package_name: &str, app_config_dir: &PathBuf) -> 
             })
         })?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut stdout_data = Vec::new();
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Stdout(line) => stdout_data.extend_from_slice(&line),
+            CommandEvent::Terminated(_) => break,
+            _ => {}
+        }
+    }
+
+    let stdout = String::from_utf8_lossy(&stdout_data);
 
     // Parse the version from the output
     // The output format is typically: "package_name@version"
@@ -916,7 +991,7 @@ pub async fn check_for_updates(
     let event_name = format!("package_install_status::{}", agent_name);
 
     // Get the installed version
-    let installed_version = match get_installed_version(&package_name, &app_config_dir).await {
+    let installed_version = match get_installed_version(&package_name, &app_config_dir, &app).await {
         Ok(Some(v)) => v,
         Ok(None) => "unknown".to_string(),
         Err(e) => {
@@ -1494,7 +1569,7 @@ pub async fn upgrade_package(
         })
     })?;
 
-    let (_update_rx, _update_child) = update_command
+    let (mut update_rx, _update_child) = update_command
         .args(["update", "-g", &package_name])
         .env("BUN_INSTALL", &app_config_dir)
         .spawn()
@@ -1513,13 +1588,48 @@ pub async fn upgrade_package(
             })
         })?;
 
-    // Wait a moment for update to complete
-    tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+    // Wait for the update process to complete
+    let mut update_failed = false;
+    while let Some(event) = update_rx.recv().await {
+        match event {
+            CommandEvent::Stderr(line) => {
+                let text = String::from_utf8_lossy(&line);
+                println!("Update stderr: {}", text);
+                if text.contains("error") || text.contains("failed") {
+                    update_failed = true;
+                }
+            }
+            CommandEvent::Terminated(payload) => {
+                if let Some(code) = payload.code {
+                    if code != 0 {
+                        update_failed = true;
+                    }
+                }
+                break;
+            }
+            _ => {}
+        }
+    }
 
-    println!("Update command started for {}", package_name);
+    if update_failed {
+        let _ = window.emit(
+            &event_name,
+            serde_json::json!({
+                "package": package_name,
+                "status": "error",
+                "message": format!("Failed to upgrade {}", package_name)
+            }),
+        );
+        return Err(serde_json::json!({
+            "code": 19,
+            "message": format!("Failed to upgrade {}", package_name)
+        }));
+    }
+
+    println!("Update command completed for {}", package_name);
 
     // Get the new version
-    let new_version = get_installed_version(&package_name, &app_config_dir).await.ok().flatten();
+    let new_version = get_installed_version(&package_name, &app_config_dir, &app).await.ok().flatten();
 
     let message = if let Some(ref v) = new_version {
         format!("Successfully upgraded {} to v{}", package_name, v)
@@ -1533,7 +1643,7 @@ pub async fn upgrade_package(
             "package": package_name,
             "status": "upgrade_success",
             "message": message,
-            "version": new_version
+            "current_version": new_version
         }),
     );
 

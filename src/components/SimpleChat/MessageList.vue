@@ -33,7 +33,7 @@ const actions = inject(CHAT_ACTIONS) as any;
 // Track if auto-scroll should be enabled (user is near bottom)
 const isAutoScrollEnabled = ref(true);
 // Threshold in pixels to consider "near bottom"
-const BOTTOM_THRESHOLD = 100;
+const BOTTOM_THRESHOLD = 20;
 
 const checkIsNearBottom = (): boolean => {
   const scroller = (listRef.value as any)?.scroller;

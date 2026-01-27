@@ -25,14 +25,14 @@
 
 # Issues
 - [ ] Fix qwen acp edit tool error.
-- [ ] Privde method to auth acp agents.
+- [ ] Provide method to auth acp agents.
 - [ ] Window controls on windows is not perfect.
 - [x] CommandPalette data loading is a bit laggy.
 - [ ] Image download is triggered twice in a row when clicking on the image toolbar.
 - [x] When metion is open, pressing enter does not trigger submit.
-- [ ] Support scrolling mention menu using keyboard.
+- [x] Support scrolling mention menu using keyboard.
 - [x] Stop auto scroll when user is scrolling.
 - [ ] Each chat has its own model setting. Now changing one will affect another.
 - [ ] Unify scroller experience.
 - [x] Workspace files tab removed when clicking x on terminal tab.
-- [ ] Agent version gone in prod build.
+- [x] Agent version gone in prod build.

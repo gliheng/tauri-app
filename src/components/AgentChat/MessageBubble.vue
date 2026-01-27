@@ -91,7 +91,6 @@ function copyText() {
               trailing-icon="i-lucide-chevron-down"
               :ui="{
                 label: 'text-left min-w-[200px]',
-                trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200',
               }"
             />
             <template #content>
@@ -157,7 +156,7 @@ function copyText() {
               :trailing-icon="part.status == 'completed' ? 'i-heroicons-check-circle-20-solid' : part.status == 'failed' ? 'i-heroicons-x-circle-20-solid' : 'i-lucide-chevron-down'"
               :ui="{
                 label: 'text-left truncate flex-1',
-                trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200 group-data-[status=completed]:text-primary group-data-[status=failed]:text-error',
+                trailingIcon: 'group-data-[status=completed]:text-primary group-data-[status=failed]:text-error',
               }"
             />
             <template #content>
