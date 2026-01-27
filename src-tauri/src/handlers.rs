@@ -116,9 +116,23 @@ pub async fn acp_initialize(
             args.push("opencode-ai".into());
             args.push("acp".into());
             if let Some(ms) = settings {
-                if !ms.model.is_empty() {
-                    args.extend(["--model".into(), ms.model.clone()]);
-                }
+                let model_name = ms.model.clone();
+                let config = serde_json::json!({
+                    "$schema": "https://opencode.ai/config.json",
+                    "model": format!("local/{}", ms.model),
+                    "provider": {
+                        "local": {
+                            "models": {
+                                (model_name): {}
+                            },
+                            "options": {
+                                "apiKey": ms.api_key,
+                                "baseURL": ms.base_url,
+                            }
+                        }
+                    }
+                });
+                env_vars.insert("OPENCODE_CONFIG_CONTENT".into(), config.to_string());
             }
             "opencode-ai"
         }
@@ -1431,30 +1445,6 @@ pub async fn unwatch_file(
     // No-op since we now watch the entire base directory
     // Individual files don't need to be unwatched anymore
     Ok(())
-}
-
-#[tauri::command]
-pub async fn get_opencode_models() -> Result<serde_json::Value, serde_json::Value> {
-    let output = TokioCommand::new("opencode")
-        .arg("models")
-        .output()
-        .await
-        .map_err(|e| {
-            serde_json::json!({
-                "code": 11,
-                "message": format!("Failed to execute opencode models: {}", e)
-            })
-        })?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-
-    let models: Vec<String> = stdout
-        .lines()
-        .map(|line| line.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
-
-    Ok(serde_json::json!({ "models": models }))
 }
 
 #[tauri::command]

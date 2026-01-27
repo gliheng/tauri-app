@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
-import { ref, watch, computed } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { ref, computed } from "vue";
 import { useSettingsStore } from "@/stores/settings";
 import { modelRepo } from "@/llm/models";
 import { AgentProgram } from "@/db-sqlite";
@@ -68,10 +67,10 @@ const agentItems = [
     label: "Qwen",
     value: "qwen",
   },
-  // {
-  //   label: "OpenCode",
-  //   value: "opencode",
-  // },
+  {
+    label: "OpenCode",
+    value: "opencode",
+  },
 ] satisfies TabsItem[];
 
 const defaultAgent = "codex";
@@ -135,29 +134,6 @@ const toggleModel = (provider: string, modelValue: string) => {
 };
 
 const currentTab = ref(defaultAgent);
-const opencodeModels = ref<{ label: string; value: string }[]>([]);
-const loadingOpencodeModels = ref(false);
-
-const fetchOpencodeModels = async () => {
-  loadingOpencodeModels.value = true;
-  try {
-    const result = await invoke<{ models: string[] }>('get_opencode_models');
-    opencodeModels.value = result.models.map(m => ({
-      label: m,
-      value: m
-    }));
-  } catch (error) {
-    console.error('Failed to fetch opencode models:', error);
-  } finally {
-    loadingOpencodeModels.value = false;
-  }
-};
-
-watch(currentTab, async (tab) => {
-  if (tab === 'opencode') {
-    await fetchOpencodeModels();
-  }
-}, { immediate: true });
 </script>
 
 <template>
@@ -295,63 +271,44 @@ watch(currentTab, async (tab) => {
                     />
                   </div>
 
-                  <template v-if="item.value !== 'opencode'">
-                    <UFormField label="Base URL" name="baseUrl">
-                      <UInput
-                        v-model.trim="
-                          agentSettings[item.value as AgentProgram].baseUrl
-                        "
-                        placeholder="https://api.example.com"
-                        class="w-full"
-                        :disabled="
-                          !agentSettings[item.value as AgentProgram].useCustomModel
-                        "
-                      />
-                    </UFormField>
+                  <UFormField label="Base URL" name="baseUrl">
+                    <UInput
+                      v-model.trim="
+                        agentSettings[item.value as AgentProgram].baseUrl
+                      "
+                      placeholder="https://api.example.com"
+                      class="w-full"
+                      :disabled="
+                        !agentSettings[item.value as AgentProgram].useCustomModel
+                      "
+                    />
+                  </UFormField>
 
-                    <UFormField label="Model" name="model">
-                      <UInput
-                        v-model.trim="
-                          agentSettings[item.value as AgentProgram].model
-                        "
-                        placeholder="gpt-4, claude-3, etc."
-                        class="w-full"
-                        :disabled="
-                          !agentSettings[item.value as AgentProgram].useCustomModel
-                        "
-                      />
-                    </UFormField>
+                  <UFormField label="Model" name="model">
+                    <UInput
+                      v-model.trim="
+                        agentSettings[item.value as AgentProgram].model
+                      "
+                      placeholder="gpt-4, claude-3, etc."
+                      class="w-full"
+                      :disabled="
+                        !agentSettings[item.value as AgentProgram].useCustomModel
+                      "
+                    />
+                  </UFormField>
 
-                    <UFormField label="API Key" name="apiKey">
-                      <UInput
-                        v-model.trim="
-                          agentSettings[item.value as AgentProgram].apiKey
-                        "
-                        placeholder="Your API key"
-                        class="w-full"
-                        :disabled="
-                          !agentSettings[item.value as AgentProgram].useCustomModel
-                        "
-                      />
-                    </UFormField>
-                  </template>
-
-                  <template v-else-if="item.value === 'opencode'">
-                    <UFormField label="Select Model">
-                      <USelectMenu
-                        v-model="agentSettings.opencode.model"
-                        :items="opencodeModels"
-                        :loading="loadingOpencodeModels"
-                        :disabled="
-                          !agentSettings.opencode?.useCustomModel
-                        "
-                        virtualize
-                        valueKey="value"
-                        placeholder="Select a model"
-                        class="w-full"
-                      />
-                    </UFormField>
-                  </template>
+                  <UFormField label="API Key" name="apiKey">
+                    <UInput
+                      v-model.trim="
+                        agentSettings[item.value as AgentProgram].apiKey
+                      "
+                      placeholder="Your API key"
+                      class="w-full"
+                      :disabled="
+                        !agentSettings[item.value as AgentProgram].useCustomModel
+                      "
+                    />
+                  </UFormField>
                   </UForm>
               </template>
             </UTabs>

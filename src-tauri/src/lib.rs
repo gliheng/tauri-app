@@ -63,7 +63,6 @@ pub fn run() {
             handlers::watch_file,
             handlers::unwatch_file,
             handlers::stop_watching,
-            handlers::get_opencode_models,
             handlers::glob_files,
             handlers::upgrade_package,
             handlers::check_for_updates,

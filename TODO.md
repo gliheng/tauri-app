@@ -22,6 +22,7 @@
 - [ ] Deep research.
 - [ ] Share message history online.
 - [x] Code editor support diff view.
+- [x] Opencode support custom model.
 
 # Issues
 - [ ] Fix qwen acp edit tool error.
@@ -36,3 +37,4 @@
 - [ ] Unify scroller experience.
 - [x] Workspace files tab removed when clicking x on terminal tab.
 - [x] Agent version gone in prod build.
+- [ ] Tavily still added even if no key is configured.
