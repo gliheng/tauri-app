@@ -10,7 +10,7 @@ import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki';
 import { ImageUpload, FileImageExtension } from './EditorImageUploadExtension';
 import { useEditorCompletion } from './EditorUseCompletion';
 import EditorLinkPopover from './EditorLinkPopover.vue';
-import { readFile } from '@/db-sqlite';
+import { readFile } from '@/db';
 import { downloadFile } from '@/utils/file';
 
 const toast = useToast();

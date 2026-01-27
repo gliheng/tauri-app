@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import { Chat, getAllChats, deleteChat } from "@/db-sqlite";
+import { Chat, getAllChats, deleteChat } from "@/db";
 
 export const useChatsStore = defineStore("chats", () => {
   const chats = ref<Chat[]>([]);

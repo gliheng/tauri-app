@@ -1,7 +1,7 @@
 import { ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { defaultsDeep } from 'lodash-es';
-import { Agent } from "@/db-sqlite";
+import * as settingsDb from "@/db/settings";
 
 export interface ChatModelConfig {
   apiKey: string;
@@ -77,57 +77,61 @@ const defaultWebSearchSettings = {
   apiKey: '',
 };
 
-export function loadAgentSettings() {
-  const stored = localStorage.getItem("agentSettings");
-  const storedSettings = stored ? JSON.parse(stored) : {};
-  return defaultsDeep({}, storedSettings, defaultAgentSettings) as Record<string, AgentConfig>;
+export async function loadAgentSettings() {
+  const dbSettings = await settingsDb.getAllAgentSettings();
+  return defaultsDeep({}, dbSettings, defaultAgentSettings) as Record<string, AgentConfig>;
 }
 
-export function loadModelSettings() {
-  const stored = localStorage.getItem("modelSettings");
-  const storedSettings = stored ? JSON.parse(stored) : {};
-  return defaultsDeep({}, storedSettings, defaultModelSettings) as Record<string, ChatModelConfig>;
+export async function loadModelSettings() {
+  const dbSettings = await settingsDb.getAllModelSettings();
+  return defaultsDeep({}, dbSettings, defaultModelSettings) as Record<string, ChatModelConfig>;
 }
 
-export function loadChatSettings() {
-  const stored = localStorage.getItem("chatSettings");
-  const storedSettings = stored ? JSON.parse(stored) : {};
-  return defaultsDeep({}, storedSettings, defaultChatSettings) as typeof defaultChatSettings;
+export async function loadChatSettings() {
+  const dbSettings = await settingsDb.getChatSettings();
+  return defaultsDeep({}, dbSettings, defaultChatSettings) as typeof defaultChatSettings;
+}
+
+export async function loadWebSearchSettings() {
+  const dbSettings = await settingsDb.getWebSearchSettings();
+  return defaultsDeep({}, dbSettings, defaultWebSearchSettings) as typeof defaultWebSearchSettings;
 }
 
 export const useSettingsStore = defineStore("settings", () => {
-  const modelSettings = ref(loadModelSettings());
-  const agentSettings = ref(loadAgentSettings());
-  const chatSettings = ref(loadChatSettings());
-  
-  function loadWebSearchSettings() {
-    const stored = localStorage.getItem("webSearchSettings");
-    const storedSettings = stored ? JSON.parse(stored) : {};
-    return defaultsDeep({}, storedSettings, defaultWebSearchSettings) as typeof defaultWebSearchSettings;
+  const modelSettings = ref<Record<string, ChatModelConfig>>({});
+  const agentSettings = ref<Record<string, AgentConfig>>({});
+  const chatSettings = ref<typeof defaultChatSettings>({} as typeof defaultChatSettings);
+  const webSearchSettings = ref<typeof defaultWebSearchSettings>({} as typeof defaultWebSearchSettings);
+
+  async function initializeStore() {
+    modelSettings.value = await loadModelSettings();
+    agentSettings.value = await loadAgentSettings();
+    chatSettings.value = await loadChatSettings();
+    webSearchSettings.value = await loadWebSearchSettings();
   }
-  
-  const webSearchSettings = ref(loadWebSearchSettings());
-  
-  watch(modelSettings, (v) => {
-    localStorage.setItem("modelSettings", JSON.stringify(v));
+
+  initializeStore();
+
+  watch(modelSettings, async (v) => {
+    await settingsDb.writeAllModelSettings(v);
   }, {
     deep: true,
   });
-  
-  watch(agentSettings, (v) => {
-    localStorage.setItem("agentSettings", JSON.stringify(v));
+
+  watch(agentSettings, async (v) => {
+    await settingsDb.writeAllAgentSettings(v);
   }, {
     deep: true,
   });
-  
-  watch(chatSettings, (v) => {
-    localStorage.setItem("chatSettings", JSON.stringify(v));
+
+  watch(chatSettings, async (v) => {
+    await settingsDb.writeChatSettings(v);
   }, {
     deep: true,
   });
-  
-  watch(webSearchSettings, (v) => {
-    localStorage.setItem("webSearchSettings", JSON.stringify(v));
+
+  watch(webSearchSettings, async (v) => {
+    await settingsDb.writeWebSearchSettings(v);
   }, {
     deep: true,
   });

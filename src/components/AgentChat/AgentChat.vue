@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted, PropType, computed, useTemplateRef } from "vue";
 import { AnimatePresence } from "motion-v";
-import { Chat, updateChat, writeChat, type Agent } from "@/db-sqlite";
+import { Chat, updateChat, writeChat, type Agent } from "@/db";
 import ChatBox from "@/components/ChatBox.vue";
 import Loader from "@/components/Loader.vue";
 import MessageList from "./MessageList.vue";

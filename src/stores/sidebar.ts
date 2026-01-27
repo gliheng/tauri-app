@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import { Agent, Document, getAgents, getDocuments } from "@/db-sqlite";
+import { Agent, Document, getAgents, getDocuments } from "@/db";
 
 export const useSidebarStore = defineStore("sidebar", () => {
   async function load() {

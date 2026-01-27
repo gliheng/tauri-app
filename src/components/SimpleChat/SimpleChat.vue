@@ -5,7 +5,7 @@ import { merge, omit } from "lodash-es";
 import ChatBox from "@/components/ChatBox.vue";
 import MessageList from "./MessageList.vue";
 import { useChat } from "@/hooks/useChat";
-import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db-sqlite";
+import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db";
 import { CHAT_ACTIONS, MESSAGE_GRAPH, ROOT_NODE_ID } from "@/constants";
 import { useSettingsStore } from "@/stores/settings";
 

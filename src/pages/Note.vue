@@ -2,7 +2,7 @@
 import { ref, watch, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { throttle } from "lodash-es";
-import { getDocument, writeDocument, updateDocument } from "@/db-sqlite";
+import { getDocument, writeDocument, updateDocument } from "@/db";
 import { NoteEditor } from "@/components/NoteEditor";
 import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";

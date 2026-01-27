@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onActivated } from "vue";
 import { useRoute } from "vue-router";
-import { getChat, getAgent, Agent } from "@/db-sqlite";
+import { getChat, getAgent, Agent } from "@/db";
 import ChatView from "@/components/SimpleChat/SimpleChat.vue";
 import AgentChat from "@/components/AgentChat/AgentChat.vue";
 import { eventBus } from "@/utils/eventBus";

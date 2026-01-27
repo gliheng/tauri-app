@@ -2,7 +2,7 @@ import { Node, mergeAttributes, Extension } from '@tiptap/core';
 import type { CommandProps } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
 import { VueNodeViewRenderer } from '@tiptap/vue-3';
-import { readFile } from '@/db-sqlite';
+import { readFile } from '@/db';
 import EditorImageUploadNode from './EditorImageUploadNode.vue';
 
 declare module '@tiptap/core' {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { NodeViewWrapper, nodeViewProps } from '@tiptap/vue-3';
-import { writeFile } from '@/db-sqlite';
+import { writeFile } from '@/db';
 import { ref, watch } from 'vue';
 
 const toast = useToast();

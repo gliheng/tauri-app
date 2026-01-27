@@ -5,7 +5,7 @@ import { tv } from "tailwind-variants";
 import { useColorMode } from "@vueuse/core";
 import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
-import { Agent, writeAgent } from "@/db-sqlite";
+import { Agent, writeAgent } from "@/db";
 import { computed } from "vue";
 import AgentModal from "./AgentChat/AgentModal.vue";
 import DocumentConfig from "./DocumentConfig.vue";

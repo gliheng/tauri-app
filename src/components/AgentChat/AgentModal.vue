@@ -2,7 +2,7 @@
 import { ref, toRaw } from "vue";
 import IconEdit from "@/components/IconEdit.vue";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup.vue";
-import { AgentProgram } from "@/db-sqlite";
+import { AgentProgram } from "@/db";
 
 export interface AgentFormData {
   name: string;

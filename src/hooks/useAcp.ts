@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { getAgentConfig } from "@/llm";
-import { Agent } from "@/db-sqlite";
+import { Agent } from "@/db";
 import PermissionModal from "@/components/AgentChat/PermissionModal.vue";
 import { TauriACPClient } from "@/services/acp";
 import type { Message, Status, Mode, Model, AvailableCommand } from "@/services/acp";

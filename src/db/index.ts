@@ -1,10 +1,12 @@
 import Database from '@tauri-apps/plugin-sql';
 import { Message } from 'ai';
-import { ROOT_NODE_ID } from './constants';
+import { ROOT_NODE_ID } from '@/constants';
 
 const DB_PATH = 'sqlite:data.db';
 
 let db: Database | null = null;
+
+export { db };
 
 export async function init() {
   db = await Database.load(DB_PATH);

@@ -6,7 +6,7 @@ import {
 } from "ai";
 import { getModel } from "@/llm";
 import { useChat as aiUseChat, UseChatOptions } from "@ai-sdk/vue";
-import { updateChat, writeChat, writeMessages } from "@/db-sqlite";
+import { updateChat, writeChat, writeMessages } from "@/db";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 import { tavilySearchTool, tavilyExtractTool } from "@/llm/tools/tavily";

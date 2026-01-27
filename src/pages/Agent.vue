@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getAgent, updateAgent, deleteAgent } from '@/db-sqlite';
+import { getAgent, updateAgent, deleteAgent } from '@/db';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useTabsStore } from '@/stores/tabs';
 import { AnimatePresence, motion } from 'motion-v';

@@ -1,8 +1,8 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { loadAgentSettings, loadModelSettings } from "@/stores/settings";
-import { AgentProgram } from "@/db-sqlite";
+import { useSettingsStore } from "@/stores/settings";
+import { AgentProgram } from "@/db";
 
 export function getModel(model?: string) {
   model = model ?? "deepseek::deepseek-chat";
@@ -41,17 +41,21 @@ export function getModel(model?: string) {
 export function getModelConfig(model?: string) {
   model = model ?? "deepseek::deepseek-chat";
   const [provider, name] = model.split("::");
+
+  const settingsStore = useSettingsStore();
+  const apiKey = settingsStore.modelSettings[provider]?.apiKey ?? '';
+
   return {
     provider,
     model: name,
-    apiKey: loadModelSettings()[provider].apiKey,
+    apiKey,
     baseUrl: getProviderBaseUrl(provider),
   };
 };
 
 export function getAgentConfig(type: AgentProgram) {
-  const settings = loadAgentSettings();
-  return settings[type];
+  const settingsStore = useSettingsStore();
+  return settingsStore.agentSettings[type];
 }
 
 export function getProviderBaseUrl(provider: string) {

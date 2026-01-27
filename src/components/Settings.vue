@@ -4,7 +4,7 @@ import { storeToRefs } from "pinia";
 import { ref, computed } from "vue";
 import { useSettingsStore } from "@/stores/settings";
 import { modelRepo } from "@/llm/models";
-import { AgentProgram } from "@/db-sqlite";
+import { AgentProgram } from "@/db";
 
 const tabItems = [
   {
