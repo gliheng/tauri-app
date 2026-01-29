@@ -27,6 +27,7 @@
 - [ ] Website.
 - [ ] Auto update.
 - [ ] Buy me a coffee.
+- [ ] Cloud service: LLM & deep research.
 
 # Issues
 - [ ] Fix qwen acp edit tool error.
@@ -48,3 +49,4 @@
 - [ ] Editor save does not work.
 - [ ] Diff apply/reject does not work.
 - [ ] Shortcut in WindowHeader does not work.
+- [ ] Agent upgrade failed.

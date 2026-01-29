@@ -13,7 +13,7 @@ export async function init() {
             if (await win.isMinimized()) {
               await win.unminimize();
             }
-            if (await win.isVisible()) {
+            if (!await win.isVisible()) {
               await win.show();
             }
             await win.setFocus();

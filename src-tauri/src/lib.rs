@@ -1,5 +1,5 @@
 use tauri_plugin_sql::{Migration, MigrationKind};
-use tauri::Emitter;
+use tauri::{Emitter, Manager, RunEvent};
 mod handlers;
 
 fn get_migrations() -> Vec<Migration> {
@@ -83,6 +83,28 @@ pub fn run() {
             handlers::is_git_repo,
             handlers::get_git_diff_all,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app: &tauri::AppHandle, event: RunEvent| {
+            match event {
+                // 1. Prevent exit on close
+                #[cfg(target_os = "macos")]
+                RunEvent::ExitRequested { api, .. } => {
+                    api.prevent_exit();
+                }
+
+                // 2. Listen for the "Reopen" event (Clicking Dock Icon)
+                // This event specifically fires when the app is running but focused via Dock
+                #[cfg(target_os = "macos")]
+                RunEvent::Reopen { has_visible_windows, .. } => {
+                    if !has_visible_windows {
+                        if let Some(window) = app.get_webview_window("main") {
+                            window.show().unwrap();
+                            window.set_focus().unwrap();
+                        }
+                    }
+                }
+                _ => {}
+            }
+        });
 }

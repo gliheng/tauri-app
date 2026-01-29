@@ -40,20 +40,12 @@ onUnmounted(() => {
   <div class="animate-bounce">
     <AnimatePresence :mode="'wait'">
       <Motion
-        v-if="!props.text"
         :key="displayText"
-        :initial="{ opacity: 0, y: 20, scale: 0.95 }"
-        :enter="{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut' } }"
-        :exit="{ opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.3, ease: 'easeIn' } }"
+        :initial="{ opacity: 0, y: 20 }"
+        :animate="{ opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } }"
+        :exit="{ opacity: 0, y: -20, transition: { duration: 0.3, ease: 'easeIn' } }"
       >
         <p class="btn-shine">{{ displayText }}</p>
-      </Motion>
-      <Motion
-        v-else
-        :initial="{ opacity: 0, y: 20, scale: 0.95 }"
-        :enter="{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut' } }"
-      >
-        <p class="btn-shine">{{ props.text }}</p>
       </Motion>
     </AnimatePresence>
   </div>
@@ -61,7 +53,6 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .btn-shine {
-  color: #fff;
   background: linear-gradient(to right, #9f9f9f 0, #fff 10%, #868686 20%);
   background-position: 0;
   -webkit-background-clip: text;
