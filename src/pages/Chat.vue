@@ -2,7 +2,7 @@
 import { onActivated } from "vue";
 import { useRoute } from "vue-router";
 import { getChat, getAgent, Agent } from "@/db";
-import ChatView from "@/components/SimpleChat/SimpleChat.vue";
+import SimpleChat from "@/components/SimpleChat/SimpleChat.vue";
 import AgentChat from "@/components/AgentChat/AgentChat.vue";
 import { eventBus } from "@/utils/eventBus";
 
@@ -29,7 +29,7 @@ onActivated(() => {
 
 <template>
   <AgentChat v-if="agent" :agent="agent" :chat="chat" :chat-id="chatId" />
-  <ChatView v-else :chat="chat" :chat-id="chatId" />
+  <SimpleChat v-else :chat="chat" :chat-id="chatId" />
 </template>
 
 <style lang="scss" scoped></style>

@@ -2,12 +2,11 @@
 import { ref, useTemplateRef, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
-import { nanoid } from "nanoid";
 import { useTabsStore } from "@/stores/tabs";
 
 const router = useRouter();
 const store = useTabsStore();
-const { closeTab, openTab, reorderTab } = store;
+const { closeTab, reorderTab, createNewChat } = store;
 const { tabs } = storeToRefs(store);
 const tabContainerRef = useTemplateRef("tabContainer");
 
@@ -253,13 +252,7 @@ function bisect(nums: number[], n: number) {
         size="sm"
         color="neutral"
         variant="subtle"
-        @click="
-          () => {
-            const id = nanoid();
-            openTab(`/chat/${id}`, 'New chat');
-            $router.push({ name: 'chat', params: { id } });
-          }
-        "
+        @click="createNewChat"
       />
       <div class="flex-1 min-h-full" />
       <slot name="extra"></slot>

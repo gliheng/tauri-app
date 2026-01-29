@@ -28,6 +28,9 @@ onUnmounted(() => {
 
 const commandPaletteOpen = ref(false);
 defineShortcuts({
+  meta_n: () => {
+    tabsStore.createNewChat();
+  },
   meta_p: () => {
     commandPaletteOpen.value = !commandPaletteOpen.value;
   },

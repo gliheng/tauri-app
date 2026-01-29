@@ -48,12 +48,7 @@ const groups = computed(() => {
           suffix: "Add new chat",
           icon: "i-lucide-file-plus",
           onSelect() {
-            const id = nanoid();
-            tabsStore.openTab(`/chat/${id}`, "New chat");
-            router.push({
-              name: "chat",
-              params: { id },
-            });
+            tabsStore.createNewChat();
             emit("close");
           },
         },
