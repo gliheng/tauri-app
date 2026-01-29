@@ -48,6 +48,13 @@ const editor = useEditor({
     attributes: {
       class: "outline-none min-h-[4.5rem] max-h-[9rem] overflow-y-auto px-3 py-2",
     },
+    handleKeyDown: (_view, event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        submitForm();
+        return true;
+      }
+      return false;
+    },
   },
   onUpdate: ({ editor }) => {
     input.value = editor.getText();
@@ -71,13 +78,6 @@ watch(input, (newValue) => {
     editor.value.commands.focus(currentPos);
   }
 });
-
-async function send(evt: KeyboardEvent) {
-  if (evt.key == "Enter" && !evt.shiftKey) {
-    evt.preventDefault();
-    await submitForm();
-  }
-}
 
 async function submitForm() {
   let attachments: Attachment[] = [];
@@ -158,7 +158,6 @@ defineExpose({
       <EditorContent
         :editor="editor"
         class="w-full bg-transparent focus:outline-none"
-        @keydown="send"
       />
       <div
         class="w-full p-2 flex items-center gap-1 pointer-none"
