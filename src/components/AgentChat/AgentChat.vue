@@ -11,6 +11,7 @@ import ContextDisplay from "./ContextDisplay.vue";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 import { useAcp } from "@/hooks/useAcp";
+import { eventBus } from "@/utils/eventBus";
 import { invoke } from "@tauri-apps/api/core";
 import Mention from "@tiptap/extension-mention";
 import MentionMenu from "./MentionMenu.vue";
@@ -365,6 +366,7 @@ const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) =
           sessionId: sessionId.value!,
         };
         await writeChat(agentChat);
+        eventBus.emit("chat_created", { id: props.chatId, topic });
         useTabsStore().setTitle(`/chat/${props.chatId}`, topic);
       })();
     } else {
@@ -373,6 +375,7 @@ const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) =
         await updateChat(props.chatId, {
           updatedAt: new Date(),
         });
+        eventBus.emit("chat_updated", { id: props.chatId });
       })();
     }
 

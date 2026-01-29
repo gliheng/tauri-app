@@ -10,6 +10,7 @@ import { updateChat, writeChat, writeMessages } from "@/db";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 import { tavilySearchTool, tavilyExtractTool } from "@/llm/tools/tavily";
+import { eventBus } from "@/utils/eventBus";
 
 export function useChat(opts: {
   id: string;
@@ -37,11 +38,13 @@ export function useChat(opts: {
             createdAt: new Date(),
             updatedAt: new Date(),
           });
+          eventBus.emit("chat_created", { id: opts.id, topic });
           useTabsStore().setTitle(`/chat/${opts.id}`, topic);
         } else {
           await updateChat(opts.id, {
             updatedAt: new Date(),
           });
+          eventBus.emit("chat_updated", { id: opts.id });
         }
       })();
       // await writeMessages(opts.id, [userMessage]);
