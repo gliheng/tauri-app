@@ -19,6 +19,15 @@ export function getFileIcon(name: string): string {
     case 'gif':
     case 'svg': return 'i-vscode-icons:file-type-image';
     case 'pdf': return 'i-vscode-icons:file-type-pdf';
+    case 'java': return 'i-vscode-icons:file-type-java';
+    case 'c':
+    case 'h': return 'i-vscode-icons:file-type-c';
+    case 'cpp':
+    case 'cc':
+    case 'cxx':
+    case 'hpp':
+    case 'hh':
+    case 'hxx': return 'i-vscode-icons:file-type-cpp';
     default: return 'i-vscode-icons:default-file';
   }
 }

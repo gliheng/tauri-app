@@ -133,13 +133,11 @@ async function onToggle(e: Event, item: any) {
   if ((e as any).detail.isSelected) {
     artifactsStore.setContext(props.artifactKey, {
       file: { path: entry.path },
-      cursor: undefined,
       selection: undefined,
     });
   } else {
     artifactsStore.setContext(props.artifactKey, {
       file: undefined,
-      cursor: undefined,
       selection: undefined,
     });
   }

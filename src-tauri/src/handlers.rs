@@ -1585,7 +1585,7 @@ pub async fn upgrade_package(
     })?;
 
     let (mut update_rx, _update_child) = update_command
-        .args(["update", "-g", &package_name])
+        .args(["update", "-g", &package_name, "--latest"])
         .env("BUN_INSTALL", &app_config_dir)
         .spawn()
         .map_err(|e| {

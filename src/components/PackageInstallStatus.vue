@@ -119,7 +119,7 @@ async function upgrade() {
         v-if="installStatus.status === 'update_available' && installStatus.latest_version"
         size="xs"
         color="primary"
-        variant="soft"
+        variant="subtle"
         :loading="isUpgrading"
         :disabled="isUpgrading"
         @click="upgrade"

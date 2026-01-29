@@ -384,7 +384,6 @@ const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) =
       prompt: parts,
     });
     console.log('sessionPrompt result', ret);
-
     status.value = "ready";
   } catch (err) {
     console.error("Failed to send message:", err);
@@ -846,8 +845,8 @@ const slashExtension = Mention.extend({ name: 'slash' }).configure({
         <ChatBox
           ref="chatBoxRef"
           class="chat-box mx-auto"
-          :style="{ width: viewWidth ? `${viewWidth}px` : '100%' }"
           v-model="input"
+          :style="{ width: viewWidth ? `${viewWidth}px` : '100%' }"
           :status="status"
           :messages="messages"
           @submit="handleSubmit"
