@@ -218,11 +218,6 @@ onMounted(async () => {
               </div>
             </div>
             
-            <div v-if="agent.instructions" class="flex items-start">
-              <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Instructions:</span>
-              <span class="whitespace-pre-wrap">{{ agent.instructions }}</span>
-            </div>
-            
             <div class="flex items-start">
               <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Created:</span>
               <span class="font-medium">{{ new Date(agent.createdAt).toLocaleString() }}</span>

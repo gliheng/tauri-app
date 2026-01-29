@@ -31,8 +31,7 @@ CREATE TABLE IF NOT EXISTS agent (
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL,
   program TEXT NOT NULL,
-  directory TEXT NOT NULL,
-  instructions TEXT
+  directory TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_updated_at ON agent(updatedAt);

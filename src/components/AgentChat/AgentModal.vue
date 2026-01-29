@@ -9,7 +9,6 @@ export interface AgentFormData {
   icon: string;
   program: AgentProgram;
   directory: string;
-  instructions?: string;
 }
 
 const emit = defineEmits<{
@@ -21,7 +20,6 @@ const agent = ref<AgentFormData>({
   icon: 'i-lucide-brain',
   program: 'codex' as const,
   directory: '',
-  instructions: '',
 });
 
 // Directory selection
@@ -84,16 +82,6 @@ const createAgent = () => {
               @click="selectDirectory"
             />
           </div>
-        </section>
-        <section>
-          <h2 class="text-lg mb-2">Instructions</h2>
-          <UTextarea
-            v-model.optional="agent.instructions"
-            class="w-full"
-            :rows="6"
-            :maxrows="12"
-            placeholder="Agent instructions"
-          />
         </section>
         <section class="flex justify-center mt-10">
           <UButton
