@@ -47,3 +47,36 @@ export function downloadFile(file: File): void {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Check if a MIME type represents a text file
+ */
+export function isTextFile(mimeType: string): boolean {
+  // Include all text/ types
+  if (mimeType.startsWith('text/')) {
+    return true;
+  }
+
+  // Include specific application types that are text-based
+  const textApplicationTypes = [
+    'application/json',
+    'application/xml',
+    'application/x-yaml',
+    'application/yaml',
+    'application/javascript',
+    'application/x-javascript',
+    'application/typescript',
+    'application/x-typescript',
+    'application/x-sh',
+    'application/x-shellscript',
+    'application/x-python',
+    'application/x-ruby',
+    'application/x-perl',
+    'application/x-php',
+    'application/graphql',
+    'application/x-toml',
+    'application/toml',
+  ];
+
+  return textApplicationTypes.includes(mimeType);
+}

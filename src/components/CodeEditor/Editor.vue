@@ -21,13 +21,13 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 interface SelectionData {
-  cursor: { line: number; column: number }
   selection?: { start: number; end: number }
 }
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   'selection': [data: SelectionData]
+  'blur': []
 }>()
 
 const editorContainer = ref<HTMLElement>()
@@ -111,14 +111,6 @@ const initializeEditor = async () => {
   const debouncedSelectionUpdate = debounce(() => {
     if (!editorView) return
     const selection = editorView.state.selection.main
-    const pos = selection.head
-
-    // Get line number (1-indexed)
-    const line = editorView.state.doc.lineAt(pos)
-    const lineNumber = line.number
-
-    // Get column number (1-indexed, relative to line start)
-    const column = pos - line.from + 1
 
     // Check if there's a text selection
     let selectionRange: { start: number; end: number } | undefined
@@ -132,7 +124,6 @@ const initializeEditor = async () => {
     }
 
     emit('selection', {
-      cursor: { line: lineNumber, column },
       selection: selectionRange
     })
   }, 150)
@@ -140,6 +131,11 @@ const initializeEditor = async () => {
   const extensions = [
     basicSetup,
     themeExtension,
+    EditorView.domEventHandlers({
+      blur: () => {
+        emit('blur')
+      }
+    }),
     EditorView.updateListener.of((update: ViewUpdate) => {
       if (update.docChanged) {
         const newValue = update.state.doc.toString()

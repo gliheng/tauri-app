@@ -44,6 +44,23 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["assets/binaries/bun"]
+    "externalBin": ["assets/binaries/bun"],
+    "macOS": {
+      "dmg": {
+        "background": "installer/dmg-background.png",
+        "windowSize": {
+          "width": 800,
+          "height": 550
+        },
+        "appPosition": {
+          "x": 240,
+          "y": 240
+        },
+        "applicationFolderPosition": {
+          "x": 560,
+          "y": 240
+        }
+      }
+    }
   }
 }

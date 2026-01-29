@@ -3,7 +3,7 @@ import { computed, PropType } from "vue";
 import { tv } from "tailwind-variants";
 import MarkdownText from "@/components/MarkdownText.vue";
 import FileImage from "@/components/FileImage.vue";
-import type { MessagePart, PlanPart, Role, ToolCallPart } from "@/hooks/useAcp";
+import type { Role, MessagePart } from "@/services/acp";
 
 const props = defineProps({
   id: {
@@ -57,39 +57,64 @@ function copyText() {
         <div
           v-for="(part, i) in displayParts"
           :key="i"
-          class="empty:hidden"
         >
           <div v-if="part.type == 'text'" :data-part-type="part.type">
-            <MarkdownText :markdown="part.text ?? ''" />
+            <MarkdownText v-if="part.text" :markdown="part.text" />
           </div>
-          <div v-else-if="part.type == 'thought'" class="text-zinc-600 dark:text-zinc-400" :data-part-type="part.type">
-            <MarkdownText :markdown="part.thought ?? ''" />
-          </div>
+          <UCollapsible
+            v-else-if="part.type == 'thought'"
+            class="flex flex-col gap-2 w-full"
+            :unmount-on-hide="false"
+            :data-part-type="part.type"
+          >
+            <UButton
+              class="self-start group"
+              label="Thought"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              leading-icon="i-lucide-brain"
+              trailing-icon="i-lucide-chevron-down"
+              :ui="{
+                base: i === displayParts.length - 1 ? 'animate-pulse' : '',
+                trailingIcon:
+                  'group-data-[state=open]:rotate-180 transition-transform duration-200',
+              }"
+            />
+            <template #content>
+              <div v-if="part.thought" class="text-zinc-600 dark:text-zinc-400" :data-part-type="part.type">
+                <MarkdownText class="opacity-60" :markdown="part.thought" />
+              </div>
+            </template>
+          </UCollapsible>
           <UCollapsible
             v-else-if="part.type == 'plan'"
             class="flex flex-col gap-2 w-full"
             :unmount-on-hide="false"
+            :data-part-type="part.type"
           >
             <UButton
               class="self-start group"
               :label="(() => {
-                const planPart = part as PlanPart;
-                const lastCompleted = planPart.plan.filter(t => t.status === 'completed').pop();
-                const lastInProgress = planPart.plan.filter(t => t.status === 'in_progress').pop();
+                const lastCompleted = part.plan.filter(t => t.status === 'completed').pop();
+                const lastInProgress = part.plan.filter(t => t.status === 'in_progress').pop();
                 if (lastCompleted) {
                   return lastCompleted.content;
                 }
                 if (lastInProgress) {
                   return lastInProgress.content;
                 }
-                return `Created TODO list with ${planPart.plan.length} tasks`;
+                return `Created TODO list with ${part.plan.length} tasks`;
               })()"
               color="neutral"
-              variant="subtle"
+              variant="ghost"
               size="sm"
               leading-icon="i-lucide-list-checks"
               trailing-icon="i-lucide-chevron-down"
               :ui="{
+                base: i === displayParts.length - 1 ? 'animate-pulse' : '',
+                trailingIcon:
+                  'group-data-[state=open]:rotate-180 transition-transform duration-200',
                 label: 'text-left min-w-[200px]',
               }"
             />
@@ -97,7 +122,7 @@ function copyText() {
               <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
                 <div class="space-y-2">
                   <div
-                    v-for="(task, idx) in (part as PlanPart).plan"
+                    v-for="(task, idx) in part.plan"
                     :key="idx"
                     class="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
                   >
@@ -149,7 +174,7 @@ function copyText() {
               class="self-start group min-w-[200px] max-w-full"
               :label="part.title"
               color="neutral"
-              variant="subtle"
+              variant="ghost"
               size="sm"
               :data-status="part.status"
               leading-icon="i-lucide-hammer"
@@ -165,43 +190,42 @@ function copyText() {
                   <div class="flex items-center gap-2">
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Kind:</span>
                     <UBadge color="neutral" variant="subtle" size="sm">
-                      {{ (part as ToolCallPart).kind }}
+                      {{ part.kind }}
                     </UBadge>
                   </div>
                   <div class="flex items-center gap-2">
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</span>
                     <UBadge :color="(() => {
-                      const toolPart = part as ToolCallPart;
-                      if (toolPart.status === 'completed') return 'success';
-                      if (toolPart.status === 'failed') return 'error';
-                      if (toolPart.status === 'in_progress') return 'info';
+                      if (part.status === 'completed') return 'success';
+                      if (part.status === 'failed') return 'error';
+                      if (part.status === 'in_progress') return 'info';
                       return 'neutral';
                     })()" variant="subtle" size="sm">
-                      {{ (part as ToolCallPart).status }}
+                      {{ part.status }}
                     </UBadge>
                   </div>
-                  <div v-if="(part as ToolCallPart).locations?.length" class="space-y-1">
+                  <div v-if="part.locations?.length" class="space-y-1">
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Locations:</span>
                     <div class="text-xs font-mono bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">
-                      {{ JSON.stringify((part as ToolCallPart).locations, null, 2) }}
+                      {{ JSON.stringify(part.locations, null, 2) }}
                     </div>
                   </div>
-                  <div v-if="(part as ToolCallPart).content?.length" class="space-y-1">
+                  <div v-if="part.content?.length" class="space-y-1">
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Content:</span>
                     <div class="text-xs font-mono bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto max-h-48 overflow-y-auto">
-                      {{ JSON.stringify((part as ToolCallPart).content, null, 2) }}
+                      {{ JSON.stringify(part.content, null, 2) }}
                     </div>
                   </div>
-                  <div v-if="(part as ToolCallPart).rawInput" class="space-y-1">
+                  <div v-if="part.rawInput" class="space-y-1">
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Input:</span>
                     <div class="text-xs font-mono bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto max-h-48 overflow-y-auto">
-                      {{ JSON.stringify((part as ToolCallPart).rawInput, null, 2) }}
+                      {{ JSON.stringify(part.rawInput, null, 2) }}
                     </div>
                   </div>
-                  <div v-if="(part as ToolCallPart).rawOutput" class="space-y-1">
+                  <div v-if="part.rawOutput" class="space-y-1">
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Output:</span>
                     <div class="text-xs font-mono bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto max-h-48 overflow-y-auto">
-                      {{ JSON.stringify((part as ToolCallPart).rawOutput, null, 2) }}
+                      {{ JSON.stringify(part.rawOutput, null, 2) }}
                     </div>
                   </div>
                 </div>
@@ -281,21 +305,23 @@ function copyText() {
         </div>
         <div
           v-if="content && displayParts.length == 0"
-          class="mb-2 empty:hidden"
+          class="mb-2"
         >
-          <MarkdownText :markdown="content" />
+          <MarkdownText v-if="content" :markdown="content" />
         </div>
       </div>
     </template>
     <template v-else>
       <div class="p-2 rounded-md bg-gray-100 dark:bg-gray-800">
         <template v-if="parts?.length">
-          <div v-for="(part, i) in parts" :key="i">
+          <div v-for="(part, i) in parts" :key="i" class="whitespace-pre-wrap">
             {{ part?.text }}
           </div>
         </template>
         <template v-else>
-          {{ content }}
+          <div class="whitespace-pre-wrap">
+            {{ content }}
+          </div>
         </template>
       </div>
     </template>

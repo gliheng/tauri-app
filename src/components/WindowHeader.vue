@@ -1,12 +1,30 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import Tabs from "@/components/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
 import { storeToRefs } from "pinia";
+import { listen } from "@tauri-apps/api/event";
 
 const platform = navigator.platform;
 
 const tabsStore = useTabsStore();
+
+// Listen for window-event from Tauri (triggered by Cmd+W)
+let unlistenFn: (() => void) | null = null;
+
+onMounted(async () => {
+  try {
+    unlistenFn = await listen("window-event", () => {
+      tabsStore.closeActiveTab();
+    });
+  } catch (e) {
+    console.error("Failed to listen for window-event:", e);
+  }
+});
+
+onUnmounted(() => {
+  unlistenFn?.();
+});
 
 const commandPaletteOpen = ref(false);
 defineShortcuts({

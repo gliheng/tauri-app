@@ -53,14 +53,14 @@ export function useChat(opts: {
           web_search: tavilySearchTool,
           web_extract: tavilyExtractTool,
         } : undefined,
-        onFinish: async ({ response }) => {
+        async onFinish({ response }) {
           const messages = appendResponseMessages({
             messages: [userMessage],
             responseMessages: response.messages,
           });
           await writeMessages(opts.id, messages, prevAssistantMessage?.id);
         },
-        onError: async (error) => {
+        onError(error) {
           console.error('useChat onError', error);
         },
         abortSignal: req?.signal ?? undefined,
@@ -68,6 +68,12 @@ export function useChat(opts: {
       return ret.toDataStreamResponse({
         sendReasoning: true,
         sendUsage: true,
+        getErrorMessage: (error: unknown) => {
+          if (error == null) return 'unknown error';
+          if (typeof error === 'string') return error;
+          if (error instanceof Error) return error.message;
+          return String(error);
+        },
       });
     },
   });

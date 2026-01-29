@@ -12,6 +12,7 @@ import AgentSessionList from "@/components/AgentChat/AgentSessionList.vue";
 import PackageInstallStatus from "@/components/PackageInstallStatus.vue";
 import { confirm, message } from '@tauri-apps/plugin-dialog';
 import { openPath } from '@tauri-apps/plugin-opener';
+import { eventBus } from '@/utils/eventBus';
 
 
 const route = useRoute();
@@ -88,6 +89,12 @@ async function openDirectory() {
         kind: 'error'
       });
     }
+  }
+}
+
+function openInArtifact() {
+  if (agent?.directory) {
+    eventBus.emit('artifact', 'workspace::' + agent.directory);
   }
 }
 
@@ -192,6 +199,14 @@ onMounted(async () => {
               <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Directory:</span>
               <div class="flex items-center gap-2">
                 <span class="font-medium break-all">{{ agent.directory }}</span>
+                <UButton
+                  icon="i-lucide-panel-right-open"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  @click="openInArtifact"
+                  title="Open in artifact area"
+                />
                 <UButton
                   icon="i-lucide-folder-open"
                   size="xs"

@@ -69,7 +69,7 @@ const emit = defineEmits(['new-session']);
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="p-4 @container">
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-lg font-medium">Sessions</h3>
     </div>
@@ -78,7 +78,7 @@ const emit = defineEmits(['new-session']);
       No sessions yet. Create one to get started.
     </div>
     
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div v-else class="grid grid-cols-1 @[400px]:grid-cols-2 @[800px]:grid-cols-3 @[1200px]:grid-cols-4 gap-4">
       <UCard
         v-for="session in sessions"
         :key="session.id"

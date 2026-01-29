@@ -230,10 +230,9 @@ function openTerminal() {
   eventBus.emit('artifact', `terminal::${props.cwd}`);
 }
 
-function onSelectionChange(selectionData: { cursor: { line: number; column: number }; selection?: { start: number; end: number } }) {
+function onSelectionChange(selectionData: { selection?: { start: number; end: number } }) {
   artifactsStore.setContext(artifactKey, {
     file: file.value ? { path: file.value.path } : undefined,
-    cursor: selectionData.cursor,
     selection: selectionData.selection
   });
 }

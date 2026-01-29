@@ -13,10 +13,6 @@ export interface SelectionContext {
   file?: {
     path: string;
   };
-  cursor?: {
-    line: number;
-    column: number;
-  };
   selection?: {
     start: number;
     end: number;

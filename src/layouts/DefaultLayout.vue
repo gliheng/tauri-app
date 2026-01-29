@@ -8,6 +8,7 @@ import { eventBus } from "@/utils/eventBus";
 import WindowHeader from "@/components/WindowHeader.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import ArtifactsPanel from "@/components/ArtifactsPanel.vue";
+import Loader from "@/components/Loader.vue";
 
 const tabsStore = useTabsStore();
 const { showArtifactView } = storeToRefs(tabsStore);
@@ -64,7 +65,7 @@ eventBus.on('artifact', (msg: string) => {
                   />
                   <template #fallback>
                     <div class="size-full flex items-center justify-center">
-                      <div class="animate-spin size-8 border-2 border-current border-t-transparent rounded-full" />
+                      <Loader />
                     </div>
                   </template>
                 </Suspense>

@@ -16,16 +16,13 @@ import Mention from "@tiptap/extension-mention";
 import MentionMenu from "./MentionMenu.vue";
 import { type Editor } from "@tiptap/core";
 import {
-  AvailableCommand,
   type EmbeddedResourceResource,
   type ContentBlock,
-  type ImageContent,
-  type AudioContent,
 } from "@agentclientprotocol/sdk";
 import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
 import mime from "mime";
 import { Attachment } from "ai";
-import dedent from "dedent";
+import { isTextFile } from "@/utils/file";
 
 const toast = useToast();
 
@@ -210,39 +207,6 @@ function findMentions(json: any): string[] {
 }
 
 /**
- * Check if a MIME type represents a text file
- */
-function isTextFile(mimeType: string): boolean {
-  // Include all text/ types
-  if (mimeType.startsWith('text/')) {
-    return true;
-  }
-
-  // Include specific application types that are text-based
-  const textApplicationTypes = [
-    'application/json',
-    'application/xml',
-    'application/x-yaml',
-    'application/yaml',
-    'application/javascript',
-    'application/x-javascript',
-    'application/typescript',
-    'application/x-typescript',
-    'application/x-sh',
-    'application/x-shellscript',
-    'application/x-python',
-    'application/x-ruby',
-    'application/x-perl',
-    'application/x-php',
-    'application/graphql',
-    'application/x-toml',
-    'application/toml',
-  ];
-
-  return textApplicationTypes.includes(mimeType);
-}
-
-/**
  * Find and read files matching the mentioned paths
  */
 async function findMentionedFiles(
@@ -372,44 +336,9 @@ const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) =
     });
 
     // Add selection context if visible
-    const ctx = selectionContextRef.value?.getContext();
-    if (ctx) {
-      if ((ctx.cursor || ctx.selection) && ctx.file) {
-        let start, end
-        if (ctx.selection) {
-          start = ctx.selection.start - 1;
-          end = ctx.selection.end;
-        } else if (ctx.cursor) {
-          start = ctx.cursor.line - 1;
-          end = ctx.cursor.line;
-        }
-        // Read file content and extract selection range
-        const fileContent = await invoke('read_file_by_range', {
-          path: `${baseDirectory}/${ctx.file.path}`,
-          start,
-          end,
-        });
-
-        parts.push({
-          type: 'text',
-          text: dedent`
-            @${ctx.file.path}
-            \`\`\`
-            ${fileContent}
-            \`\`\`
-          `,
-        });
-      } else if (ctx.file) {
-        const mimeType = getMimeType(ctx.file.path);
-        parts.push({
-          type: 'resource',
-          resource: {
-            uri: `file://${baseDirectory}/${ctx.file.path}`,
-            mimeType,
-            [isTextFile(mimeType) ? 'text' : 'blob']: '',
-          } as any,
-        });
-      }
+    const contextParts = await selectionContextRef.value?.buildContextParts(baseDirectory);
+    if (contextParts) {
+      parts.push(...contextParts);
     }
 
     messages.value.push({
@@ -744,7 +673,7 @@ const mentionExtension = Mention.configure({
   },
 });
 
-const slashExtension = Mention.configure({
+const slashExtension = Mention.extend({ name: 'slash' }).configure({
   HTMLAttributes: {
     class: 'slash',
   },
@@ -907,7 +836,7 @@ const slashExtension = Mention.configure({
           />
         </div>
         <header v-else class="mx-auto text-3xl font-semibold mb-3">
-          How can I help you?
+          Let's work on something!
         </header>
       </AnimatePresence>
       <div class="px-8 my-4">
@@ -953,7 +882,11 @@ const slashExtension = Mention.configure({
               :disabled="nonInteractive"
               @update:modelValue="handleModeChange"
             />
-            <ContextDisplay ref="selectionContextRef" v-if="artifactKey" :artifact-key="artifactKey" />
+            <ContextDisplay
+              ref="selectionContextRef"
+              v-if="artifactKey"
+              :artifact-key="artifactKey"
+            />
             <MentionMenu
               v-if="mentionMenuOpen"
               ref="mentionMenuRef"

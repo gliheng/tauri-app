@@ -59,9 +59,10 @@ function getArtifactDisplayName(id: string): string {
       </UTooltip>
 
       <!-- Empty state -->
-      <div v-if="artifacts.length === 0" class="h-full flex items-center justify-center text-muted-foreground">
-        <p class="text-center p-8">
-          This area will display agent-generated files.
+      <div v-if="artifacts.length === 0" class="h-full flex flex-col items-center justify-center text-muted-foreground gap-4">
+        <UIcon name="i-lucide-file-stack" class="size-16 opacity-30" />
+        <p class="text-center text-sm">
+          Agent related files will be displayed here.
         </p>
       </div>
 

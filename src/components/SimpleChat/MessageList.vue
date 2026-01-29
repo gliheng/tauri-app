@@ -48,6 +48,13 @@ const handleScroll = () => {
   isAutoScrollEnabled.value = checkIsNearBottom();
 };
 
+const scrollToBottom = () => {
+  const scroller = (listRef.value as any)?.scroller;
+  if (scroller) {
+    scroller.scrollToBottom();
+  }
+};
+
 // Scroll to bottom when new message is added (only if auto-scroll is enabled)
 watch(
   () => props.messages,
@@ -63,31 +70,42 @@ watch(
 </script>
 
 <template>
-  <motion.div class="flex-1 flex min-h-0">
+  <motion.div class="flex-1 flex min-h-0 relative">
     <Scrollbar class="w-full" ref="listRef" @scroll="handleScroll">
-      <div
-        class="px-8 flex-1 flex flex-col gap-2 min-h-0 mx-auto my-4 max"
-        :style="{
-          maxWidth: width ? `${width}px` : '100%',
-        }"
-      >
-        <Component
-          v-for="message in displayMessages"
-          v-bind="message"
-          :is="editingId === message.id ? MessageEdit : MessageBubble"
-          :key="message.id"
-          :last="message.id === displayMessages[displayMessages.length - 1].id"
-          :loading="
-            message.id === displayMessages[displayMessages.length - 1].id &&
-            (status == 'submitted' || status == 'streaming')
-          "
-          @start-edit="() => (editingId = message.id)"
-          @cancel-edit="() => (editingId = '')"
-          @reload="actions.reload"
-        />
-        <LoadingText v-if="status == 'submitted'" />
+      <div class="px-8">
+        <div
+          class="flex-1 flex flex-col gap-2 min-h-0 mx-auto my-4 max"
+          :style="{
+            maxWidth: width ? `${width}px` : '100%',
+          }"
+        >
+          <Component
+            v-for="message in displayMessages"
+            v-bind="message"
+            :is="editingId === message.id ? MessageEdit : MessageBubble"
+            :key="message.id"
+            :last="message.id === displayMessages[displayMessages.length - 1].id"
+            :loading="
+              message.id === displayMessages[displayMessages.length - 1].id &&
+              (status == 'submitted' || status == 'streaming')
+            "
+            @start-edit="() => (editingId = message.id)"
+            @cancel-edit="() => (editingId = '')"
+            @reload="actions.reload"
+          />
+          <LoadingText v-if="status == 'submitted'" />
+        </div>
       </div>
     </Scrollbar>
+    <UButton
+      v-if="!isAutoScrollEnabled"
+      icon="i-heroicons-arrow-down"
+      size="sm"
+      color="gray"
+      variant="soft"
+      class="absolute bottom-4 right-4 z-10"
+      @click="scrollToBottom"
+    />
   </motion.div>
 </template>
 

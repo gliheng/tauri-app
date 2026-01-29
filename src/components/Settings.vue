@@ -247,7 +247,9 @@ const currentTab = ref(defaultAgent);
                 </UForm>
               </template>
             </UTabs>
-            <h2 class="text-lg font-semibold">Agent Program</h2>
+          </div>
+          <h2 class="text-lg font-semibold mt-4">Agent Program</h2>
+          <div class="flex-1 min-h-0">
             <UTabs
               orientation="vertical"
               variant="link"
@@ -309,7 +311,7 @@ const currentTab = ref(defaultAgent);
                       "
                     />
                   </UFormField>
-                  </UForm>
+                </UForm>
               </template>
             </UTabs>
           </div>
@@ -318,22 +320,23 @@ const currentTab = ref(defaultAgent);
     </template>
     <template #tavily>
       <h1 class="text-xl font-semibold py-4">Tavily Search</h1>
-      <div class="flex-1 flex flex-col gap-4 min-h-0 overflow-auto">
-        <UForm :state="webSearchSettings" class="flex flex-col gap-4">
-          <UFormField label="API Key" name="apiKey">
-            <UInput
-              v-model.trim="webSearchSettings.apiKey"
-              placeholder="tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              type="password"
-              class="w-full"
-            />
-          </UFormField>
-          <p class="text-sm text-muted">
-            Enter your Tavily API key to enable web search in chat.
-            Get your API key from <a href="https://tavily.com" target="_blank" class="text-primary underline">tavily.com</a>
-          </p>
-        </UForm>
-      </div>
+      <Scrollbar class="flex-1 min-h-0">
+        <div class="pr-4 py-4">
+          <UForm :state="webSearchSettings" class="flex flex-col gap-4">
+            <UFormField label="API Key" name="apiKey">
+              <UInput
+                v-model.trim="webSearchSettings.apiKey"
+                placeholder="tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                class="w-full"
+              />
+            </UFormField>
+            <p class="text-sm text-muted">
+              Enter your Tavily API key to enable web search in chat.
+              Get your API key from <a href="https://tavily.com" target="_blank" class="text-primary underline">tavily.com</a>
+            </p>
+          </UForm>
+        </div>
+      </Scrollbar>
     </template>
     <template #mcp>
       <h1 class="text-xl font-semibold py-4">MCP</h1>

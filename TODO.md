@@ -23,6 +23,10 @@
 - [ ] Share message history online.
 - [x] Code editor support diff view.
 - [x] Opencode support custom model.
+- [ ] Handle opencode question tool call: https://jsonhero.io/j/RAI0aO8gN0sb
+- [ ] Website.
+- [ ] Auto update.
+- [ ] Buy me a coffee.
 
 # Issues
 - [ ] Fix qwen acp edit tool error.
@@ -37,11 +41,10 @@
 - [ ] Unify scroller experience.
 - [x] Workspace files tab removed when clicking x on terminal tab.
 - [x] Agent version gone in prod build.
-- [ ] Tavily still added even if no key is configured.
 - [ ] Clicking outside the code editor should remove cursor and selection.
-- [ ] Clicking outside chatbox dismiss @ menu.
-- [ ] / command's description is too long.
+- [x] Clicking outside chatbox dismiss @ menu.
+- [x] / command's description is too long.
 - [ ] Autoscroll does not work.
 - [ ] Editor save does not work.
 - [ ] Diff apply/reject does not work.
-
+- [ ] Shortcut in WindowHeader does not work.

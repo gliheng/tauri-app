@@ -1,5 +1,5 @@
 use tauri_plugin_sql::{Migration, MigrationKind};
-
+use tauri::Emitter;
 mod handlers;
 
 fn get_migrations() -> Vec<Migration> {
@@ -39,6 +39,14 @@ pub fn run() {
                 window.open_devtools();
             }
             Ok(())
+        })
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                // Prevent window from closing on Cmd+W and emit event to frontend
+                api.prevent_close();
+                let _ = window.emit("window-event", ());
+            }
+            _ => {}
         })
         .invoke_handler(tauri::generate_handler![
             handlers::acp_initialize,

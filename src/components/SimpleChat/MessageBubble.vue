@@ -65,10 +65,10 @@ function copyText() {
         <div
           v-for="(part, i) in displayParts"
           :key="i"
-          class="mb-2 empty:hidden"
+          class="mb-2"
         >
           <div v-if="part.type == 'text'">
-            <MarkdownText :markdown="part.text" />
+            <MarkdownText v-if="part.text" :markdown="part.text" />
           </div>
           <UCollapsible
             v-else-if="part.type == 'reasoning'"
@@ -77,9 +77,9 @@ function copyText() {
           >
             <UButton
               class="self-start group"
-              label="Thinking"
+              label="Thought"
               color="neutral"
-              variant="subtle"
+              variant="ghost"
               size="sm"
               leading-icon="i-lucide-brain"
               trailing-icon="i-lucide-chevron-down"
@@ -91,7 +91,7 @@ function copyText() {
             >
             </UButton>
             <template #content>
-              <MarkdownText class="opacity-50" :markdown="part.reasoning" />
+              <MarkdownText class="opacity-60" v-if="part.reasoning" :markdown="part.reasoning" />
             </template>
           </UCollapsible>
           <UCollapsible
@@ -103,7 +103,7 @@ function copyText() {
               class="self-start group"
               :label="`Tool: ${(part as any).toolInvocation?.toolName}`"
               color="neutral"
-              variant="subtle"
+              variant="ghost"
               size="sm"
               leading-icon="i-lucide-terminal"
               trailing-icon="i-lucide-chevron-down"
@@ -142,21 +142,23 @@ function copyText() {
         </div>
         <div
           v-if="content && displayParts.length == 0"
-          class="mb-2 empty:hidden"
+          class="mb-2"
         >
-          <MarkdownText :markdown="content" />
+          <MarkdownText v-if="content" :markdown="content" />
         </div>
       </div>
     </template>
     <template v-else>
       <div class="p-2 rounded-md bg-gray-100 dark:bg-gray-800">
         <template v-if="parts?.length">
-          <div v-for="(part, i) in parts" :key="i">
+          <div v-for="(part, i) in parts" :key="i" class="whitespace-pre-wrap">
             {{ part?.text }}
           </div>
         </template>
         <template v-else>
-          {{ content }}
+          <div class="whitespace-pre-wrap">
+            {{ content }}
+          </div>
         </template>
       </div>
     </template>

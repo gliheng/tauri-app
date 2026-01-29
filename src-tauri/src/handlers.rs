@@ -505,6 +505,26 @@ pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::V
     }))
 }
 
+/// Returns true if the file/directory name should be ignored (well-known types)
+fn should_ignore_file(name: &str) -> bool {
+    // macOS system files
+    if name == ".DS_Store" || name == ".Spotlight-V100" || name == ".Trashes" || name == ".fseventsd" || name == ".localized" {
+        return true;
+    }
+
+    // Windows system files
+    if name == "Thumbs.db" || name == "desktop.ini" {
+        return true;
+    }
+
+    // Version control
+    if name == ".git" || name == ".svn" || name == ".hg" {
+        return true;
+    }
+
+    false
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileNode {
     name: String,
@@ -548,6 +568,11 @@ pub async fn read_directory(path: &str) -> Result<FileNode, String> {
                 .and_then(|n| n.to_str())
                 .unwrap_or("")
                 .to_string();
+
+            // Skip well-known system files and directories
+            if should_ignore_file(&child_name) {
+                continue;
+            }
 
             let child_node = if child_metadata.is_dir() {
                 FileNode {

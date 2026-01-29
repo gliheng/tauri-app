@@ -241,6 +241,7 @@ function onSubmit(data: any) {
             <UButton
               :icon="webSearch ? 'i-lucide-globe' : 'i-lucide-globe'"
               :color="webSearch ? 'primary' : 'neutral'"
+              :class="webSearch ? '' : 'opacity-50'"
               variant="soft"
               size="sm"
               :disabled="status == 'submitted' || status == 'streaming'"
