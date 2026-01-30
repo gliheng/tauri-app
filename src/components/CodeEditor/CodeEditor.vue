@@ -32,6 +32,7 @@ const diffContent = ref("");
 
 const currentSessionId = ref(`editor-${Date.now()}`);
 const externallyModified = ref(false);
+const lastSaveTime = ref(0);
 
 interface FileNode {
   name: string;
@@ -98,6 +99,25 @@ provide(EDITOR_ACTIONS, {
   saveFileContent,
 });
 
+// Auto-save: Watch for content changes and save to disk (debounced)
+const debouncedSave = debounce(async (newContent: string | undefined) => {
+  if (file.value?.path && newContent !== undefined && !externallyModified.value) {
+    try {
+      lastSaveTime.value = Date.now();
+      await saveFileContent(file.value.path, newContent);
+    } catch (error) {
+      console.error('Failed to auto-save file:', error);
+    }
+  }
+}, 500);
+
+watch(
+  () => file.value?.content,
+  (newContent) => {
+    debouncedSave(newContent);
+  }
+);
+
 async function onSelect(entry: FileEntry) {
   if (entry.type === FileEntryType.File) {
     const content = await loadFileContent(entry.path);
@@ -137,6 +157,13 @@ onMounted(async () => {
   unlistenFileChanged = await listen('file_changed', async (event: any) => {
     const { path } = event.payload;
     console.log('file changed', file.value?.path, path);
+
+    // Ignore file changes triggered by our own saves (within 1 second)
+    const timeSinceLastSave = Date.now() - lastSaveTime.value;
+    if (timeSinceLastSave < 500) {
+      console.log('Ignoring file change from our own save');
+      return;
+    }
 
     if (file.value?.path === path) {
       try {
@@ -236,6 +263,18 @@ function onSelectionChange(selectionData: { selection?: { start: number; end: nu
     selection: selectionData.selection
   });
 }
+
+async function onDiffSaveFile(content: string, filePath: string) {
+  try {
+    await saveFileContent(filePath, content);
+    // Also refresh the currently open file if it matches
+    if (file.value?.path === filePath) {
+      file.value = { ...file.value, content };
+    }
+  } catch (error) {
+    console.error('Failed to save file from diff:', error);
+  }
+}
 </script>
 
 <template>
@@ -289,6 +328,7 @@ function onSelectionChange(selectionData: { selection?: { start: number; end: nu
               class="flex-1 min-h-0"
               :diff="diffContent"
               :theme="colorMode === 'dark' ? 'dark' : 'light'"
+              @save-file="onDiffSaveFile"
             />
             <div v-if="!showDiffView && !file"
               class="flex-1 min-h-0 flex flex-col items-center justify-center text-gray-400"

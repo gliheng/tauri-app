@@ -1703,7 +1703,13 @@ pub async fn get_git_diff_all(base_path: &str) -> Result<String, String> {
     let mut diff_text = String::new();
     diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
         match line.origin() {
+            'F' | 'H' => {
+                // File headers (diff --git) and hunk headers (@@)
+                // These don't have the origin prefix, just push the content
+                diff_text.push_str(std::str::from_utf8(line.content()).unwrap_or(""));
+            }
             '+' | '-' | ' ' => {
+                // Content lines - include the origin prefix
                 diff_text.push(line.origin());
                 diff_text.push_str(std::str::from_utf8(line.content()).unwrap_or(""));
             }

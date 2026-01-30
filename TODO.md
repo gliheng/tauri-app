@@ -1,5 +1,6 @@
 
 # Features
+- [ ] Show red dots on tabs when task is finished.
 - [ ] Agent chat add input queue.
 - [ ] Agent change UI improvement, show TODO as a fixed UI.
 - [ ] Plan and tool call supporting modification.
@@ -28,6 +29,8 @@
 - [ ] Auto update.
 - [ ] Buy me a coffee.
 - [ ] Cloud service: LLM & deep research.
+- [ ] Cloud service: Login and sync.
+- [ ] Browser control.
 
 # Issues
 - [ ] Fix qwen acp edit tool error.

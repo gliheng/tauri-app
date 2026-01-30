@@ -11,6 +11,10 @@ const props = withDefaults(defineProps<Props>(), {
   theme: 'light',
 })
 
+const emit = defineEmits<{
+  'save-file': [content: string, filePath: string]
+}>()
+
 const viewMode = ref<'unified' | 'split'>('unified')
 
 interface FileDiff {
@@ -117,6 +121,10 @@ const borderColor = computed(() => props.theme === 'dark' ? 'border-[#30363d]' :
 function toggleViewMode() {
   viewMode.value = viewMode.value === 'unified' ? 'split' : 'unified'
 }
+
+function onContentChanged(content: string, filePath: string) {
+  emit('save-file', content, filePath)
+}
 </script>
 
 <template>
@@ -170,6 +178,8 @@ function toggleViewMode() {
               :is-binary="fileDiff.isBinary"
               :is-new="fileDiff.isNew"
               :is-deleted="fileDiff.isDeleted"
+              :file-path="fileDiff.filePath"
+              @content-changed="onContentChanged"
             />
           </div>
         </template>

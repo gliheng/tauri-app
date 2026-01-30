@@ -147,7 +147,7 @@ const initializeEditor = async () => {
     }),
     EditorView.theme({
       '&': {
-        height: '100%',
+        height: props.height ?? '100%',
       },
     }),
   ]

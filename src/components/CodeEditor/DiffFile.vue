@@ -13,13 +13,19 @@ interface Props {
   isBinary?: boolean
   isNew?: boolean
   isDeleted?: boolean
+  filePath?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isBinary: false,
   isNew: false,
   isDeleted: false,
+  filePath: '',
 })
+
+const emit = defineEmits<{
+  'content-changed': [content: string, filePath: string]
+}>()
 
 const editorView = ref<EditorView | MergeView | null>(null)
 const editorContainer = ref<HTMLElement>()
@@ -110,7 +116,13 @@ function initSplitView() {
             fontSize: '13px',
           }
         }),
-        EditorState.readOnly.of(true)
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            const newContent = update.state.doc.toString()
+            emit('content-changed', newContent, props.filePath)
+          }
+        }),
+        EditorState.readOnly.of(false)
       ]
     },
     parent: editorContainer.value,
