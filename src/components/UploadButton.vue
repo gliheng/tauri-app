@@ -19,6 +19,7 @@ const input = ref();
       variant="soft"
       color="primary"
       icon="i-mdi-paperclip"
+      size="sm"
       @click="input.click()"
       :disabled="disabled"
     />

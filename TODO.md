@@ -1,36 +1,37 @@
 
 # Features
-- [ ] Show red dots on tabs when task is finished.
-- [ ] Agent chat add input queue.
-- [ ] Agent change UI improvement, show TODO as a fixed UI.
-- [ ] Plan and tool call supporting modification.
 - [x] Bundle bun.
-- [ ] My Acp agent with codeact and skills.
 - [x] Chart using infinite canvas (vueflow).
 - [x] Change acp implementation with [SDK](https://github.com/agentclientprotocol/typescript-sdk/).
 - [x] Append resource to the prompt.
-- [ ] MCP interaction.
 - [x] Support sending attachments.
-- [ ] Create image using image model.
 - [x] Move settings to a sql table.
-- [ ] Quick agent chat on the agent task list page.
-- [ ] Optimize display of agent chat in the agent task list page, using a series of dots to show the progress.
-- [ ] Able to control "Ask before edit" & "Edit automaticly"
 - [x] Reveal file in finder.
 - [x] Acp log debug page.
 - [x] Support bun agent package upgrade.
 - [x] Web search.
-- [ ] Deep research.
-- [ ] Share message history online.
 - [x] Code editor support diff view.
 - [x] Opencode support custom model.
+- [ ] MCP interaction.
+- [ ] Show red dots on tabs when task is finished.
+- [ ] Plan and tool call supporting modification.
+- [ ] Agent chat add input queue.
+- [ ] Agent change UI improvement, show TODO as a fixed UI.
+- [ ] My Acp agent with codeact and skills.
+- [ ] Create image using image model.
+- [ ] Quick agent chat on the agent task list page.
+- [ ] Optimize display of agent chat in the agent task list page, using a series of dots to show the progress.
+- [ ] Able to control "Ask before edit" & "Edit automaticly"
+- [ ] Deep research.
+- [ ] Share message history online.
 - [ ] Handle opencode question tool call: https://jsonhero.io/j/RAI0aO8gN0sb
-- [ ] Website.
 - [ ] Auto update.
+- [ ] Website for downloading.
 - [ ] Buy me a coffee.
 - [ ] Cloud service: LLM & deep research.
 - [ ] Cloud service: Login and sync.
 - [ ] Browser control.
+- [ ] Cowork like feature investigation.
 
 # Issues
 - [ ] Fix qwen acp edit tool error.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { onActivated, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getAgent, updateAgent, deleteAgent } from '@/db';
 import { useSidebarStore } from '@/stores/sidebar';
@@ -92,12 +92,6 @@ async function openDirectory() {
   }
 }
 
-function openInArtifact() {
-  if (agent?.directory) {
-    eventBus.emit('artifact', 'workspace::' + agent.directory);
-  }
-}
-
 const enableLoadSession = ref(false);
 onMounted(async () => {
   try {
@@ -134,6 +128,12 @@ onMounted(async () => {
   } catch (error) {
     console.error("Failed to check capabilities:", error);
     enableLoadSession.value = false;
+  }
+});
+
+onActivated(() => {
+  if (agent) {
+    eventBus.emit('artifact', 'workspace::' + agent.directory);
   }
 });
 </script>
@@ -199,14 +199,6 @@ onMounted(async () => {
               <span class="text-gray-500 dark:text-gray-400 w-32 flex-shrink-0">Directory:</span>
               <div class="flex items-center gap-2">
                 <span class="font-medium break-all">{{ agent.directory }}</span>
-                <UButton
-                  icon="i-lucide-panel-right-open"
-                  size="xs"
-                  color="neutral"
-                  variant="ghost"
-                  @click="openInArtifact"
-                  title="Open in artifact area"
-                />
                 <UButton
                   icon="i-lucide-folder-open"
                   size="xs"

@@ -74,6 +74,7 @@ const selectedModel = computed({
       color="neutral"
       variant="soft"
       trailing-icon="i-lucide-chevrons-up-down"
+      size="sm"
       :items="modelList"
       :ui="{
         base: 'bg-primary/10 hover:bg-primary/15 text-primary-500 focus-visible:bg-primary/15',
