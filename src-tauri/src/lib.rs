@@ -1,6 +1,7 @@
 use tauri_plugin_sql::{Migration, MigrationKind};
 use tauri::{Emitter, Manager, RunEvent};
 mod handlers;
+mod mcp;
 
 fn get_migrations() -> Vec<Migration> {
     vec![
@@ -49,22 +50,13 @@ pub fn run() {
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![
+            // ACP commands
             handlers::acp_initialize,
             handlers::acp_send_message,
             handlers::acp_start_listening,
             handlers::acp_stop_listening,
             handlers::acp_dispose,
-            handlers::read_directory,
-            handlers::read_file,
             handlers::read_file_by_range,
-            handlers::write_file,
-            handlers::read_binary_file,
-            handlers::write_binary_file,
-            handlers::create_file,
-            handlers::create_directory,
-            handlers::rename_file,
-            handlers::delete_file,
-            handlers::move_file,
             handlers::terminal_create_session,
             handlers::terminal_send_input,
             handlers::terminal_resize,
@@ -74,14 +66,32 @@ pub fn run() {
             handlers::acp_terminal_wait_for_exit,
             handlers::acp_terminal_kill,
             handlers::acp_terminal_release,
+            // Editor
+            handlers::create_file,
+            handlers::create_directory,
+            handlers::read_directory,
+            handlers::read_file,
+            handlers::write_file,
+            handlers::read_binary_file,
+            handlers::write_binary_file,
+            handlers::move_file,
+            handlers::rename_file,
+            handlers::delete_file,
             handlers::watch_file,
             handlers::unwatch_file,
             handlers::stop_watching,
             handlers::glob_files,
-            handlers::upgrade_package,
-            handlers::check_for_updates,
             handlers::is_git_repo,
             handlers::get_git_diff_all,
+            // Package management
+            handlers::upgrade_package,
+            handlers::check_for_updates,
+            // MCP commands
+            handlers::mcp_start_servers,
+            handlers::mcp_list_tools,
+            handlers::mcp_call_tool,
+            handlers::mcp_stop_server,
+            handlers::mcp_list_servers,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

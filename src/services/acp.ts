@@ -292,12 +292,19 @@ export class TauriACPClient implements acp.Client {
     this.config.onInvoke?.('fs/read_text_file', params);
     const { path, line, limit } = params;
     try {
-      let content = await invoke<string>('read_file', { path });
+      let content: string;
       if (line !== undefined && line !== null) {
-        const lines = content.split('\n');
-        const startLine = line - 1;
-        const endLine = limit ? startLine + limit : lines.length;
-        content = lines.slice(startLine, endLine).join('\n');
+        // Use read_file_by_range for efficient partial file reading
+        const startLine = line - 1; // Convert to 0-indexed
+        const endLine = limit ? startLine + limit : startLine + 1;
+        content = await invoke<string>('read_file_by_range', {
+          path,
+          start: startLine,
+          end: endLine,
+        });
+      } else {
+        // Read entire file
+        content = await invoke<string>('read_file', { path });
       }
       return { content };
     } catch(e) {
