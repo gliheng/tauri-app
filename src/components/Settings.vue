@@ -2,9 +2,13 @@
 import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
 import { ref, computed } from "vue";
+import { nanoid } from "nanoid";
 import { useSettingsStore } from "@/stores/settings";
 import { modelRepo } from "@/llm/models";
 import { AgentProgram } from "@/db";
+import McpServerModal from "@/components/McpServerModal.vue";
+import McpImportModal from "@/components/McpImportModal.vue";
+import type { McpServer } from "@/types/mcp";
 
 const tabItems = [
   {
@@ -75,7 +79,7 @@ const agentItems = [
 
 const defaultAgent = "codex";
 
-const { modelSettings, agentSettings, chatSettings, webSearchSettings } = storeToRefs(useSettingsStore());
+const { modelSettings, agentSettings, chatSettings, webSearchSettings, mcpServers } = storeToRefs(useSettingsStore());
 
 const modelList = computed(() => {
   const models: Array<{ label: string; value: string; provider: string }> = [];
@@ -130,6 +134,117 @@ const toggleModel = (provider: string, modelValue: string) => {
     models.splice(index, 1);
   } else {
     models.push(modelValue);
+  }
+};
+
+// MCP Server Modal setup
+const overlay = useOverlay();
+const mcpServerModal = overlay.create(McpServerModal);
+const mcpImportModal = overlay.create(McpImportModal);
+
+// MCP server operations
+const addMcpServer = async () => {
+  const server = await mcpServerModal.open() as McpServer | null;
+  if (!server) return;
+
+  mcpServers.value[server.id] = {
+    ...server,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+};
+
+const editMcpServer = async (serverId: string) => {
+  const existing = mcpServers.value[serverId];
+  if (!existing) return;
+
+  const server = await mcpServerModal.open({ server: existing }) as McpServer | null;
+  if (!server) return;
+
+  mcpServers.value[serverId] = {
+    ...server,
+    createdAt: existing.createdAt,
+    updatedAt: new Date(),
+  };
+};
+
+const deleteMcpServer = (serverId: string) => {
+  delete mcpServers.value[serverId];
+};
+
+const getServerIcon = (server: McpServer) => {
+  switch (server.config.type) {
+    case 'stdio': return 'i-lucide-terminal';
+    case 'http': return 'i-lucide-globe';
+    case 'sse': return 'i-lucide-radio';
+  }
+};
+
+const getServerTypeLabel = (type: string) => {
+  return type.toUpperCase();
+};
+
+// Import MCP servers from JSON (Claude Desktop format)
+const importMcpServers = async () => {
+  const jsonContent = await mcpImportModal.open() as string | null;
+  if (!jsonContent) return;
+
+  try {
+    const json = JSON.parse(jsonContent);
+
+    // Support Claude Desktop MCP format
+    const serversToImport: Array<{ name: string; config: McpServer['config'] }> = [];
+
+    // Claude Desktop format: { "mcpServers": { "server-id": { "command": "...", "args": [...] } } }
+    if (json.mcpServers) {
+      for (const [name, serverConfig] of Object.entries(json.mcpServers)) {
+        const config = serverConfig as any;
+
+        // Check if it's stdio type (has command)
+        if (config.command) {
+          serversToImport.push({
+            name,
+            config: {
+              type: 'stdio',
+              name,
+              command: config.command,
+              args: config.args || [],
+              env: Object.entries(config.env || {}).map(([name, value]) => ({
+                name,
+                value: String(value)
+              }))
+            }
+          });
+        }
+      }
+    }
+
+    // Import servers
+    let imported = 0;
+    for (const { config } of serversToImport) {
+      // Generate unique ID using nanoid
+      const id = nanoid();
+
+      mcpServers.value[id] = {
+        id,
+        config,
+        enabled: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      imported++;
+    }
+
+    if (imported > 0) {
+      alert(`Successfully imported ${imported} MCP server(s)`);
+    } else if (serversToImport.length > 0) {
+      alert('No servers imported (all servers already exist)');
+    } else {
+      alert('No valid MCP servers found in JSON');
+    }
+  } catch (error) {
+    console.error('Failed to import MCP servers:', error);
+    alert(`Failed to import: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -339,10 +454,87 @@ const currentTab = ref(defaultAgent);
       </Scrollbar>
     </template>
     <template #mcp>
-      <h1 class="text-xl font-semibold py-4">MCP</h1>
-      <div class="flex-1 flex flex-col gap-2 min-h-0 overflow-auto">
-        <p class="text-muted">Configure MCP servers</p>
-      </div>
+      <h1 class="text-xl font-semibold py-4">MCP Servers</h1>
+      <Scrollbar class="flex-1 min-h-0">
+        <div class="pr-4 py-4 space-y-4">
+          <!-- Action Buttons -->
+          <div class="flex gap-2 justify-center">
+            <UFieldGroup>
+              <UButton
+                icon="i-lucide-plus"
+                label="Add Server"
+                color="primary"
+                @click="addMcpServer"
+              />
+              <UButton
+                icon="i-lucide-upload"
+                label="Import JSON"
+                variant="outline"
+                @click="importMcpServers"
+              />
+            </UFieldGroup>
+          </div>
+
+          <!-- Server List -->
+          <div v-if="Object.keys(mcpServers).length > 0" class="space-y-2">
+            <div
+              v-for="(server, serverId) in mcpServers"
+              :key="serverId"
+              class="flex items-center gap-3 p-3 bg-elevated rounded-lg border"
+              :class="{ 'opacity-50': !server.enabled }"
+            >
+              <!-- Icon -->
+              <div class="flex-shrink-0">
+                <div :class="getServerIcon(server)" class="text-xl" />
+              </div>
+
+              <!-- Info -->
+              <div class="flex-1 min-w-0">
+                <div class="font-medium truncate">{{ server.config.name }}</div>
+                <div v-if="server.config.description" class="text-sm text-muted truncate">
+                  {{ server.config.description }}
+                </div>
+                <div class="text-sm text-muted flex items-center gap-2">
+                  <span>{{ getServerTypeLabel(server.config.type) }}</span>
+                  <span v-if="!server.enabled" class="text-xs text-warning">(disabled)</span>
+                </div>
+                <!-- Type-specific details -->
+                <div v-if="server.config.type === 'stdio'" class="text-xs text-muted">
+                  {{ server.config.command }}
+                </div>
+                <div v-else class="text-xs text-muted truncate">
+                  {{ server.config.url }}
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex gap-1">
+                <UButton
+                  icon="i-lucide-pencil"
+                  variant="ghost"
+                  color="neutral"
+                  size="sm"
+                  @click="editMcpServer(serverId)"
+                />
+                <UButton
+                  icon="i-lucide-trash"
+                  variant="ghost"
+                  color="error"
+                  size="sm"
+                  @click="deleteMcpServer(serverId)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="text-center py-12 text-muted">
+            <div class="text-4xl mb-2 i-mdi-server" />
+            <p class="text-lg font-medium mb-1">No MCP Servers</p>
+            <p class="text-sm">Add a server to extend agent capabilities</p>
+          </div>
+        </div>
+      </Scrollbar>
     </template>
   </UTabs>
 </template>

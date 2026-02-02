@@ -1,4 +1,5 @@
 import { db } from '.';
+import type { McpServer } from '@/types/mcp';
 
 export interface ChatModelConfig {
   apiKey: string;
@@ -188,4 +189,50 @@ export async function getWebSearchSettings(): Promise<WebSearchSettings | null> 
 export async function clearAllSettings(): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute('DELETE FROM settings');
+}
+
+// ============== MCP SERVER SETTINGS ==============
+
+export async function writeMcpServer(server: McpServer): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  const id = `mcp::${server.id}`;
+  const value = JSON.stringify(server);
+
+  await db.execute(
+    `INSERT OR REPLACE INTO settings (id, type, key, value)
+     VALUES ($1, $2, $3, $4)`,
+    [id, 'mcp', server.id, value]
+  );
+}
+
+export async function getAllMcpServers(): Promise<Record<string, McpServer>> {
+  if (!db) throw new Error('Database not initialized');
+  const result = await db.select<SettingRecord[]>(
+    `SELECT * FROM settings WHERE type = 'mcp'`
+  );
+
+  const servers: Record<string, McpServer> = {};
+  for (const row of result) {
+    servers[row.key] = JSON.parse(row.value) as McpServer;
+  }
+  return servers;
+}
+
+export async function getMcpServer(
+  serverId: string
+): Promise<McpServer | null> {
+  if (!db) throw new Error('Database not initialized');
+  const id = `mcp::${serverId}`;
+  const result = await db.select<SettingRecord[]>(
+    `SELECT * FROM settings WHERE id = $1`,
+    [id]
+  );
+  if (result.length === 0) return null;
+  return JSON.parse(result[0].value) as McpServer;
+}
+
+export async function deleteMcpServer(serverId: string): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  const id = `mcp::${serverId}`;
+  await db.execute('DELETE FROM settings WHERE id = $1', [id]);
 }

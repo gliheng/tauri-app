@@ -3,6 +3,8 @@ import * as acp from "@agentclientprotocol/sdk";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { eventBus } from "@/utils/eventBus";
+import type { McpServer } from "@/types/mcp";
+import { useSettingsStore } from "@/stores/settings";
 
 export type Role = 'user' | 'assistant';
 
@@ -420,6 +422,7 @@ export class TauriACPClient implements acp.Client {
   }
 
   async sessionNew() {
+    // const mcpServers = this.getMcpServersConfig();
     const result = await this.connection.newSession({
       cwd: this.config.directory,
       mcpServers: [],
@@ -488,6 +491,15 @@ export class TauriACPClient implements acp.Client {
 
   getAuthMethods() {
     return this.initializeResponse?.authMethods;
+  }
+
+  private getMcpServersConfig(): McpServer['config'][] {
+    const settingsStore = useSettingsStore();
+    const servers = settingsStore.mcpServers;
+
+    return Object.values(servers)
+      .filter(server => server.enabled)
+      .map(server => server.config);
   }
 
   private appendSessionUpdate(

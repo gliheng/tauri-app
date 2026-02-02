@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS chat (
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL,
   agentId TEXT,
-  sessionId TEXT
+  sessionId TEXT,
+  ext TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_chat_updated_at ON chat(updatedAt);

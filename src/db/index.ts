@@ -20,6 +20,9 @@ export interface Chat {
   updatedAt: Date;
   agentId?: string;
   sessionId?: string;
+  ext?: {
+    mcpServers?: string[];
+  };
 }
 
 export interface ChatMessage {
@@ -91,8 +94,8 @@ function stringToDate(dateString: string): Date {
 export async function writeChat(data: Chat): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute(
-    `INSERT OR REPLACE INTO chat (id, topic, createdAt, updatedAt, agentId, sessionId)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+    `INSERT OR REPLACE INTO chat (id, topic, createdAt, updatedAt, agentId, sessionId, ext)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [
       data.id,
       data.topic,
@@ -100,6 +103,7 @@ export async function writeChat(data: Chat): Promise<void> {
       dateToString(data.updatedAt),
       data.agentId ?? null,
       data.sessionId ?? null,
+      data.ext ? JSON.stringify(data.ext) : null,
     ]
   );
 }
@@ -113,6 +117,7 @@ export async function getAllChats(): Promise<Chat[]> {
     ...row,
     createdAt: stringToDate(row.createdAt),
     updatedAt: stringToDate(row.updatedAt),
+    ext: row.ext ? JSON.parse(row.ext) : undefined,
   }));
 }
 
@@ -128,6 +133,7 @@ export async function getChat(chatId: string): Promise<Chat | undefined> {
     ...row,
     createdAt: stringToDate(row.createdAt),
     updatedAt: stringToDate(row.updatedAt),
+    ext: row.ext ? JSON.parse(row.ext) : undefined,
   };
 }
 
@@ -160,6 +166,7 @@ export async function searchChats(query: string): Promise<Chat[]> {
     ...row,
     createdAt: stringToDate(row.createdAt),
     updatedAt: stringToDate(row.updatedAt),
+    ext: row.ext ? JSON.parse(row.ext) : undefined,
   }));
 }
 
@@ -173,6 +180,7 @@ export async function getChatsByAgentId(agentId: string): Promise<Chat[]> {
     ...row,
     createdAt: stringToDate(row.createdAt),
     updatedAt: stringToDate(row.updatedAt),
+    ext: row.ext ? JSON.parse(row.ext) : undefined,
   }));
 }
 
