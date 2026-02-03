@@ -21,9 +21,12 @@ const tabsStore = useTabsStore();
 const sidebarStore = useSidebarStore();
 const mode = useColorMode();
 
-const logoImg = computed(() => {
-  return mode.value === "dark" ? "/raven-light.png" : "/raven-dark.png";
-});
+const getIconSrc = (mode: string, collapsed?: boolean) => {
+  if (collapsed) {
+    return mode === "dark" ? "/raven-icon-light.png" : "/raven-icon-dark.png";
+  }
+  return mode === "dark" ? "/raven-light.png" : "/raven-dark.png";
+};
 
 sidebarStore.load();
 
@@ -143,15 +146,9 @@ const isMac = platform.startsWith("Mac");</script>
         data-tauri-drag-region
       >
         <img
-          v-if="!collapsed"
           class="w-40 h-10 pointer-events-none object-contain"
-          :src="logoImg"
+          :src="getIconSrc(mode, collapsed)"
           alt="Logo"
-        />
-        <UIcon
-          v-else
-          name="i-lucide-message-circle"
-          class="size-8 mx-auto text-primary pointer-events-none"
         />
       </h1>
     </template>

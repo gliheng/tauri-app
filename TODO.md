@@ -57,3 +57,4 @@
 - [ ] Diff apply/reject does not work.
 - [ ] Shortcut in WindowHeader does not work.
 - [ ] Agent upgrade failed.
+- [ ] Configuring mcp leads to all servers restarting.
