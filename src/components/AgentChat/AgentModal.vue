@@ -3,6 +3,11 @@ import { ref, toRaw } from "vue";
 import IconEdit from "@/components/IconEdit.vue";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup.vue";
 import { AgentProgram } from "@/db";
+import ICustomOpencode from '~icons/custom/opencode';
+import ICustomQwen from '~icons/custom/qwen';
+import ICustomCodex from '~icons/custom/codex';
+import ICustomClaude from '~icons/custom/claude';
+import ICustomGemini from '~icons/custom/gemini';
 
 export interface AgentFormData {
   name: string;
@@ -59,11 +64,11 @@ const createAgent = () => {
           <ToggleButtonGroup
             v-model="agent.program"
             :options="[
-              { value: 'codex', label: 'Codex' },
-              { value: 'gemini', label: 'Gemini CLI' },
-              { value: 'claude', label: 'Claude Code' },
-              { value: 'qwen', label: 'Qwen Code' },
-              { value: 'opencode', label: 'OpenCode' }
+              { value: 'codex', label: 'Codex', icon: ICustomCodex },
+              { value: 'gemini', label: 'Gemini CLI', icon: ICustomGemini },
+              { value: 'claude', label: 'Claude Code', icon: ICustomClaude },
+              { value: 'qwen', label: 'Qwen Code', icon: ICustomQwen },
+              { value: 'opencode', label: 'OpenCode', icon: ICustomOpencode },
             ]"
           />
         </section>
