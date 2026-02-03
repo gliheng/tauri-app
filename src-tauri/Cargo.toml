@@ -38,6 +38,21 @@ reqwest = { version = "0.12", features = ["json"] }
 git2 = "0.19"
 chrono = "0.4"
 
+# MCP server support
+rmcp = { version = "0.5", features = [
+    "client",
+    "client-side-sse",
+    "transport-io",
+    "transport-child-process",
+    "transport-streamable-http-client",
+    "transport-sse-client",
+    "reqwest",
+    "macros",
+    "schemars"
+] }
+async-trait = "0.1"
+thiserror = "2.0"
+
 [target."cfg(target_os = \"macos\")".dependencies]
 objc2 = "0.6.1"
 objc2-app-kit = { version = "0.3.1", features = ["NSColor", "NSWindow", "NSView", "NSButton", "NSControl"] }

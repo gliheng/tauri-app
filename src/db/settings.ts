@@ -15,6 +15,7 @@ export interface AgentConfig {
 
 interface ChatSettings {
   chatModel: string;
+  mcpServers: string[];
 }
 
 interface WebSearchSettings {

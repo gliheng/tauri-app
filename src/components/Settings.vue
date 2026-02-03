@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { nanoid } from "nanoid";
 import { useSettingsStore } from "@/stores/settings";
+import { useMcpStore } from "@/stores/mcp";
 import { modelRepo } from "@/llm/models";
 import { AgentProgram } from "@/db";
 import McpServerModal from "@/components/McpServerModal.vue";
 import McpImportModal from "@/components/McpImportModal.vue";
+import McpToolsModal from "@/components/McpToolsModal.vue";
+import McpLogsModal from "@/components/McpLogsModal.vue";
 import type { McpServer } from "@/types/mcp";
 
 const tabItems = [
@@ -141,6 +144,15 @@ const toggleModel = (provider: string, modelValue: string) => {
 const overlay = useOverlay();
 const mcpServerModal = overlay.create(McpServerModal);
 const mcpImportModal = overlay.create(McpImportModal);
+const mcpToolsModal = overlay.create(McpToolsModal);
+const mcpLogsModal = overlay.create(McpLogsModal);
+
+// Use MCP store for reactive connection status
+const mcpStore = useMcpStore();
+
+onMounted(async () => {
+  await mcpStore.setupEventListeners();
+});
 
 // MCP server operations
 const addMcpServer = async () => {
@@ -168,8 +180,17 @@ const editMcpServer = async (serverId: string) => {
   };
 };
 
-const deleteMcpServer = (serverId: string) => {
-  delete mcpServers.value[serverId];
+const deleteMcpServer = async (serverId: string) => {
+  const server = mcpServers.value[serverId];
+  if (!server) return;
+  
+  const ok = await confirm(
+    `Are you sure you want to delete "${server.config.name}"?\n\nThis action cannot be undone.`
+  );
+  
+  if (ok) {
+    delete mcpServers.value[serverId];
+  }
 };
 
 const getServerIcon = (server: McpServer) => {
@@ -182,6 +203,36 @@ const getServerIcon = (server: McpServer) => {
 
 const getServerTypeLabel = (type: string) => {
   return type.toUpperCase();
+};
+
+const getServerStatus = (serverId: string) => {
+  return mcpStore.getConnection(serverId);
+};
+
+const getStatusBadgeProps = (status: any) => {
+  if (!status) return null;
+  
+  switch (status.status) {
+    case 'starting':
+      return { color: 'warning', label: 'Starting...' };
+    case 'connected':
+      return { color: 'success', label: `Connected (${status.tools.length} tools)` };
+    case 'failed':
+      return { color: 'error', label: 'Failed' };
+    case 'disconnected':
+      return { color: 'neutral', label: 'Disconnected' };
+    default:
+      return null;
+  }
+};
+
+const viewTools = async (serverId: string, serverName: string) => {
+  const tools = mcpStore.getTools(serverId);
+  await mcpToolsModal.open({ serverName, tools });
+};
+
+const viewLogs = async (serverId: string, serverName: string) => {
+  await mcpLogsModal.open({ serverId, serverName });
 };
 
 // Import MCP servers from JSON (Claude Desktop format)
@@ -210,6 +261,36 @@ const importMcpServers = async () => {
               command: config.command,
               args: config.args || [],
               env: Object.entries(config.env || {}).map(([name, value]) => ({
+                name,
+                value: String(value)
+              }))
+            }
+          });
+        }
+        // Check if it's HTTP type (has url and method or no transport specified)
+        else if (config.url && (!config.transport || config.transport === 'http')) {
+          serversToImport.push({
+            name,
+            config: {
+              type: 'http',
+              name,
+              url: config.url,
+              headers: Object.entries(config.headers || {}).map(([name, value]) => ({
+                name,
+                value: String(value)
+              }))
+            }
+          });
+        }
+        // Check if it's SSE type (has url and transport: 'sse')
+        else if (config.url && config.transport === 'sse') {
+          serversToImport.push({
+            name,
+            config: {
+              type: 'sse',
+              name,
+              url: config.url,
+              headers: Object.entries(config.headers || {}).map(([name, value]) => ({
                 name,
                 value: String(value)
               }))
@@ -480,7 +561,7 @@ const currentTab = ref(defaultAgent);
             <div
               v-for="(server, serverId) in mcpServers"
               :key="serverId"
-              class="flex items-center gap-3 p-3 bg-elevated rounded-lg border"
+              class="flex items-center gap-3 p-3 rounded-lg border border-accented"
               :class="{ 'opacity-50': !server.enabled }"
             >
               <!-- Icon -->
@@ -490,13 +571,21 @@ const currentTab = ref(defaultAgent);
 
               <!-- Info -->
               <div class="flex-1 min-w-0">
-                <div class="font-medium truncate">{{ server.config.name }}</div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <div class="font-medium truncate">{{ server.config.name }}</div>
+                  <span v-if="!server.enabled" class="text-xs text-warning">(disabled)</span>
+                  <UBadge
+                    v-if="getStatusBadgeProps(getServerStatus(serverId))"
+                    :color="getStatusBadgeProps(getServerStatus(serverId))!.color"
+                    :label="getStatusBadgeProps(getServerStatus(serverId))!.label"
+                    size="xs"
+                  />
+                </div>
                 <div v-if="server.config.description" class="text-sm text-muted truncate">
                   {{ server.config.description }}
                 </div>
                 <div class="text-sm text-muted flex items-center gap-2">
                   <span>{{ getServerTypeLabel(server.config.type) }}</span>
-                  <span v-if="!server.enabled" class="text-xs text-warning">(disabled)</span>
                 </div>
                 <!-- Type-specific details -->
                 <div v-if="server.config.type === 'stdio'" class="text-xs text-muted">
@@ -515,6 +604,21 @@ const currentTab = ref(defaultAgent);
                   color="neutral"
                   size="sm"
                   @click="editMcpServer(serverId)"
+                />
+                <UButton
+                  v-if="getServerStatus(serverId)?.status === 'connected' && (getServerStatus(serverId)?.tools.length ?? 0) > 0"
+                  icon="i-lucide-wrench"
+                  variant="ghost"
+                  color="neutral"
+                  size="sm"
+                  @click="viewTools(serverId, server.config.name)"
+                />
+                <UButton
+                  icon="i-lucide-scroll-text"
+                  variant="ghost"
+                  color="neutral"
+                  size="sm"
+                  @click="viewLogs(serverId, server.config.name)"
                 />
                 <UButton
                   icon="i-lucide-trash"

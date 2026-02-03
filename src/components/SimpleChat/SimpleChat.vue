@@ -3,6 +3,7 @@ import { provide, computed, ref, PropType } from "vue";
 import { AnimatePresence } from "motion-v";
 import { merge, omit } from "lodash-es";
 import ChatBox from "@/components/ChatBox.vue";
+import McpSelector from "@/components/McpSelector.vue";
 import MessageList from "./MessageList.vue";
 import { useChat } from "@/hooks/useChat";
 import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db";
@@ -114,6 +115,7 @@ provide(CHAT_ACTIONS, {
       data: {
         model: settingsStore.chatSettings.chatModel,
         webSearch: webSearch.value,
+        mcpServers: settingsStore.chatSettings.mcpServers,
       }
     });
   },
@@ -122,6 +124,7 @@ provide(CHAT_ACTIONS, {
       data: {
         model: settingsStore.chatSettings.chatModel,
         webSearch: webSearch.value,
+        mcpServers: settingsStore.chatSettings.mcpServers,
       }
     });
   },
@@ -148,6 +151,7 @@ function onSubmit(data: any) {
     data: {
       model: settingsStore.chatSettings.chatModel,
       webSearch: webSearch.value,
+      mcpServers: settingsStore.chatSettings.mcpServers,
     }
   }));
 }
@@ -248,6 +252,7 @@ function onSubmit(data: any) {
               @click="webSearch = !webSearch"
             />
           </UTooltip>
+          <McpSelector v-model="settingsStore.chatSettings.mcpServers" />
         </template>
       </ChatBox>
     </div>

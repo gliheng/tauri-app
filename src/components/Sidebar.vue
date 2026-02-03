@@ -128,6 +128,14 @@ const isMac = platform.startsWith("Mac");</script>
       body: 'gap-2',
     }"
   >
+    <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
+      <UDashboardResizeHandle
+        class="after:absolute after:inset-y-0 after:right-0 after:w-px hover:after:bg-(--ui-border-accented) after:transition"
+        @mousedown="onMouseDown"
+        @touchstart="onTouchStart"
+        @dblclick="onDoubleClick"
+      />
+    </template>
     <template #header="{ collapsed }">
       <h1
         class="text-3xl font-bold flex flex-row gap-4 items-center justify-center select-none flex-1"

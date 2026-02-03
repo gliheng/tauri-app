@@ -12,7 +12,8 @@
 - [x] Web search.
 - [x] Code editor support diff view.
 - [x] Opencode support custom model.
-- [ ] MCP interaction.
+- [x] MCP interaction.
+- [ ] Support MCP ext-apps.
 - [ ] Show red dots on tabs when task is finished.
 - [ ] Plan and tool call supporting modification.
 - [ ] Agent chat add input queue.
@@ -32,6 +33,8 @@
 - [ ] Cloud service: Login and sync.
 - [ ] Browser control.
 - [ ] Cowork like feature investigation.
+- [ ] Update ai-sdk.
+- [ ] In SimpleChat, should show allow user to reload when there's error.
 
 # Issues
 - [ ] Fix qwen acp edit tool error.

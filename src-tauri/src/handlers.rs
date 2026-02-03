@@ -14,6 +14,9 @@ use tokio::sync::Mutex;
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandEvent;
 
+// MCP module imports
+use crate::mcp::{McpManager, McpServerConfig, McpToolCallRequest};
+
 // Struct to hold the shell process with its event receiver
 struct ShellProcess {
     _receiver: tauri::async_runtime::Receiver<CommandEvent>,
@@ -1719,4 +1722,175 @@ pub async fn get_git_diff_all(base_path: &str) -> Result<String, String> {
     }).map_err(|e| format!("Failed to print diff: {}", e))?;
 
     Ok(diff_text)
+}
+
+// MCP Server Management
+static MCP_MANAGER: std::sync::LazyLock<Arc<Mutex<Option<McpManager>>>> =
+    std::sync::LazyLock::new(|| Arc::new(Mutex::new(None)));
+
+#[tauri::command]
+pub async fn mcp_start_servers(
+    configs: Vec<(String, McpServerConfig)>,
+    app: tauri::AppHandle,
+) -> Result<serde_json::Value, serde_json::Value> {
+    println!("Starting {} MCP servers", configs.len());
+
+    // Initialize manager if needed
+    {
+        let mut manager = MCP_MANAGER.lock().await;
+        if manager.is_none() {
+            *manager = Some(crate::mcp::McpManager::new(app.clone()));
+        }
+    }
+
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().expect("Manager should be initialized");
+
+    manager_ref
+        .start_servers(configs)
+        .await
+        .map(|results| {
+            serde_json::to_value(results).map_err(|e| {
+                serde_json::json!({
+                    "code": -32000,
+                    "message": format!("Failed to serialize results: {}", e)
+                })
+            })
+        })
+        .map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to start MCP servers: {}", e)
+            })
+        })?
+}
+
+#[tauri::command]
+pub async fn mcp_list_tools() -> Result<serde_json::Value, serde_json::Value> {
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    manager_ref
+        .list_tools()
+        .await
+        .map(|tools| {
+            serde_json::to_value(tools).map_err(|e| {
+                serde_json::json!({
+                    "code": -32000,
+                    "message": format!("Failed to serialize tools: {}", e)
+                })
+            })
+        })
+        .map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to list tools: {}", e)
+            })
+        })?
+}
+
+#[tauri::command]
+pub async fn mcp_call_tool(request: McpToolCallRequest) -> Result<serde_json::Value, serde_json::Value> {
+    println!(
+        "Calling MCP tool: {} on server {}",
+        request.tool_name, request.server_id
+    );
+
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    manager_ref
+        .call_tool(request)
+        .await
+        .map(|response| {
+            serde_json::to_value(response).map_err(|e| {
+                serde_json::json!({
+                    "code": -32000,
+                    "message": format!("Failed to serialize response: {}", e)
+                })
+            })
+        })
+        .map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Tool call failed: {}", e)
+            })
+        })?
+}
+
+#[tauri::command]
+pub async fn mcp_stop_server(server_id: String) -> Result<(), serde_json::Value> {
+    println!("Stopping MCP server: {}", server_id);
+
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    manager_ref
+        .stop_server(&server_id)
+        .await
+        .map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to stop server: {}", e)
+            })
+        })
+}
+
+#[tauri::command]
+pub async fn mcp_list_servers() -> Result<serde_json::Value, serde_json::Value> {
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    let servers = manager_ref.list_servers().await;
+    serde_json::to_value(servers).map_err(|e| {
+        serde_json::json!({
+            "code": -32000,
+            "message": format!("Failed to serialize server list: {}", e)
+        })
+    })
+}
+
+#[tauri::command]
+pub async fn mcp_get_server_logs(server_id: String) -> Result<serde_json::Value, serde_json::Value> {
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    let logs = manager_ref.get_server_logs(&server_id).await.map_err(|e| {
+        serde_json::json!({
+            "code": -32000,
+            "message": format!("Failed to get server logs: {}", e)
+        })
+    })?;
+
+    serde_json::to_value(logs).map_err(|e| {
+        serde_json::json!({
+            "code": -32000,
+            "message": format!("Failed to serialize logs: {}", e)
+        })
+    })
 }
