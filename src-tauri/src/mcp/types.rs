@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 // MCP Server Configuration (mirrors frontend types)
-// Note: Only stdio transport is currently supported due to rmcp dependency limitations
+// Supported transports: stdio, http (streamable)
+// SSE transport is not supported in rmcp 0.14
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "type")]
 pub enum McpServerConfig {
@@ -15,7 +16,7 @@ pub enum McpServerConfig {
         env: Vec<McpEnvVar>,
     },
 
-    // HTTP transport
+    // HTTP transport (streamable HTTP)
     #[serde(rename = "http")]
     Http {
         name: String,
@@ -25,7 +26,8 @@ pub enum McpServerConfig {
         headers: Vec<McpHttpHeader>,
     },
 
-    // SSE (Server-Sent Events) transport
+    // SSE (Server-Sent Events) transport - NOT SUPPORTED in rmcp 0.14
+    // Will return an error if used
     #[serde(rename = "sse")]
     Sse {
         name: String,
@@ -81,6 +83,82 @@ pub enum McpContentItem {
     Resource { uri: String, mime_type: Option<String> },
     #[serde(rename = "image")]
     Image { data: String, mime_type: String },
+}
+
+// Resources
+#[derive(Debug, Clone, Serialize)]
+pub struct McpResource {
+    pub uri: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub mime_type: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct McpResourceReadRequest {
+    #[serde(rename = "serverId")]
+    pub server_id: String,
+    pub uri: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct McpResourceReadResponse {
+    pub contents: Vec<McpResourceContent>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type")]
+pub enum McpResourceContent {
+    #[serde(rename = "text")]
+    Text { uri: String, text: String, mime_type: Option<String> },
+    #[serde(rename = "blob")]
+    Blob { uri: String, blob: String, mime_type: String },
+}
+
+// Prompts
+#[derive(Debug, Clone, Serialize)]
+pub struct McpPromptArgument {
+    pub name: String,
+    pub description: Option<String>,
+    pub required: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct McpPrompt {
+    pub name: String,
+    pub description: Option<String>,
+    pub arguments: Vec<McpPromptArgument>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct McpPromptGetRequest {
+    #[serde(rename = "serverId")]
+    pub server_id: String,
+    pub name: String,
+    pub arguments: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct McpPromptGetResponse {
+    pub messages: Vec<McpPromptMessage>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct McpPromptMessage {
+    pub role: String,
+    #[serde(flatten)]
+    pub content: McpPromptContent,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type")]
+pub enum McpPromptContent {
+    #[serde(rename = "text")]
+    Text { text: String },
+    #[serde(rename = "image")]
+    Image { data: String, mime_type: String },
+    #[serde(rename = "resource")]
+    Resource { uri: String },
 }
 
 // Error handling

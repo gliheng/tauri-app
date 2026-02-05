@@ -12,6 +12,44 @@ export interface McpTool {
   annotations?: any;
 }
 
+export interface McpResource {
+  uri: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+}
+
+export interface McpResourceContent {
+  type: 'text' | 'blob';
+  uri: string;
+  text?: string;
+  blob?: string;
+  mimeType?: string;
+}
+
+export interface McpPromptArgument {
+  name: string;
+  description?: string;
+  required?: boolean;
+}
+
+export interface McpPrompt {
+  name: string;
+  description?: string;
+  arguments: McpPromptArgument[];
+}
+
+export interface McpPromptMessage {
+  role: string;
+  content: {
+    type: 'text' | 'image' | 'resource';
+    text?: string;
+    data?: string;
+    mimeType?: string;
+    uri?: string;
+  };
+}
+
 export interface McpLogEntry {
   timestamp: number;
   level: 'info' | 'error' | 'stdout' | 'stderr';
@@ -21,6 +59,8 @@ export interface McpLogEntry {
 export interface McpConnection {
   serverId: string;
   tools: McpTool[];
+  resources: McpResource[];
+  prompts: McpPrompt[];
   status: 'starting' | 'connected' | 'failed' | 'disconnected';
   error?: string;
 }
@@ -34,26 +74,32 @@ export const useMcpStore = defineStore('mcp', () => {
       return; // Already setup
     }
 
-    const unlisten = await listen<{ 
-      serverId: string; 
-      status: string; 
-      tools?: McpTool[]; 
-      error?: string 
+    const unlisten = await listen<{
+      serverId: string;
+      status: string;
+      tools?: McpTool[];
+      resources?: McpResource[];
+      prompts?: McpPrompt[];
+      error?: string
     }>('mcp-server-status', (event) => {
-      const { serverId, status, tools, error } = event.payload;
+      const { serverId, status, tools, resources, prompts, error } = event.payload;
 
-      console.log(`[MCP Store] Server ${serverId} status: ${status}`, { tools, error });
+      console.log(`[MCP Store] Server ${serverId} status: ${status}`, { tools, resources, prompts, error });
 
       if (status === 'connected') {
         connections.value.set(serverId, {
           serverId,
           tools: tools ?? [],
+          resources: resources ?? [],
+          prompts: prompts ?? [],
           status: 'connected',
         });
       } else if (status === 'failed') {
         connections.value.set(serverId, {
           serverId,
           tools: [],
+          resources: [],
+          prompts: [],
           status: 'failed',
           error,
         });
@@ -61,6 +107,8 @@ export const useMcpStore = defineStore('mcp', () => {
         connections.value.set(serverId, {
           serverId,
           tools: [],
+          resources: [],
+          prompts: [],
           status: 'starting',
         });
       } else if (status === 'disconnected') {
@@ -77,6 +125,14 @@ export const useMcpStore = defineStore('mcp', () => {
 
   const getTools = (serverId: string): McpTool[] => {
     return connections.value.get(serverId)?.tools || [];
+  };
+
+  const getResources = (serverId: string): McpResource[] => {
+    return connections.value.get(serverId)?.resources || [];
+  };
+
+  const getPrompts = (serverId: string): McpPrompt[] => {
+    return connections.value.get(serverId)?.prompts || [];
   };
 
   const getAllConnections = (): McpConnection[] => {
@@ -129,6 +185,37 @@ export const useMcpStore = defineStore('mcp', () => {
     return tools;
   };
 
+  const readResource = async (serverId: string, uri: string): Promise<McpResourceContent[]> => {
+    const result = await invoke('mcp_read_resource', {
+      request: {
+        serverId,
+        uri,
+      },
+    });
+    return result as McpResourceContent[];
+  };
+
+  const getPrompt = async (serverId: string, name: string, args?: any): Promise<McpPromptMessage[]> => {
+    const result = await invoke('mcp_get_prompt', {
+      request: {
+        serverId,
+        name,
+        arguments: args,
+      },
+    });
+    return result as McpPromptMessage[];
+  };
+
+  const getAllResources = async (): Promise<McpResource[]> => {
+    const resources = await invoke<McpResource[]>('mcp_list_resources');
+    return resources;
+  };
+
+  const getAllPrompts = async (): Promise<McpPrompt[]> => {
+    const prompts = await invoke<McpPrompt[]>('mcp_list_prompts');
+    return prompts;
+  };
+
   const cleanup = () => {
     if (eventListenerUnsubscribe) {
       eventListenerUnsubscribe();
@@ -142,13 +229,19 @@ export const useMcpStore = defineStore('mcp', () => {
     setupEventListeners,
     getConnection,
     getTools,
+    getResources,
+    getPrompts,
     getAllConnections,
     startServers,
     stopServer,
     stopAllServers,
     callTool,
+    readResource,
+    getPrompt,
     getServerLogs,
     getAllTools,
+    getAllResources,
+    getAllPrompts,
     cleanup,
   };
 });

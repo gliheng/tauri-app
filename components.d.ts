@@ -36,6 +36,7 @@ declare module 'vue' {
     Loader: typeof import('./src/components/Loader.vue')['default']
     LoadingText: typeof import('./src/components/LoadingText.vue')['default']
     MarkdownText: typeof import('./src/components/MarkdownText.vue')['default']
+    McpDetailsModal: typeof import('./src/components/McpDetailsModal.vue')['default']
     McpImportModal: typeof import('./src/components/McpImportModal.vue')['default']
     McpLogsModal: typeof import('./src/components/McpLogsModal.vue')['default']
     McpSelector: typeof import('./src/components/McpSelector.vue')['default']

@@ -15,7 +15,7 @@ use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandEvent;
 
 // MCP module imports
-use crate::mcp::{McpManager, McpServerConfig, McpToolCallRequest};
+use crate::mcp::{McpManager, McpServerConfig, McpToolCallRequest, McpResourceReadRequest, McpPromptGetRequest};
 
 // Struct to hold the shell process with its event receiver
 struct ShellProcess {
@@ -1733,7 +1733,7 @@ pub async fn mcp_start_servers(
     configs: Vec<(String, McpServerConfig)>,
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, serde_json::Value> {
-    println!("Starting {} MCP servers", configs.len());
+    println!("Starting {} MCP servers: {:#?}", configs.len(), configs);
 
     // Initialize manager if needed
     {
@@ -1893,4 +1893,116 @@ pub async fn mcp_get_server_logs(server_id: String) -> Result<serde_json::Value,
             "message": format!("Failed to serialize logs: {}", e)
         })
     })
+}
+
+#[tauri::command]
+pub async fn mcp_list_resources() -> Result<serde_json::Value, serde_json::Value> {
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    manager_ref
+        .list_resources()
+        .await
+        .map(|resources| serde_json::to_value(resources).map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to serialize resources: {}", e)
+            })
+        }))
+        .map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to list resources: {}", e)
+            })
+        })?
+}
+
+#[tauri::command]
+pub async fn mcp_list_prompts() -> Result<serde_json::Value, serde_json::Value> {
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    manager_ref
+        .list_prompts()
+        .await
+        .map(|prompts| serde_json::to_value(prompts).map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to serialize prompts: {}", e)
+            })
+        }))
+        .map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to list prompts: {}", e)
+            })
+        })?
+}
+
+#[tauri::command]
+pub async fn mcp_read_resource(request: McpResourceReadRequest) -> Result<serde_json::Value, serde_json::Value> {
+    println!("Reading MCP resource: {} from server {}", request.uri, request.server_id);
+
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    manager_ref
+        .read_resource(request)
+        .await
+        .map(|response| serde_json::to_value(response).map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to serialize response: {}", e)
+            })
+        }))
+        .map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Resource read failed: {}", e)
+            })
+        })?
+}
+
+#[tauri::command]
+pub async fn mcp_get_prompt(request: McpPromptGetRequest) -> Result<serde_json::Value, serde_json::Value> {
+    println!("Getting MCP prompt: {} from server {}", request.name, request.server_id);
+
+    let manager = MCP_MANAGER.lock().await;
+    let manager_ref = manager.as_ref().ok_or_else(|| {
+        serde_json::json!({
+            "code": -32000,
+            "message": "MCP manager not initialized. Call mcp_start_servers first."
+        })
+    })?;
+
+    manager_ref
+        .get_prompt(request)
+        .await
+        .map(|response| serde_json::to_value(response).map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Failed to serialize response: {}", e)
+            })
+        }))
+        .map_err(|e| {
+            serde_json::json!({
+                "code": -32000,
+                "message": format!("Prompt get failed: {}", e)
+            })
+        })?
 }

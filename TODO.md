@@ -13,6 +13,7 @@
 - [x] Code editor support diff view.
 - [x] Opencode support custom model.
 - [x] MCP interaction.
+- [x] MCP resources and prompts.
 - [ ] Support MCP ext-apps.
 - [ ] Show red dots on tabs when task is finished.
 - [ ] Plan and tool call supporting modification.

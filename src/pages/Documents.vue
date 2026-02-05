@@ -98,7 +98,7 @@ function formatDate(date: Date) {
 
     <div class="flex-1 flex flex-col overflow-hidden">
       <div class="px-6 pt-4">
-        <UTabs v-model="filter" :items="tabItems" variant="line" />
+        <UTabs v-model="filter" :items="tabItems" variant="link" />
       </div>
 
       <div class="flex-1 overflow-auto p-6">

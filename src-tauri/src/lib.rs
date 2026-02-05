@@ -88,11 +88,15 @@ pub fn run() {
             handlers::check_for_updates,
             // MCP commands
             handlers::mcp_start_servers,
-            handlers::mcp_list_tools,
-            handlers::mcp_call_tool,
             handlers::mcp_stop_server,
             handlers::mcp_list_servers,
             handlers::mcp_get_server_logs,
+            handlers::mcp_list_tools,
+            handlers::mcp_call_tool,
+            handlers::mcp_list_resources,
+            handlers::mcp_list_prompts,
+            handlers::mcp_read_resource,
+            handlers::mcp_get_prompt,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

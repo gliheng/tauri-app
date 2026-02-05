@@ -1,13 +1,11 @@
 use crate::mcp::types::{McpServerConfig, McpResult, McpError, McpHttpHeader};
-use rmcp::transport::TokioChildProcess;
-use rmcp::transport::streamable_http_client::StreamableHttpClientTransport;
-use rmcp::transport::SseClientTransport;
+use rmcp::transport::child_process::TokioChildProcess;
+use rmcp::transport::streamable_http_client::{StreamableHttpClientTransport, StreamableHttpClientTransportConfig};
 
 /// Enum to hold different transport types
 pub enum McpTransport {
     Stdio(TokioChildProcess),
     Http(StreamableHttpClientTransport<reqwest::Client>),
-    Sse(SseClientTransport<reqwest::Client>),
 }
 
 /// Creates appropriate transport for each server type
@@ -21,9 +19,8 @@ pub async fn create_transport(config: &McpServerConfig) -> McpResult<McpTranspor
             create_http_transport(url, headers).await
                 .map(McpTransport::Http)
         }
-        McpServerConfig::Sse { url, headers, .. } => {
-            create_sse_transport(url, headers).await
-                .map(McpTransport::Sse)
+        McpServerConfig::Sse { .. } => {
+            Err(McpError::InvalidConfig("SSE transport is not supported in rmcp 0.14".to_string()))
         }
     }
 }
@@ -49,34 +46,31 @@ async fn create_stdio_transport(
     Ok(transport)
 }
 
-/// Create HTTP transport
+/// Create HTTP transport using streamable HTTP client
 async fn create_http_transport(
     url: &str,
     headers: &[McpHttpHeader],
 ) -> McpResult<StreamableHttpClientTransport<reqwest::Client>> {
-    // Create transport from URI - this returns a WorkerTransport directly
-    let transport = StreamableHttpClientTransport::from_uri(url);
-    
-    // Note: Custom headers would need to be configured via reqwest client
-    // For now, we use the default client. If headers are needed, we'd need to:
-    // 1. Build a custom reqwest::Client with headers
-    // 2. Use StreamableHttpClientTransport::with_client if available
-    let _ = headers; // Will be used when custom header support is added
-    
-    Ok(transport)
-}
+    use reqwest::Client;
 
-/// Create SSE (Server-Sent Events) transport
-async fn create_sse_transport(
-    url: &str,
-    headers: &[McpHttpHeader],
-) -> McpResult<SseClientTransport<reqwest::Client>> {
-    // Create SSE transport from URI
-    let transport = SseClientTransport::start(url).await
-        .map_err(|e| McpError::TransportError(format!("Failed to create SSE transport: {}", e)))?;
+    // Build reqwest client with custom headers if provided
+    let client = if headers.is_empty() {
+        Client::new()
+    } else {
+        let mut header_map = reqwest::header::HeaderMap::new();
+        for header in headers {
+            let header_name = header.name.parse::<reqwest::header::HeaderName>()
+                .map_err(|e| McpError::TransportError(format!("Invalid header name: {}", e)))?;
+            let header_value = header.value.parse::<reqwest::header::HeaderValue>()
+                .map_err(|e| McpError::TransportError(format!("Invalid header value: {}", e)))?;
+            header_map.insert(header_name, header_value);
+        }
+        Client::builder().default_headers(header_map).build()
+            .map_err(|e| McpError::TransportError(format!("Failed to build HTTP client: {}", e)))?
+    };
 
-    // Note: Custom headers support would be added here if needed
-    let _ = headers; // Will be used when custom header support is added
-    
+    let config = StreamableHttpClientTransportConfig::with_uri(url);
+    let transport = StreamableHttpClientTransport::with_client(client, config);
+
     Ok(transport)
 }

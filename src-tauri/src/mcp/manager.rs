@@ -6,14 +6,21 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::mcp::{
     transport::{McpTransport, create_transport},
-    types::{McpServerConfig, McpTool, McpToolCallRequest, McpToolCallResponse, McpResult, McpError, McpContentItem, McpLogEntry, McpLogLevel},
+    types::{
+        McpServerConfig, McpTool, McpToolCallRequest, McpToolCallResponse,
+        McpResult, McpError, McpContentItem, McpLogEntry, McpLogLevel,
+        McpResource, McpResourceReadRequest, McpResourceReadResponse,
+        McpResourceContent,
+        McpPrompt, McpPromptArgument, McpPromptGetRequest, McpPromptGetResponse,
+        McpPromptMessage, McpPromptContent,
+    },
 };
 use rmcp::{
     RoleClient,
     service::{ClientInitializeError, RunningService, serve_client},
 };
+use rmcp::transport::child_process::TokioChildProcess;
 use rmcp::transport::streamable_http_client::StreamableHttpClientTransport;
-use rmcp::transport::SseClientTransport;
 
 pub struct McpManager {
     // We store the tools directly since we can't store dyn Service
@@ -24,6 +31,8 @@ pub struct McpManager {
 struct ServerInfo {
     config: McpServerConfig,
     tools: Vec<McpTool>,
+    resources: Vec<McpResource>,
+    prompts: Vec<McpPrompt>,
     is_connected: bool,
     service: Arc<RunningService<RoleClient, ()>>,
     logs: VecDeque<McpLogEntry>,
@@ -105,31 +114,59 @@ impl McpManager {
             McpTransport::Http(t) => {
                 self.connect_http(t, &server_id).await?
             }
-            McpTransport::Sse(t) => {
-                self.connect_sse(t, &server_id).await?
-            }
         };
 
-        // Extract tools from the service
-        let tools = self.extract_tools(&service, &server_id).await?;
+        // Check server capabilities and only extract supported features
+        let capabilities = service.peer_info()
+            .map(|info| &info.capabilities);
 
-        self.add_log_entry(&server_id, McpLogLevel::Info, format!("Successfully connected. Found {} tools", tools.len()));
+        let has_tools = capabilities.map(|c| c.tools.is_some()).unwrap_or(false);
+        let has_resources = capabilities.map(|c| c.resources.is_some()).unwrap_or(false);
+        let has_prompts = capabilities.map(|c| c.prompts.is_some()).unwrap_or(false);
 
-        // Store the service and tools
+        self.add_log_entry(&server_id, McpLogLevel::Info, 
+            format!("Server capabilities - tools: {}, resources: {}, prompts: {}", has_tools, has_resources, has_prompts));
+
+        // Extract tools, resources, and prompts based on capabilities
+        let tools = if has_tools {
+            self.extract_tools(&service, &server_id).await?
+        } else {
+            Vec::new()
+        };
+
+        let resources = if has_resources {
+            self.extract_resources(&service, &server_id).await?
+        } else {
+            Vec::new()
+        };
+
+        let prompts = if has_prompts {
+            self.extract_prompts(&service, &server_id).await?
+        } else {
+            Vec::new()
+        };
+
+        self.add_log_entry(&server_id, McpLogLevel::Info, format!("Successfully connected. Found {} tools, {} resources, {} prompts", tools.len(), resources.len(), prompts.len()));
+
+        // Store the service, tools, resources, and prompts
         let mut servers = self.servers.write().await;
         servers.insert(server_id.to_string(), ServerInfo {
             config,
             tools: tools.clone(),
+            resources: resources.clone(),
+            prompts: prompts.clone(),
             is_connected: true,
             service: Arc::new(service),
             logs: VecDeque::new(),
         });
 
-        // Emit success
+        // Emit success with resources and prompts
         let _ = self.app_handle.emit("mcp-server-status", serde_json::json!({
             "serverId": server_id,
             "status": "connected",
             "tools": tools,
+            "resources": resources,
+            "prompts": prompts,
         }));
 
         Ok(tools)
@@ -138,11 +175,11 @@ impl McpManager {
     /// Connect via stdio transport
     async fn connect_stdio(
         &self,
-        transport: rmcp::transport::TokioChildProcess,
+        transport: TokioChildProcess,
         server_id: &str,
     ) -> McpResult<RunningService<RoleClient, ()>> {
         self.add_log_entry(server_id, McpLogLevel::Info, "Connecting via stdio transport...".to_string());
-        
+
         let service = serve_client((), transport).await
             .map_err(|e: ClientInitializeError| {
                 self.add_log_entry(server_id, McpLogLevel::Error, format!("Stdio connection failed: {}", e));
@@ -157,14 +194,14 @@ impl McpManager {
         Ok(service)
     }
 
-    /// Connect via HTTP transport
+    /// Connect via HTTP transport (streamable HTTP)
     async fn connect_http(
         &self,
         transport: StreamableHttpClientTransport<reqwest::Client>,
         server_id: &str,
     ) -> McpResult<RunningService<RoleClient, ()>> {
         self.add_log_entry(server_id, McpLogLevel::Info, "Connecting via HTTP transport...".to_string());
-        
+
         let service = serve_client((), transport).await
             .map_err(|e: ClientInitializeError| {
                 self.add_log_entry(server_id, McpLogLevel::Error, format!("HTTP connection failed: {}", e));
@@ -174,28 +211,6 @@ impl McpManager {
                     "error": e.to_string(),
                 }));
                 McpError::ProtocolError(format!("Failed to connect HTTP: {}", e))
-            })?;
-
-        Ok(service)
-    }
-
-    /// Connect via SSE (Server-Sent Events) transport
-    async fn connect_sse(
-        &self,
-        transport: SseClientTransport<reqwest::Client>,
-        server_id: &str,
-    ) -> McpResult<RunningService<RoleClient, ()>> {
-        self.add_log_entry(server_id, McpLogLevel::Info, "Connecting via SSE transport...".to_string());
-        
-        let service = serve_client((), transport).await
-            .map_err(|e: ClientInitializeError| {
-                self.add_log_entry(server_id, McpLogLevel::Error, format!("SSE connection failed: {}", e));
-                let _ = self.app_handle.emit("mcp-server-status", serde_json::json!({
-                    "serverId": server_id,
-                    "status": "failed",
-                    "error": e.to_string(),
-                }));
-                McpError::ProtocolError(format!("Failed to connect SSE: {}", e))
             })?;
 
         Ok(service)
@@ -234,6 +249,79 @@ impl McpManager {
         Ok(tools)
     }
 
+    /// Extract resources from a service
+    async fn extract_resources(
+        &self,
+        service: &RunningService<RoleClient, ()>,
+        server_id: &str,
+    ) -> McpResult<Vec<McpResource>> {
+        println!("[MCP] Extracting resources from service for server: {}", server_id);
+
+        let resources_response = service.list_all_resources().await
+            .map_err(|e| {
+                self.add_log_entry(server_id, McpLogLevel::Error, format!("Failed to list resources: {}", e));
+                McpError::ProtocolError(format!("Failed to list resources: {}", e))
+            })?;
+
+        println!("[MCP] Extracted {} resources for server: {}", resources_response.len(), server_id);
+
+        let resources: Vec<McpResource> = resources_response
+            .into_iter()
+            .map(|r| {
+                // Resource is Annotated<RawResource>, access via .raw field
+                McpResource {
+                    uri: r.raw.uri.clone(),
+                    name: r.raw.name.clone(),
+                    description: r.raw.description.clone(),
+                    mime_type: r.raw.mime_type.clone(),
+                }
+            })
+            .collect();
+
+        Ok(resources)
+    }
+
+    /// Extract prompts from a service
+    async fn extract_prompts(
+        &self,
+        service: &RunningService<RoleClient, ()>,
+        server_id: &str,
+    ) -> McpResult<Vec<McpPrompt>> {
+        println!("[MCP] Extracting prompts from service for server: {}", server_id);
+
+        let prompts_response = service.list_all_prompts().await
+            .map_err(|e| {
+                self.add_log_entry(server_id, McpLogLevel::Error, format!("Failed to list prompts: {}", e));
+                McpError::ProtocolError(format!("Failed to list prompts: {}", e))
+            })?;
+
+        println!("[MCP] Extracted {} prompts for server: {}", prompts_response.len(), server_id);
+
+        let prompts: Vec<McpPrompt> = prompts_response
+            .into_iter()
+            .map(|p| {
+                // Prompt is not wrapped in Annotated, access fields directly
+                let arguments = p.arguments
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|arg| McpPromptArgument {
+                        name: arg.name,
+                        description: arg.description,
+                        required: arg.required,
+                    })
+                    .collect();
+
+                McpPrompt {
+                    name: p.name,
+                    description: p.description,
+                    arguments,
+                }
+            })
+            .collect();
+
+        Ok(prompts)
+    }
+
     /// List all tools from all connected servers
     pub async fn list_tools(&self) -> McpResult<Vec<McpTool>> {
         let servers = self.servers.read().await;
@@ -248,15 +336,185 @@ impl McpManager {
         Ok(all_tools)
     }
 
+    /// List all resources from all connected servers
+    pub async fn list_resources(&self) -> McpResult<Vec<McpResource>> {
+        let servers = self.servers.read().await;
+        let mut all_resources = Vec::new();
+
+        for info in servers.values() {
+            if info.is_connected {
+                all_resources.extend(info.resources.clone());
+            }
+        }
+
+        Ok(all_resources)
+    }
+
+    /// List all prompts from all connected servers
+    pub async fn list_prompts(&self) -> McpResult<Vec<McpPrompt>> {
+        let servers = self.servers.read().await;
+        let mut all_prompts = Vec::new();
+
+        for info in servers.values() {
+            if info.is_connected {
+                all_prompts.extend(info.prompts.clone());
+            }
+        }
+
+        Ok(all_prompts)
+    }
+
+    /// Read a resource from a specific server
+    pub async fn read_resource(&self, request: McpResourceReadRequest) -> McpResult<McpResourceReadResponse> {
+        use rmcp::model::ReadResourceRequestParams;
+
+        let servers = self.servers.read().await;
+        let server_info = servers.get(&request.server_id)
+            .ok_or_else(|| McpError::ServerNotFound(request.server_id.clone()))?;
+
+        if !server_info.is_connected {
+            return Err(McpError::ServerNotFound(format!("Server {} is not connected", request.server_id)));
+        }
+
+        self.add_log_entry(&request.server_id, McpLogLevel::Info,
+            format!("Reading resource: {}", request.uri));
+
+        let read_request = ReadResourceRequestParams {
+            uri: request.uri.clone().into(),
+            meta: None,
+        };
+
+        let result = server_info.service.read_resource(read_request).await
+            .map_err(|e| {
+                self.add_log_entry(&request.server_id, McpLogLevel::Error,
+                    format!("Resource read failed: {}", e));
+                McpError::ProtocolError(format!("Resource read failed: {}", e))
+            })?;
+
+        let contents = result.contents
+            .into_iter()
+            .map(|item| {
+                use rmcp::model::ResourceContents;
+                match item {
+                    ResourceContents::TextResourceContents { uri, text, mime_type, .. } => {
+                        McpResourceContent::Text {
+                            uri: uri.to_string(),
+                            text,
+                            mime_type: mime_type.map(|m| m.to_string())
+                        }
+                    }
+                    ResourceContents::BlobResourceContents { uri, blob, mime_type, .. } => {
+                        McpResourceContent::Blob {
+                            uri: uri.to_string(),
+                            blob,
+                            mime_type: mime_type.clone().unwrap_or_default()
+                        }
+                    }
+                }
+            })
+            .collect();
+
+        Ok(McpResourceReadResponse { contents })
+    }
+
+    /// Get a prompt from a specific server
+    pub async fn get_prompt(&self, request: McpPromptGetRequest) -> McpResult<McpPromptGetResponse> {
+        use rmcp::model::{GetPromptRequestParams, PromptMessageRole};
+
+        let servers = self.servers.read().await;
+        let server_info = servers.get(&request.server_id)
+            .ok_or_else(|| McpError::ServerNotFound(request.server_id.clone()))?;
+
+        if !server_info.is_connected {
+            return Err(McpError::ServerNotFound(format!("Server {} is not connected", request.server_id)));
+        }
+
+        let args = request.arguments.and_then(|v| {
+            if let serde_json::Value::Object(map) = v {
+                Some(map.into_iter().map(|(k, v)| (k.into(), v)).collect())
+            } else {
+                None
+            }
+        });
+
+        self.add_log_entry(&request.server_id, McpLogLevel::Info,
+            format!("Getting prompt: {}", request.name));
+
+        let prompt_request = GetPromptRequestParams {
+            name: request.name.clone().into(),
+            arguments: args,
+            meta: None,
+        };
+
+        let result = server_info.service.get_prompt(prompt_request).await
+            .map_err(|e| {
+                self.add_log_entry(&request.server_id, McpLogLevel::Error,
+                    format!("Prompt get failed: {}", e));
+                McpError::ProtocolError(format!("Prompt get failed: {}", e))
+            })?;
+
+        let messages = result.messages
+            .into_iter()
+            .map(|msg| {
+                let role = match msg.role {
+                    PromptMessageRole::User => "user".to_string(),
+                    PromptMessageRole::Assistant => "assistant".to_string(),
+                };
+
+                let content = match msg.content {
+                    rmcp::model::PromptMessageContent::Text { text } => {
+                        McpPromptContent::Text { text }
+                    }
+                    rmcp::model::PromptMessageContent::Image { image } => {
+                        // Access fields from the Annotated wrapper
+                        McpPromptContent::Image {
+                            data: image.raw.data.clone(),
+                            mime_type: image.raw.mime_type.clone()
+                        }
+                    }
+                    rmcp::model::PromptMessageContent::Resource { resource } => {
+                        use rmcp::model::ResourceContents;
+                        // Access through the Annotated wrapper
+                        match &resource.raw.resource {
+                            ResourceContents::TextResourceContents { uri, .. } => {
+                                McpPromptContent::Resource {
+                                    uri: uri.to_string()
+                                }
+                            }
+                            ResourceContents::BlobResourceContents { uri, .. } => {
+                                McpPromptContent::Resource {
+                                    uri: uri.to_string()
+                                }
+                            }
+                        }
+                    }
+                    rmcp::model::PromptMessageContent::ResourceLink { link } => {
+                        // Access through the Annotated wrapper
+                        McpPromptContent::Resource {
+                            uri: link.raw.uri.clone()
+                        }
+                    }
+                };
+
+                McpPromptMessage {
+                    role,
+                    content,
+                }
+            })
+            .collect();
+
+        Ok(McpPromptGetResponse { messages })
+    }
+
     /// Call a tool on a specific server using the persistent connection
     pub async fn call_tool(&self, request: McpToolCallRequest) -> McpResult<McpToolCallResponse> {
-        use rmcp::model::CallToolRequestParam;
+        use rmcp::model::CallToolRequestParams;
 
         // Get the service from the stored connection and call the tool
         let servers = self.servers.read().await;
         let server_info = servers.get(&request.server_id)
             .ok_or_else(|| McpError::ServerNotFound(request.server_id.clone()))?;
-        
+
         if !server_info.is_connected {
             return Err(McpError::ServerNotFound(format!("Server {} is not connected", request.server_id)));
         }
@@ -271,10 +529,12 @@ impl McpManager {
             }
             None => None,
         };
-        
-        let tool_request = CallToolRequestParam {
+
+        let tool_request = CallToolRequestParams {
             name: request.tool_name.clone().into(),
             arguments: args,
+            meta: None,
+            task: None,
         };
 
         self.add_log_entry(&request.server_id, McpLogLevel::Info, format!("Calling tool: {}", request.tool_name));
@@ -289,7 +549,6 @@ impl McpManager {
 
         // Convert rmcp content to our content format
         let content = result.content
-            .unwrap_or_default()
             .into_iter()
             .map(|item| {
                 use rmcp::model::RawContent;
@@ -298,20 +557,34 @@ impl McpManager {
                         McpContentItem::Text { text: text_content.text }
                     }
                     RawContent::Image(image_content) => {
-                        McpContentItem::Image { 
-                            data: image_content.data, 
-                            mime_type: image_content.mime_type 
+                        McpContentItem::Image {
+                            data: image_content.data,
+                            mime_type: image_content.mime_type
                         }
                     }
                     RawContent::Resource(resource_content) => {
                         use rmcp::model::ResourceContents;
-                        match resource_content.resource {
+                        // RawEmbeddedResource is already a raw type, access .resource directly
+                        match &resource_content.resource {
                             ResourceContents::TextResourceContents { uri, mime_type, .. } => {
-                                McpContentItem::Resource { uri, mime_type }
+                                McpContentItem::Resource {
+                                    uri: uri.clone(),
+                                    mime_type: mime_type.clone()
+                                }
                             }
                             ResourceContents::BlobResourceContents { uri, mime_type, .. } => {
-                                McpContentItem::Resource { uri, mime_type }
+                                McpContentItem::Resource {
+                                    uri: uri.clone(),
+                                    mime_type: mime_type.clone()
+                                }
                             }
+                        }
+                    }
+                    RawContent::ResourceLink(resource_link) => {
+                        // RawResource is already a raw type, access fields directly
+                        McpContentItem::Resource {
+                            uri: resource_link.uri.clone(),
+                            mime_type: resource_link.mime_type.clone()
                         }
                     }
                     RawContent::Audio(_) => {

@@ -6,14 +6,14 @@ import { useSettingsStore } from "@/stores/settings";
 import { useMcpStore } from "@/stores/mcp";
 import McpServerModal from "@/components/McpServerModal.vue";
 import McpImportModal from "@/components/McpImportModal.vue";
-import McpToolsModal from "@/components/McpToolsModal.vue";
+import McpDetailsModal from "@/components/McpDetailsModal.vue";
 import McpLogsModal from "@/components/McpLogsModal.vue";
 import type { McpServer } from "@/types/mcp";
 
 const overlay = useOverlay();
 const mcpServerModal = overlay.create(McpServerModal);
 const mcpImportModal = overlay.create(McpImportModal);
-const mcpToolsModal = overlay.create(McpToolsModal);
+const mcpDetailsModal = overlay.create(McpDetailsModal);
 const mcpLogsModal = overlay.create(McpLogsModal);
 
 const mcpStore = useMcpStore();
@@ -94,9 +94,16 @@ const getStatusBadgeProps = (status: any) => {
   }
 };
 
-const viewTools = async (serverId: string, serverName: string) => {
+const viewDetails = async (serverId: string, serverName: string) => {
   const tools = mcpStore.getTools(serverId);
-  await mcpToolsModal.open({ serverName, tools });
+  const resources = mcpStore.getResources(serverId);
+  const prompts = mcpStore.getPrompts(serverId);
+  await mcpDetailsModal.open({
+    serverName,
+    tools,
+    resources,
+    prompts
+  });
 };
 
 const viewLogs = async (serverId: string, serverName: string) => {
@@ -254,12 +261,12 @@ const importMcpServers = async () => {
             @click="editMcpServer(serverId)"
           />
           <UButton
-            v-if="getServerStatus(serverId)?.status === 'connected' && (getServerStatus(serverId)?.tools.length ?? 0) > 0"
-            icon="i-lucide-wrench"
+            v-if="getServerStatus(serverId)?.status === 'connected'"
+            icon="i-lucide-cpu"
             variant="ghost"
             color="neutral"
             size="sm"
-            @click="viewTools(serverId, server.config.name)"
+            @click="viewDetails(serverId, server.config.name)"
           />
           <UButton
             icon="i-lucide-scroll-text"

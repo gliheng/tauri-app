@@ -3,4 +3,4 @@ mod transport;
 mod types;
 
 pub use manager::McpManager;
-pub use types::{McpServerConfig, McpToolCallRequest};
+pub use types::{McpServerConfig, McpToolCallRequest, McpResourceReadRequest, McpPromptGetRequest};
