@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onActivated } from "vue";
 import { useRouter } from "vue-router";
 import { useDocumentsStore } from "@/stores/documents";
 import { useTabsStore } from "@/stores/tabs";
@@ -16,7 +16,7 @@ const filter = ref<'all' | 'note' | 'chart'>('all');
 const overlay = useOverlay();
 const documentCreateModal = overlay.create(DocumentConfig);
 
-onMounted(() => {
+onActivated(() => {
   documentsStore.loadDocuments();
 });
 

@@ -3,16 +3,7 @@ import { computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import type { McpServer } from '@/types/mcp'
 
-interface Props {
-  modelValue: string[]
-}
-
-interface Emits {
-  (e: 'update:modelValue', value: string[]): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const modelValue = defineModel<string[]>({ default: () => [] })
 
 const settingsStore = useSettingsStore()
 
@@ -24,11 +15,6 @@ const enabledServers = computed(() => {
       value: server.id,
       icon: getServerIcon(server.config.type),
     }))
-})
-
-const selectedServers = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
 })
 
 const getServerIcon = (type: string) => {
@@ -48,7 +34,7 @@ const getServerIcon = (type: string) => {
 <template>
   <UTooltip text="Select MCP servers">
     <USelect
-      v-model="selectedServers"
+      v-model="modelValue"
       multiple
       size="sm"
       variant="soft"
