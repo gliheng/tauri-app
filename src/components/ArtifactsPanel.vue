@@ -4,8 +4,8 @@ import { TabsContent, TabsIndicator, TabsList, TabsRoot, TabsTrigger } from "rek
 import { useArtifactsStore } from "@/stores/artifacts";
 import { storeToRefs } from "pinia";
 import Loader from "@/components/Loader.vue";
-import CodeEditor from "@/components/CodeEditor/CodeEditor.vue";
-import Terminal from "@/components/CodeEditor/Terminal.vue";
+import WorkspaceEditor from "@/components/WorkspaceEditor/WorkspaceEditor.vue";
+import Terminal from "@/components/WorkspaceEditor/Terminal.vue";
 
 const artifactsStore = useArtifactsStore();
 const { artifacts, activeArtifactKey } = storeToRefs(artifactsStore);
@@ -96,7 +96,7 @@ function getArtifactDisplayName(id: string): string {
           :value="artifact.key"
           class="flex-1 min-h-0"
         >
-          <CodeEditor
+          <WorkspaceEditor
             v-if="artifact.type === 'workspace'"
             :cwd="artifact.id"
           />

@@ -6,7 +6,7 @@ import { listen } from "@tauri-apps/api/event";
 import { debounce } from "lodash-es";
 import { useColorMode } from "@vueuse/core";
 import FileTree from "./FileTree.vue";
-import Editor from "./Editor.vue";
+import CodeEditor from "./CodeEditor.vue";
 import DiffViewer from "./DiffViewer.vue";
 import { FileEntryType, type FileEntry } from "./types";
 import { EDITOR_ACTIONS } from "@/constants";
@@ -313,7 +313,7 @@ async function onDiffSaveFile(content: string, filePath: string) {
               </div>
             </header>
             <KeepAlive :max="10">
-              <Editor
+              <CodeEditor
                 v-if="!showDiffView && file"
                 :key="file.path"
                 class="flex-1 min-h-0"

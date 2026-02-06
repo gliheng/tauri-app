@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import Editor from "@/components/CodeEditor/Editor.vue";
+import CodeEditor from "@/components/WorkspaceEditor/CodeEditor.vue";
 
 const emit = defineEmits<{
   close: [json: string | null];
@@ -66,7 +66,7 @@ const cancel = () => {
 
         <!-- JSON Editor -->
         <div class="border rounded-lg overflow-hidden" :class="{ 'border-error': !!validationError }">
-          <Editor
+          <CodeEditor
             v-model="jsonContent"
             language="json"
             height="300px"

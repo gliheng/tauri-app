@@ -16,7 +16,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   language: 'py',
   theme: 'light',
-  height: '200px',
+  height: '100%',
   readonly: false,
 })
 
@@ -77,6 +77,8 @@ const getLanguageExtension = async () => {
     case 'sql':
       const sqlLang = await import('@codemirror/lang-sql')
       return sqlLang.sql()
+    case 'h':
+    case 'c':
     case 'cpp':
       const cppLang = await import('@codemirror/lang-cpp')
       return cppLang.cpp()
