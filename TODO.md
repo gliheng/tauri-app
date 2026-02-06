@@ -36,6 +36,7 @@
 - [ ] Cowork like feature investigation.
 - [ ] Update ai-sdk.
 - [ ] In SimpleChat, should show allow user to reload when there's error.
+- [ ] Outline editor in documents pages.
 
 # Issues
 - [ ] Fix qwen acp edit tool error.

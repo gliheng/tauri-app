@@ -10,7 +10,6 @@ export { db };
 
 export async function init() {
   db = await Database.load(DB_PATH);
-  // Tables are created by Rust-side migrations
 }
 
 export interface Chat {
@@ -384,8 +383,6 @@ export async function deleteDocument(id: string): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute('DELETE FROM document WHERE id = $1', [id]);
 }
-
-
 
 // File operations
 export async function writeFile(file: File): Promise<number> {

@@ -6,7 +6,6 @@ import { useColorMode } from "@vueuse/core";
 import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Agent, writeAgent } from "@/db";
-import { computed } from "vue";
 import AgentModal from "./AgentChat/AgentModal.vue";
 import DocumentConfig from "./DocumentConfig.vue";
 import type { AgentFormData } from "./AgentChat/AgentModal.vue";
@@ -90,30 +89,14 @@ function openAgent(agent: Agent) {
   });
 }
 
-function documentUrl(type: "note" | "chart", id: string) {
-  return `/${type}/${id}`;
-}
-
 function goToDocuments() {
   tabsStore.openTab('/documents', 'Documents');
   router.push({ name: 'documents' });
 }
 
-async function addDocument() {
-  const type = await documentCreateModal.open() as "note" | "chart" | null;
-  if (!type) {
-    return;
-  }
-
-  const id = nanoid();
-  const name = type === 'note' ? 'New Note' : 'New Chart';
-  tabsStore.openTab(documentUrl(type, id), name);
-  router.push({
-    name: type,
-    params: {
-      id,
-    },
-  });
+function goToJournal() {
+  tabsStore.openTab('/journal', 'Journal');
+  router.push({ name: 'journal' });
 }
 
 const platform = navigator.platform;
@@ -129,6 +112,7 @@ const isMac = platform.startsWith("Mac");</script>
     :ui="{
       root: 'bg-elevated',
       body: 'gap-2',
+      footer: 'flex-col items-stretch',
     }"
   >
     <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
@@ -248,6 +232,18 @@ const isMac = platform.startsWith("Mac");</script>
     </template>
 
     <template #footer="{ collapsed }">
+      <UTooltip text="Journal" :content="{
+        side: 'right',
+      }">
+        <UButton
+          :label="collapsed ? undefined : 'Journal'"
+          icon="i-lucide-book-open"
+          variant="subtle"
+          color="neutral"
+          block
+          @click="goToJournal"
+        />
+      </UTooltip>
       <UModal
         :ui="{
           content: 'w-[720px] max-w-[720px] h-[70dvh]',

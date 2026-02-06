@@ -17,6 +17,12 @@ fn get_migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/002_settings.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "create_journal_table",
+            sql: include_str!("../migrations/003_journal.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
