@@ -4,7 +4,7 @@ import { CalendarDate, getLocalTimeZone } from '@internationalized/date';
 
 const props = defineProps<{
   currentDate: Date;
-  highlightedDates: string[];
+  highlightedDates: string[] | Set<string>;
 }>();
 
 const emit = defineEmits<{
@@ -31,7 +31,12 @@ function hasJournalEntry(date: any): boolean {
   const month = String(date.month).padStart(2, '0');
   const day = String(date.day).padStart(2, '0');
   const dateISO = `${year}-${month}-${day}`;
-  return props.highlightedDates.includes(dateISO);
+  
+  const dates = Array.isArray(props.highlightedDates) 
+    ? props.highlightedDates 
+    : Array.from(props.highlightedDates);
+    
+  return dates.includes(dateISO);
 }
 
 function isCurrent(date: any): boolean {

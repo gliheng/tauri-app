@@ -1,12 +1,12 @@
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { defineStore } from "pinia";
 import moment from "moment";
-import { Journal, writeJournal, getJournalByDate, getJournalsByDates, updateJournal, getJournalDatesInRange, countJournalsOlderThan } from "@/db/journal";
+import { Journal, writeJournal, getJournalByDate, updateJournal, getJournalDatesInMonth } from "@/db/journal";
 
 export const useJournalStore = defineStore("journal", () => {
   const journals = ref<Record<string, Journal>>({});
   const currentDate = ref<Date>(new Date());
-  const loadedDateRanges = ref<{start: Date; end: Date}[]>([]);
+  const currentMonthDates = ref<Set<string>>(new Set());
 
   async function loadJournalByDate(date: Date) {
     const dateISO = formatDateISO(date);
@@ -23,52 +23,20 @@ export const useJournalStore = defineStore("journal", () => {
     return journal;
   }
 
-  async function loadJournalsByDates(dates: Date[]) {
-    const dateISOs = dates.map(d => formatDateISO(d));
-    const journalsData = await getJournalsByDates(dateISOs);
-    
-    for (const journal of journalsData) {
-      journals.value[journal.date] = journal;
-    }
-    
-    if (dates.length > 0) {
-      const start = dates[dates.length - 1];
-      const end = dates[0];
-      loadedDateRanges.value.push({ start, end });
-    }
+  async function loadMonthDates(date: Date) {
+    const year = moment(date).year();
+    const month = moment(date).month() + 1;
+    const dates = await getJournalDatesInMonth(year, month);
+    currentMonthDates.value = new Set(dates);
   }
 
-  async function getDatesWithContent(
-    date: Date,
-    options: {
-      daysBack?: number;
-      includeEmpty?: boolean;
-      olderThan?: Date;
-    } = {}
-  ): Promise<Date[]> {
-    const { daysBack = 30, includeEmpty = false, olderThan } = options;
-    
-    const result = await getJournalDatesInRange(
-      formatDateISO(date),
-      daysBack,
-      includeEmpty
-    );
-    
-    const dates = result.map(d => parseISODate(d));
-    
-    if (olderThan) {
-      return dates.filter(d => d < olderThan);
-    }
-    
-    return dates;
-  }
-
-  async function hasMoreJournals(): Promise<boolean> {
-    const oldestLoaded = getOldestLoadedDate();
-    if (!oldestLoaded) return true;
-    
-    const count = await countJournalsOlderThan(formatDateISO(oldestLoaded));
-    return count > 0;
+  function cleanUpOldJournals() {
+    const dateISOs = Object.keys(journals.value);
+    dateISOs.forEach(dateISO => {
+      if (!currentMonthDates.value.has(dateISO)) {
+        delete journals.value[dateISO];
+      }
+    });
   }
 
   async function loadCurrentJournal() {
@@ -89,12 +57,12 @@ export const useJournalStore = defineStore("journal", () => {
     
     await writeJournal(journal);
     journals.value[journal.date] = journal;
+    currentMonthDates.value.add(journal.date);
     
     return journal;
   }
 
   async function updateJournalContent(date: Date, content: string) {
-    console.log('update journal', date, content);
     const dateISO = formatDateISO(date);
     
     if (!journals.value[dateISO]) {
@@ -103,16 +71,8 @@ export const useJournalStore = defineStore("journal", () => {
       await updateJournal(dateISO, { content, updatedAt: new Date() });
       journals.value[dateISO].content = content;
       journals.value[dateISO].updatedAt = new Date();
+      currentMonthDates.value.add(dateISO);
     }
-  }
-
-  function getOldestLoadedDate(): Date | null {
-    if (Object.keys(journals.value).length === 0) return null;
-    
-    const dates = Object.keys(journals.value).map(d => parseISODate(d));
-    return dates.reduce((oldest, current) => 
-      current < oldest ? current : oldest
-    );
   }
 
   const currentJournal = computed(() => {
@@ -126,26 +86,8 @@ export const useJournalStore = defineStore("journal", () => {
     };
   });
 
-  const sortedJournals = computed(() => {
-    return Object.values(journals.value).sort(
-      (a, b) => moment(b.date).valueOf() - moment(a.date).valueOf()
-    );
-  });
-
-  const recentJournals = computed(() => {
-    return sortedJournals.value.slice(0, 30);
-  });
-
-  const loadedDates = computed(() => {
-    return Object.keys(journals.value);
-  });
-
   function formatDateISO(date: Date): string {
     return moment(date).format('YYYY-MM-DD');
-  }
-
-  function parseISODate(dateStr: string): Date {
-    return moment(dateStr).toDate();
   }
 
   async function goToPreviousDay() {
@@ -161,8 +103,9 @@ export const useJournalStore = defineStore("journal", () => {
   }
 
   async function goToToday() {
-    await loadJournalByDate(currentDate.value);
-    currentDate.value = new Date();
+    const today = new Date();
+    await loadJournalByDate(today);
+    currentDate.value = today;
   }
 
   async function goToDate(date: Date) {
@@ -170,19 +113,28 @@ export const useJournalStore = defineStore("journal", () => {
     currentDate.value = date;
   }
 
+  watch(currentDate, async (newDate, oldDate) => {
+    let isNewMonth = true;
+    if (oldDate) {
+      isNewMonth = moment(newDate).month() !== moment(oldDate).month() || 
+                          moment(newDate).year() !== moment(oldDate).year();
+    }
+    if (isNewMonth) {
+      await loadMonthDates(newDate);
+      cleanUpOldJournals();
+    }
+  }, {
+    immediate: true,
+  });
+
   return {
     journals,
     currentDate,
     currentJournal,
-    sortedJournals,
-    recentJournals,
-    loadedDates,
-    loadedDateRanges,
+    currentMonthDates,
     loadJournalByDate,
-    loadJournalsByDates,
-    getDatesWithContent,
-    hasMoreJournals,
     loadCurrentJournal,
+    loadMonthDates,
     updateJournalContent,
     createJournal,
     goToPreviousDay,

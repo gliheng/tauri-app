@@ -4,8 +4,9 @@ import { useJournalStore } from "@/stores/journal";
 import { NoteEditor } from "@/components/NoteEditor";
 import JournalToolbar from "./JournalToolbar.vue";
 import JournalCalendar from "./JournalCalendar.vue";
-import JournalDateList from "./JournalDateList.vue";
 import { throttle } from "lodash-es";
+
+const EMPTY_DOC = '&nbsp;';
 
 const journalStore = useJournalStore();
 const { currentDate, currentJournal } = toRefs(journalStore);
@@ -34,9 +35,9 @@ const throttledSave = throttle(async (content: string) => {
 }, 1000);
 
 const currentJournalContent = computed({
-  get: () => currentJournal.value?.content || '',
+  get: () => currentJournal.value?.content || EMPTY_DOC, // &nbsp; is codemirror's empty placeholder
   set: (content: string) => {
-    throttledSave(content);
+    throttledSave(content == EMPTY_DOC ? '' : content);
   },
 });
 </script>
@@ -54,8 +55,8 @@ const currentJournalContent = computed({
       <div class="day-editor flex-1 min-h-0 overflow-y-auto mx-10">
         <NoteEditor
           v-if="currentJournal"
-          :key="currentDate.toISOString()"
           v-model="currentJournalContent"
+          :key="currentDate.toISOString()"
           :date="currentDate"
         />
         
@@ -68,12 +69,7 @@ const currentJournalContent = computed({
     <div class="w-[320px] min-w-[320px] border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden lg:flex hidden">
       <JournalCalendar
         :current-date="currentDate"
-        :highlighted-dates="journalStore.loadedDates"
-        @date-select="selectDate"
-      />
-      
-      <JournalDateList
-        :current-date="currentDate"
+        :highlighted-dates="Array.from(journalStore.currentMonthDates)"
         @date-select="selectDate"
       />
     </div>
