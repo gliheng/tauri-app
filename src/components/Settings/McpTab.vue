@@ -4,10 +4,10 @@ import { nanoid } from "nanoid";
 import { storeToRefs } from "pinia";
 import { useSettingsStore } from "@/stores/settings";
 import { useMcpStore } from "@/stores/mcp";
-import McpServerModal from "@/components/McpServerModal.vue";
-import McpImportModal from "@/components/McpImportModal.vue";
-import McpDetailsModal from "@/components/McpDetailsModal.vue";
-import McpLogsModal from "@/components/McpLogsModal.vue";
+import McpServerModal from "./McpServerModal.vue";
+import McpImportModal from "./McpImportModal.vue";
+import McpDetailsModal from "./McpDetailsModal.vue";
+import McpLogsModal from "./McpLogsModal.vue";
 import type { McpServer } from "@/types/mcp";
 
 const overlay = useOverlay();
