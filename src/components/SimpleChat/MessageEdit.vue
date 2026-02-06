@@ -15,7 +15,7 @@ const props = defineProps({
 });
 
 const text = ref(props.content);
-const { messages, setMessages, append } = inject(CHAT_ACTIONS);
+const { messages, setMessages, append } = inject(CHAT_ACTIONS) as any;
 
 function saveEdit() {
   const msgList = messages.value;

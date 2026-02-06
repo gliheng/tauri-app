@@ -7,4 +7,5 @@ export const eventBus = mitt<{
   acp_message_received: { program: string; message: string; timestamp: number };
   chat_created: { id: string; topic: string };
   chat_updated: { id: string };
+  toast: { title: string; description: string; icon: string; color: string };
 }>();

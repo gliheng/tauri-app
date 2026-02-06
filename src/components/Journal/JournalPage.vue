@@ -60,7 +60,7 @@ const currentJournalContent = computed({
         />
         
         <div v-else class="flex flex-1 items-center justify-center">
-          <USpinner size="lg" />
+          <Spinner size="lg" />
         </div>
       </div>
     </div>

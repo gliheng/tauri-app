@@ -94,6 +94,7 @@ export const useJournalStore = defineStore("journal", () => {
   }
 
   async function updateJournalContent(date: Date, content: string) {
+    console.log('update journal', date, content);
     const dateISO = formatDateISO(date);
     
     if (!journals.value[dateISO]) {

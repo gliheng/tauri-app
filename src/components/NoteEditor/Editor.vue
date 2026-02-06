@@ -518,9 +518,12 @@ const emojiItems: EditorEmojiMenuItem[] = gitHubEmojis.filter((emoji) => !emoji.
     v-slot="{ editor, handlers }"
     v-model="model"
     content-type="markdown"
+    :starter-kit="{
+      codeBlock: false,
+    }"
     :extensions="[
       Emoji,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }), 
       ImageUpload,
       FileImageExtension,
       CodeBlockShiki.configure({

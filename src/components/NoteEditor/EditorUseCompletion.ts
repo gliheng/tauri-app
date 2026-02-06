@@ -6,8 +6,7 @@ import { getModel } from '@/llm';
 import { Completion } from './EditorCompletionExtension';
 import type { CompletionStorage } from './EditorCompletionExtension';
 import dedent from 'dedent';
-
-const toast = useToast();
+import { eventBus } from '@/utils/eventBus';
 
 type CompletionMode = 'continue' | 'fix' | 'extend' | 'reduce' | 'simplify' | 'summarize' | 'translate';
 
@@ -115,7 +114,7 @@ export function useEditorCompletion(
       insertState.value = undefined;
     },
     onError: (error) => {
-      toast.add({
+      eventBus.emit('toast', {
         title: 'AI completion error',
         description: error instanceof Error ? error.message : 'An error occurred during AI completion',
         icon: 'i-lucide-alert-circle',

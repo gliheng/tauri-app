@@ -4,12 +4,18 @@ import { RouterView } from "vue-router";
 import VueEasyLightbox from "vue-easy-lightbox";
 import { eventBus } from "@/utils/eventBus";
 
+const toast = useToast();
+
 const visibleRef = ref(false);
 const indexRef = ref(0);
 const imgsRef = ref<string[]>([]);
 eventBus.on("lightbox", (src: string | string[]) => {
   imgsRef.value = Array.isArray(src) ? src : [src];
   visibleRef.value = true;
+});
+
+eventBus.on("toast", (data) => {
+  toast.add(data);
 });
 
 const onHide = () => (visibleRef.value = false);

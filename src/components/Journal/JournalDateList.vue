@@ -123,7 +123,7 @@ function selectDate(date: Date) {
       </div>
 
       <div v-if="loading" class="p-4 flex items-center justify-center gap-2 text-sm text-[var(--ui-color-muted)]">
-        <USpinner size="sm" />
+        <Spinner size="sm" />
         <span>Loading more entries...</span>
       </div>
 
