@@ -48,7 +48,7 @@
 - [x] Support scrolling mention menu using keyboard.
 - [x] Stop auto scroll when user is scrolling.
 - [ ] Each chat has its own model setting. Now changing one will affect another.
-- [ ] Unify scroller experience.
+- [x] Unify scroller experience.
 - [x] Workspace files tab removed when clicking x on terminal tab.
 - [x] Agent version gone in prod build.
 - [ ] Clicking outside the code editor should remove cursor and selection.

@@ -36,27 +36,27 @@ const tabItems = [
     </template>
     <template #models>
       <h1 class="text-xl font-semibold py-4">Models</h1>
-      <Scrollbar class="flex-1 min-h-0">
+      <div class="flex-1 min-h-0 overflow-y-auto">
         <div class="pr-4 py-4">
           <ModelsTab />
         </div>
-      </Scrollbar>
+      </div>
     </template>
     <template #tavily>
       <h1 class="text-xl font-semibold py-4">Tavily Search</h1>
-      <Scrollbar class="flex-1 min-h-0">
+      <div class="flex-1 min-h-0 overflow-y-auto">
         <div class="pr-4 py-4">
           <TavilyTab />
         </div>
-      </Scrollbar>
+      </div>
     </template>
     <template #mcp>
       <h1 class="text-xl font-semibold py-4">MCP Servers</h1>
-      <Scrollbar class="flex-1 min-h-0">
+      <div class="flex-1 min-h-0 overflow-y-auto">
         <div class="pr-4 py-4">
           <McpTab />
         </div>
-      </Scrollbar>
+      </div>
     </template>
   </UTabs>
 </template>

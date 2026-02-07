@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, PropType } from "vue";
 import { motion } from "motion-v";
-import Scrollbar from "@/components/Scrollbar.vue";
 import MessageBubble from "./MessageBubble.vue";
 
 const props = defineProps({
@@ -13,7 +12,7 @@ const props = defineProps({
   width: Number,
 });
 
-const listRef = ref<InstanceType<typeof Scrollbar> | null>(null);
+const listRef = ref<HTMLDivElement | null>(null);
 
 // Track if auto-scroll should be enabled (user is near bottom)
 const isAutoScrollEnabled = ref(true);
@@ -21,12 +20,12 @@ const isAutoScrollEnabled = ref(true);
 const BOTTOM_THRESHOLD = 20;
 
 const checkIsNearBottom = (): boolean => {
-  const scroller = (listRef.value as any)?.scroller;
-  if (!scroller) return true;
+  const element = listRef.value;
+  if (!element) return true;
 
-  const { maxScrollY, scrollTop } = scroller;
+  const { scrollTop, scrollHeight, clientHeight } = element;
   // Consider near bottom if within threshold pixels of bottom
-  return maxScrollY - scrollTop <= BOTTOM_THRESHOLD;
+  return scrollHeight - scrollTop - clientHeight <= BOTTOM_THRESHOLD;
 };
 
 const handleScroll = () => {
@@ -34,9 +33,9 @@ const handleScroll = () => {
 };
 
 const scrollToBottom = () => {
-  const scroller = (listRef.value as any)?.scroller;
-  if (scroller) {
-    scroller.scrollToBottom();
+  const element = listRef.value;
+  if (element) {
+    element.scrollTop = element.scrollHeight;
   }
 };
 
@@ -44,11 +43,8 @@ const scrollToBottom = () => {
 watch(
   () => props.messages,
   () => {
-    if (isAutoScrollEnabled.value) {
-      const scroller = (listRef.value as any).scroller;
-      if (scroller) {
-        scroller.scrollToBottom();
-      }
+    if (isAutoScrollEnabled.value && listRef.value) {
+      listRef.value.scrollTop = listRef.value.scrollHeight;
     }
   },
 );
@@ -56,7 +52,11 @@ watch(
 
 <template>
   <motion.div class="flex-1 flex min-h-0 relative">
-    <Scrollbar class="w-full" ref="listRef" @scroll="handleScroll">
+    <div
+      class="w-full overflow-y-auto"
+      ref="listRef"
+      @scroll="handleScroll"
+    >
       <div class="px-8">
         <div
           class="flex-1 flex flex-col gap-2 min-h-0 mx-auto my-4"
@@ -70,9 +70,9 @@ watch(
             v-bind="message"
           />
           <LoadingText v-if="status == 'submitted' || status == 'streaming'" />
-        </div>      
+        </div>
       </div>
-    </Scrollbar>
+    </div>
     <UButton
       v-if="!isAutoScrollEnabled"
       icon="i-heroicons-arrow-down"
