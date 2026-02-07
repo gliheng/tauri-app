@@ -78,3 +78,21 @@ export async function getJournalDatesInMonth(year: number, month: number): Promi
   
   return result.map(r => r.date);
 }
+
+export async function getRecentJournals(sinceDate: string): Promise<Journal[]> {
+  if (!db) throw new Error('Database not initialized');
+  
+  const result = await db.select<Journal[]>(
+    `SELECT * FROM journal 
+     WHERE date >= $1 
+       AND content IS NOT NULL AND content != ''
+     ORDER BY updatedAt DESC`,
+    [sinceDate]
+  );
+  
+  return result.map((row: any) => ({
+    ...row,
+    createdAt: stringToDate(row.createdAt),
+    updatedAt: stringToDate(row.updatedAt),
+  }));
+}

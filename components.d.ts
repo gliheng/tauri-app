@@ -36,6 +36,7 @@ declare module 'vue' {
     JournalCalendar: typeof import('./src/components/Journal/JournalCalendar.vue')['default']
     JournalDateList: typeof import('./src/components/Journal/JournalDateList.vue')['default']
     JournalPage: typeof import('./src/components/Journal/JournalPage.vue')['default']
+    JournalRecent: typeof import('./src/components/Journal/JournalRecent.vue')['default']
     JournalToolbar: typeof import('./src/components/Journal/JournalToolbar.vue')['default']
     Loader: typeof import('./src/components/Loader.vue')['default']
     LoadingText: typeof import('./src/components/LoadingText.vue')['default']

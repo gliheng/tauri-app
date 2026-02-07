@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { toRefs, computed } from "vue";
+import { toRefs, computed, onMounted } from "vue";
 import { useJournalStore } from "@/stores/journal";
 import { NoteEditor } from "@/components/NoteEditor";
 import JournalToolbar from "./JournalToolbar.vue";
 import JournalCalendar from "./JournalCalendar.vue";
+import JournalRecent from "./JournalRecent.vue";
 import { throttle } from "lodash-es";
 
 const EMPTY_DOC = '&nbsp;';
 
 const journalStore = useJournalStore();
-const { currentDate, currentJournal } = toRefs(journalStore);
+const { currentDate, currentJournal, recentJournals } = toRefs(journalStore);
 
 await journalStore.loadCurrentJournal();
+
+onMounted(async () => {
+  await journalStore.loadRecentJournals();
+});
 
 function goToPreviousDay() {
   journalStore.goToPreviousDay();
@@ -67,11 +72,17 @@ const currentJournalContent = computed({
     </div>
     
     <div class="w-[320px] min-w-[320px] border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden lg:flex hidden">
-      <JournalCalendar
-        :current-date="currentDate"
-        :highlighted-dates="Array.from(journalStore.currentMonthDates)"
-        @date-select="selectDate"
-      />
+      <div class="overflow-y-auto flex-1">
+        <JournalCalendar
+          :current-date="currentDate"
+          :highlighted-dates="Array.from(journalStore.currentMonthDates)"
+          @date-select="selectDate"
+        />
+        <JournalRecent
+          :recent-journals="recentJournals"
+          @date-select="selectDate"
+        />
+      </div>
     </div>
   </div>
 </template>

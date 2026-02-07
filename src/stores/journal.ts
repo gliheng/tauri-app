@@ -1,12 +1,14 @@
 import { ref, computed, watch } from "vue";
 import { defineStore } from "pinia";
 import moment from "moment";
-import { Journal, writeJournal, getJournalByDate, updateJournal, getJournalDatesInMonth } from "@/db/journal";
+import { nanoid } from "nanoid";
+import { Journal, writeJournal, getJournalByDate, updateJournal, getJournalDatesInMonth, getRecentJournals } from "@/db/journal";
 
 export const useJournalStore = defineStore("journal", () => {
   const journals = ref<Record<string, Journal>>({});
   const currentDate = ref<Date>(new Date());
   const currentMonthDates = ref<Set<string>>(new Set());
+  const recentJournals = ref<Journal[]>([]);
 
   async function loadJournalByDate(date: Date) {
     const dateISO = formatDateISO(date);
@@ -30,6 +32,11 @@ export const useJournalStore = defineStore("journal", () => {
     currentMonthDates.value = new Set(dates);
   }
 
+  async function loadRecentJournals() {
+    const weekAgo = moment().subtract(7, 'days').format('YYYY-MM-DD');
+    recentJournals.value = await getRecentJournals(weekAgo);
+  }
+
   function cleanUpOldJournals() {
     const dateISOs = Object.keys(journals.value);
     dateISOs.forEach(dateISO => {
@@ -44,7 +51,6 @@ export const useJournalStore = defineStore("journal", () => {
   }
 
   async function createJournal(date: Date, content = '') {
-    const { nanoid } = await import('nanoid');
     const id = nanoid();
     
     const journal: Journal = {
@@ -57,7 +63,6 @@ export const useJournalStore = defineStore("journal", () => {
     
     await writeJournal(journal);
     journals.value[journal.date] = journal;
-    currentMonthDates.value.add(journal.date);
     
     return journal;
   }
@@ -68,11 +73,13 @@ export const useJournalStore = defineStore("journal", () => {
     if (!journals.value[dateISO]) {
       await createJournal(date, content);
     } else {
-      await updateJournal(dateISO, { content, updatedAt: new Date() });
-      journals.value[dateISO].content = content;
-      journals.value[dateISO].updatedAt = new Date();
-      currentMonthDates.value.add(dateISO);
+      const newJournal = { content, updatedAt: new Date() };
+      await updateJournal(dateISO, newJournal);
+      Object.assign(journals.value[dateISO], newJournal);
     }
+    currentMonthDates.value.add(dateISO);
+    // No need to wait for this to finish
+    loadRecentJournals();
   }
 
   const currentJournal = computed(() => {
@@ -132,9 +139,11 @@ export const useJournalStore = defineStore("journal", () => {
     currentDate,
     currentJournal,
     currentMonthDates,
+    recentJournals,
     loadJournalByDate,
     loadCurrentJournal,
     loadMonthDates,
+    loadRecentJournals,
     updateJournalContent,
     createJournal,
     goToPreviousDay,
