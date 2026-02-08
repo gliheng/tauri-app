@@ -221,9 +221,7 @@ impl McpManager {
         &self,
         service: &RunningService<RoleClient, ()>,
         server_id: &str,
-    ) -> McpResult<Vec<McpTool>> {
-        println!("[MCP] Extracting tools from service for server: {}", server_id);
-        
+    ) -> McpResult<Vec<McpTool>> {        
         // List tools from the service
         let tools_response = service.list_all_tools().await
             .map_err(|e| {
@@ -255,8 +253,6 @@ impl McpManager {
         service: &RunningService<RoleClient, ()>,
         server_id: &str,
     ) -> McpResult<Vec<McpResource>> {
-        println!("[MCP] Extracting resources from service for server: {}", server_id);
-
         let resources_response = service.list_all_resources().await
             .map_err(|e| {
                 self.add_log_entry(server_id, McpLogLevel::Error, format!("Failed to list resources: {}", e));
@@ -287,8 +283,6 @@ impl McpManager {
         service: &RunningService<RoleClient, ()>,
         server_id: &str,
     ) -> McpResult<Vec<McpPrompt>> {
-        println!("[MCP] Extracting prompts from service for server: {}", server_id);
-
         let prompts_response = service.list_all_prompts().await
             .map_err(|e| {
                 self.add_log_entry(server_id, McpLogLevel::Error, format!("Failed to list prompts: {}", e));
