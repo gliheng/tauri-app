@@ -9,7 +9,7 @@ import { nanoid } from "nanoid";
 import * as acp from "@agentclientprotocol/sdk";
 import { createTauriAcpConnection } from "@/services/acp";
 import AgentSessionList from "@/components/AgentChat/AgentSessionList.vue";
-import PackageInstallStatus from "@/components/PackageInstallStatus.vue";
+import PackageInstallStatus from "@/components/AgentChat/PackageInstallStatus.vue";
 import { confirm, message } from '@tauri-apps/plugin-dialog';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { eventBus } from '@/utils/eventBus';
@@ -142,7 +142,7 @@ onActivated(() => {
   <div class="size-full p-4 flex flex-col relative overflow-y-auto"
     :class="enableLoadSession ? 'justify-start' : 'justify-center'"
   >
-  <!-- Agent header section -->
+   <!-- Agent header section -->
   <div class="flex flex-row gap-2 px-4 sticky top-0 rounded bg-elevated">
       <!-- Package installation status notifications -->
       <PackageInstallStatus class="absolute top-1 right-2" :agent="agent.program!" />

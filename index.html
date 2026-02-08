@@ -11,11 +11,127 @@
         document.head.appendChild(script);
       }
     </script>
+    <script type="module">
+      import {LitElement, html, css} from 'lit';
+
+      class SplashLoader extends LitElement {
+        static styles = css`
+          :host {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+          }
+
+          .splash-loader-content {
+            text-align: center;
+          }
+
+          .splash-title {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--splash-title-color, #1a1a1a);
+            margin-bottom: 32px;
+            letter-spacing: -0.5px;
+            animation: fadeInUp 0.8s ease-out;
+          }
+
+          .splash-spinner {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            margin: 0 auto;
+          }
+
+          .splash-spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(102, 126, 234, 0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+          }
+
+          .splash-spinner-ring:nth-child(2) {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            animation: spin 1.2s linear infinite reverse;
+          }
+
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0);
+            }
+            50% {
+              transform: translateY(-10px);
+            }
+          }
+
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          :host([fade-out]) {
+            animation: fadeOut 0.5s ease-out forwards;
+          }
+
+          @keyframes fadeOut {
+            to {
+              opacity: 0;
+              pointer-events: none;
+            }
+          }
+        `;
+
+        static properties = {
+          fadeOut: { type: Boolean, reflect: true, attribute: 'fade-out' }
+        };
+
+        render() {
+          return html`
+            <div class="splash-loader-content">
+              <div class="splash-title">Raven</div>
+              <div class="splash-spinner">
+                <div class="splash-spinner-ring"></div>
+                <div class="splash-spinner-ring"></div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      customElements.define('splash-loader', SplashLoader);
+    </script>
     <title>Raven App</title>
   </head>
 
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <splash-loader id="splash-loader"></splash-loader>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

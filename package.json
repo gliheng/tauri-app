@@ -72,6 +72,7 @@
     "ai": "^4.3.16",
     "codemirror": "^6.0.2",
     "dedent": "^1.6.0",
+    "lit": "^3.3.2",
     "lodash-es": "^4.17.21",
     "marked": "^15.0.12",
     "marked-highlight": "^2.2.1",
