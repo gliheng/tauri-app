@@ -8,4 +8,5 @@ export const eventBus = mitt<{
   chat_created: { id: string; topic: string };
   chat_updated: { id: string };
   toast: { title: string; description: string; icon: string; color: string };
+  tab_notify: { path: string };
 }>();

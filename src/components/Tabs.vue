@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, useTemplateRef, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, useTemplateRef, onMounted, onUnmounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useTabsStore } from "@/stores/tabs";
+import { eventBus } from "@/utils/eventBus";
 
 const router = useRouter();
+const route = useRoute();
 const store = useTabsStore();
-const { closeTab, reorderTab, createNewChat } = store;
+const { closeTab, reorderTab, createNewChat, setNotification } = store;
 const { tabs } = storeToRefs(store);
 const tabContainerRef = useTemplateRef("tabContainer");
 
@@ -72,9 +74,19 @@ onMounted(() => {
   calcScroll();
 });
 
+eventBus.on("tab_notify", ({ path }) => {
+  if (route.path !== path) {
+    setNotification(path, true);
+  }
+});
+
 onUnmounted(() => {
   mutationObserver.disconnect();
   resizeObserver.disconnect();
+});
+
+watch(() => route.path, (newPath) => {
+  setNotification(newPath, false);
 });
 
 function startDrag(evt: PointerEvent) {
@@ -84,6 +96,7 @@ function startDrag(evt: PointerEvent) {
 
   const el = evt.currentTarget as HTMLElement;
   const id = el.dataset.id;
+  if (!id) return;
   router.push({ path: id });
   currentIndex.value = parseInt(el.dataset.idx!);
   dragData.value = tabs.value.find((e) => e.path === id);
@@ -200,7 +213,16 @@ function bisect(nums: number[], n: number) {
           :data-id="tab.path"
           :data-idx="i"
           @pointerdown="startDrag"
-          ><span class="block overflow-hidden text-ellipsis">{{
+          >
+          <UBadge
+            v-if="tab.showNotification"
+            class="rounded-full"
+            icon="i-lucide-bell"
+            color="warning"
+            variant="solid"
+            size="sm"
+          />
+          <span class="block overflow-hidden text-ellipsis">{{
             tab.title
           }}</span>
           <UButton

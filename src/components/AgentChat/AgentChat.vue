@@ -412,6 +412,12 @@ onUnmounted(() => {
   stop();
 });
 
+watch(status, (newStatus, oldStatus) => {
+  if ((oldStatus === 'streaming' || oldStatus === 'submitted') && newStatus === 'ready') {
+    eventBus.emit('tab_notify', { path: `/chat/${props.chatId}` });
+  }
+});
+
 interface MentionItem {
   id: string;
   label: string;

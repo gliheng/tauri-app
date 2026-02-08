@@ -10,6 +10,7 @@ export const useTabsStore = defineStore("tabs", () => {
     {
       path: string;
       title: string;
+      showNotification?: boolean;
     }[]
   >(loadTabs());
   const showArtifactView = ref(false);
@@ -68,6 +69,14 @@ export const useTabsStore = defineStore("tabs", () => {
     }
   };
 
+  const setNotification = (path: string, show: boolean) => {
+    const tab = tabs.value.find((tab) => tab.path === path);
+    if (tab) {
+      tab.showNotification = show;
+      saveTabs(tabs.value);
+    }
+  };
+
   const toggleArtifactView = () => {
     showArtifactView.value = !showArtifactView.value;
   };
@@ -85,6 +94,7 @@ export const useTabsStore = defineStore("tabs", () => {
     closeTab,
     reorderTab,
     setTitle,
+    setNotification,
     createNewChat,
     showArtifactView,
     toggleArtifactView,

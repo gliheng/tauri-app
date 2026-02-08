@@ -14,8 +14,8 @@
 - [x] Opencode support custom model.
 - [x] MCP interaction.
 - [x] MCP resources and prompts.
+- [x] Show red dots on tabs when task is finished.
 - [ ] Support MCP ext-apps.
-- [ ] Show red dots on tabs when task is finished.
 - [ ] Plan and tool call supporting modification.
 - [ ] Agent chat add input queue.
 - [ ] Agent change UI improvement, show TODO as a fixed UI.

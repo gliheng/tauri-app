@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, computed, ref, PropType } from "vue";
+import { provide, computed, ref, PropType, watch } from "vue";
 import { AnimatePresence } from "motion-v";
 import { merge, omit } from "lodash-es";
 import ChatBox from "@/components/ChatBox.vue";
@@ -9,6 +9,7 @@ import { useChat } from "@/hooks/useChat";
 import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db";
 import { CHAT_ACTIONS, MESSAGE_GRAPH, ROOT_NODE_ID } from "@/constants";
 import { useSettingsStore } from "@/stores/settings";
+import { eventBus } from "@/utils/eventBus";
 
 const props = defineProps({
   chat: {
@@ -155,6 +156,12 @@ function onSubmit(data: any) {
     }
   }));
 }
+
+watch(status, (newStatus, oldStatus) => {
+  if ((oldStatus === 'streaming' || oldStatus === 'submitted') && newStatus === 'ready') {
+    eventBus.emit('tab_notify', { path: `/chat/${props.chatId}` });
+  }
+});
 
 </script>
 
