@@ -17,7 +17,7 @@
 - [x] Show red dots on tabs when task is finished.
 - [ ] Support MCP ext-apps.
 - [ ] Plan and tool call supporting modification.
-- [ ] Agent chat add input queue.
+- [ ] Add input queue to agent chat.
 - [ ] Agent change UI improvement, show TODO as a fixed UI.
 - [ ] My Acp agent with codeact and skills.
 - [ ] Create image using image model.
