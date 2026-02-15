@@ -67,7 +67,7 @@ watch(
           <MessageBubble
             v-for="message in messages"
             :key="message.id"
-            v-bind="message"
+            :message="message"
           />
           <LoadingText v-if="status == 'submitted' || status == 'streaming'" />
         </div>

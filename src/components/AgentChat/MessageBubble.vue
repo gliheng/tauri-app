@@ -6,19 +6,15 @@ import FileImage from "@/components/FileImage.vue";
 import type { Role, MessagePart } from "@/services/acp";
 
 const props = defineProps({
-  id: {
-    type: String,
+  message: {
+    type: Object as PropType<{
+      id: string;
+      role: Role;
+      content: string;
+      parts?: MessagePart[];
+    }>,
     required: true,
   },
-  role: {
-    type: String as PropType<Role>,
-    required: true,
-  },
-  content: {
-    type: String,
-    required: true,
-  },
-  parts: Array as PropType<MessagePart[]>,
   loading: Boolean,
 });
 
@@ -34,17 +30,17 @@ const bubbleStyle = tv({
   },
 });
 
-const displayParts = computed(() => props.parts ?? []);
+const displayParts = computed(() => props.message.parts ?? []);
 
 function copyText() {
-  console.log(props.parts);
-  navigator.clipboard.writeText(props.content || JSON.stringify(props.parts));
+  console.log(props.message.parts);
+  navigator.clipboard.writeText(props.message.content || JSON.stringify(props.message.parts));
 }
 </script>
 
 <template>
-  <section :class="bubbleStyle({ role })">
-    <template v-if="role == 'assistant'">
+  <section :class="bubbleStyle({ role: props.message.role })">
+    <template v-if="props.message.role == 'assistant'">
       <h1 class="flex items-center gap-2 mb-2 hidden">
         <UAvatar
           :class="{ 'animate-bounce': loading }"
@@ -304,23 +300,23 @@ function copyText() {
           </div>
         </div>
         <div
-          v-if="content && displayParts.length == 0"
+          v-if="props.message.content && displayParts.length == 0"
           class="mb-2"
         >
-          <MarkdownText v-if="content" :markdown="content" />
+          <MarkdownText v-if="props.message.content" :markdown="props.message.content" />
         </div>
       </div>
     </template>
     <template v-else>
       <div class="p-2 rounded-md bg-gray-100 dark:bg-gray-800">
-        <template v-if="parts?.length">
-          <div v-for="(part, i) in parts" :key="i" class="whitespace-pre-wrap">
+        <template v-if="props.message.parts?.length">
+          <div v-for="(part, i) in props.message.parts" :key="i" class="whitespace-pre-wrap">
             {{ part?.text }}
           </div>
         </template>
         <template v-else>
           <div class="whitespace-pre-wrap">
-            {{ content }}
+            {{ props.message.content }}
           </div>
         </template>
       </div>
