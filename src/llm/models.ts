@@ -17,6 +17,10 @@ export const modelRepo = {
   ],
   zai: [
     {
+      label: "GLM 5",
+      value: "glm-5",
+    },
+    {
       label: "GLM 4.7",
       value: "glm-4.7",
     },
@@ -83,6 +87,10 @@ export const modelRepo = {
     {
       label: "GLM 4.7",
       value: "Pro/zai-org/GLM-4.7",
+    },
+    {
+      label: "Kimi K2.5",
+      value: "Pro/moonshotai/Kimi-K2.5",
     },
   ],
 };

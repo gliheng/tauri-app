@@ -22,6 +22,7 @@ use rmcp::{
 use rmcp::transport::child_process::TokioChildProcess;
 use rmcp::transport::streamable_http_client::StreamableHttpClientTransport;
 
+#[derive(Clone)]
 pub struct McpManager {
     // We store the tools directly since we can't store dyn Service
     servers: Arc<RwLock<HashMap<String, ServerInfo>>>,
@@ -54,15 +55,30 @@ impl McpManager {
         server_configs: Vec<(String, McpServerConfig)>,
     ) -> McpResult<HashMap<String, Vec<String>>> {
         let mut results = HashMap::new();
+        let mut handles = Vec::new();
 
+        // Start all servers concurrently to prevent blocking
         for (server_id, config) in server_configs {
-            match self.start_server(server_id.clone(), config).await {
-                Ok(tools) => {
+            let self_clone = self.clone();
+            let handle = tokio::spawn(async move {
+                let result = self_clone.start_server(server_id.clone(), config).await;
+                (server_id, result)
+            });
+            handles.push(handle);
+        }
+
+        // Collect results as they complete
+        for handle in handles {
+            match handle.await {
+                Ok((server_id, Ok(tools))) => {
                     let tool_names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
                     results.insert(server_id, tool_names);
                 }
+                Ok((server_id, Err(e))) => {
+                    eprintln!("Failed to start server {}: {}", server_id, e);
+                }
                 Err(e) => {
-                    eprintln!("Failed to start server: {}", e);
+                    eprintln!("Task join error: {}", e);
                 }
             }
         }

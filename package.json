@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.13.0",
-    "@ai-sdk/deepseek": "^0.2.14",
-    "@ai-sdk/openai-compatible": "^0.2.14",
-    "@ai-sdk/vue": "^1.2.12",
+    "@ai-sdk/deepseek": "^2.0.18",
+    "@ai-sdk/openai-compatible": "^2.0.28",
+    "@ai-sdk/vue": "^3.0.79",
     "@codemirror/lang-cpp": "^6.0.3",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-html": "^6.4.11",
@@ -37,7 +37,7 @@
     "@iconify-json/lucide": "^1.2.86",
     "@iconify-json/vscode-icons": "^1.2.37",
     "@nuxt/ui": "^4.3.0",
-    "@openrouter/ai-sdk-provider": "^0.7.0",
+    "@openrouter/ai-sdk-provider": "^2.2.3",
     "@tauri-apps/api": "^2.9.1",
     "@tauri-apps/plugin-dialog": "^2.5.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
@@ -69,7 +69,7 @@
     "@vueuse/core": "^13.3.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "ai": "^4.3.16",
+    "ai": "^6.0.79",
     "codemirror": "^6.0.2",
     "dedent": "^1.6.0",
     "lit": "^3.3.2",
@@ -95,8 +95,7 @@
     "vue-router": "^4.5.1",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29",
-    "zod": "^3.25.67",
-    "zod-from-json-schema": "^0.1.0"
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.8",

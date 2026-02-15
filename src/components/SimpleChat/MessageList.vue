@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, watch, ref, PropType, inject } from "vue";
+import { watch, ref, PropType, inject } from "vue";
 import { motion } from "motion-v";
-import { Message } from "ai";
+import { UIMessage } from "ai";
 import { CHAT_ACTIONS } from "@/constants";
 import MessageBubble from "./MessageBubble.vue";
 import MessageEdit from "./MessageEdit.vue";
@@ -9,7 +9,7 @@ import MessageEdit from "./MessageEdit.vue";
 const props = defineProps({
   width: Number,
   messages: {
-    type: Array as PropType<Message[]>,
+    type: Array as PropType<UIMessage[]>,
     default: () => [],
   },
   messageGraph: {
@@ -17,11 +17,6 @@ const props = defineProps({
     default: () => ({}),
   },
   status: String,
-});
-
-const displayMessages = computed(() => {
-  const list: Message[] = [...props.messages];
-  return list;
 });
 
 const listRef = ref<HTMLElement | null>(null);
@@ -72,6 +67,7 @@ watch(
     }
   },
 );
+
 </script>
 
 <template>
@@ -84,19 +80,20 @@ watch(
             maxWidth: width ? `${width}px` : '100%',
           }"
         >
+          <p v-for="message in messages" :key="message.id">{{ JSON.stringify(message) }}</p>
           <Component
-            v-for="message in displayMessages"
-            v-bind="message"
+            v-for="message in messages"
+            :message="message"
             :is="editingId === message.id ? MessageEdit : MessageBubble"
             :key="message.id"
-            :last="message.id === displayMessages[displayMessages.length - 1].id"
+            :last="message.id === messages[messages.length - 1].id"
             :loading="
-              message.id === displayMessages[displayMessages.length - 1].id &&
+              message.id === messages[messages.length - 1].id &&
               (status == 'submitted' || status == 'streaming')
             "
             @start-edit="() => (editingId = message.id)"
             @cancel-edit="() => (editingId = '')"
-            @reload="actions.reload"
+            @regenerate="actions.regenerate"
           />
           <LoadingText v-if="status == 'submitted'" />
         </div>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, PropType, nextTick, onMounted, onBeforeUnmount, watch } from "vue";
-import { Attachment } from "ai";
-import { file2DataUrl } from "@/utils/file";
+import { file2DataUrl, type FileAttachment } from "@/utils/file";
 import { useSettingsStore } from "@/stores/settings";
 import FileImage from "./FileImage.vue";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
@@ -22,14 +21,16 @@ const props = defineProps({
   },
 });
 
-const input = defineModel<string>();
+const input = defineModel<string>({ default: '' });
 
 const emit = defineEmits<{
-  submit: [data: { data: { model: string }; experimental_attachments: Attachment[] }];
+  submit: [data: {
+    text: string;
+    attachments?: FileAttachment[];
+    body?: { model: string },
+  }];
   stop: [];
 }>();
-
-const settingsStore = useSettingsStore();
 
 const nonInteractive = computed(
   () => props.status == "submitted" || props.status == "streaming",
@@ -80,16 +81,14 @@ watch(input, (newValue) => {
 });
 
 async function submitForm() {
-  let attachments: Attachment[] = [];
+  let fileParts: FileAttachment[] = [];
   if (files.value.length) {
-    attachments = await Promise.all(files.value.map(file2DataUrl));
+    fileParts = await Promise.all(files.value.map(file2DataUrl));
   }
   files.value = [];
   emit('submit', {
-    data: {
-      model: settingsStore.chatSettings.chatModel,
-    },
-    experimental_attachments: attachments,
+    text: input.value,
+    attachments: fileParts.length > 0 ? fileParts : undefined,
   });
 }
 

@@ -3,8 +3,7 @@
  *
  * This module converts MCP tool definitions to AI SDK tool format.
  */
-
-import { convertJsonSchemaToZod } from 'zod-from-json-schema';
+import z from 'zod'
 import { useMcpStore } from '@/stores/mcp';
 
 /**
@@ -12,7 +11,7 @@ import { useMcpStore } from '@/stores/mcp';
  */
 export interface AiSdkTool {
   description: string
-  parameters: any
+  inputSchema: z.ZodType<any>
   execute: (args: any) => Promise<any>
 }
 
@@ -41,7 +40,7 @@ export async function convertMcpToolsToAiSdk(serverIds?: string[]): Promise<Reco
 
       tools[prefixedName] = {
         description: tool.description || `Tool: ${tool.name}`,
-        parameters: tool.input_schema ? convertJsonSchemaToZod(tool.input_schema) : {},
+        inputSchema: z.fromJSONSchema(tool.input_schema ?? {}),
         execute: async (args: any) => {
           try {
             const result = await mcpStore.callTool(connection.serverId, tool.name, args)

@@ -5,11 +5,13 @@ import { merge, omit } from "lodash-es";
 import ChatBox from "@/components/ChatBox.vue";
 import McpSelector from "@/components/McpSelector.vue";
 import MessageList from "./MessageList.vue";
-import { useChat } from "@/hooks/useChat";
-import { Chat, ChatMessage, getChatMessages, getMessages } from "@/db";
+import type { Chat, ChatMessage } from "@/db";
+import { getChatMessages, getMessages } from "@/db";
 import { CHAT_ACTIONS, MESSAGE_GRAPH, ROOT_NODE_ID } from "@/constants";
 import { useSettingsStore } from "@/stores/settings";
 import { eventBus } from "@/utils/eventBus";
+import { useChat } from "@/hooks/useChat";
+import { FileAttachment } from "@/utils/file";
 
 const props = defineProps({
   chat: {
@@ -68,27 +70,18 @@ const viewWidth = computed(() =>
   expanded.value ? undefined : Math.min(screen.width / 3, 600),
 );
 
-const {
-  error,
-  status,
-  messages,
-  setMessages,
-  reload,
-  append,
-  input,
-  stop,
-  handleSubmit,
-} = useChat({
+const input = ref('');
+const chat = useChat({
   id: props.chatId,
   initialMessages: initialMessages.map((e) => e.data),
-  onFinish(message) {
-    const len = messages.value.length;
-    const userMessage = messages.value[len - 2];
+  onFinish({ messages }) {
+    const len = messages.length;
+    const userMessage = messages[len - 2];
     // Add user message to graph
-    const prevAssistantMessage = messages.value[len - 3];
+    const prevAssistantMessage = messages[len - 3];
     addMessageToGraph(userMessage.id, prevAssistantMessage?.id);
     // Add assistant message to graph
-    addMessageToGraph(message.id, userMessage.id);
+    addMessageToGraph(messages[len - 1].id, userMessage.id);
   },
 });
 
@@ -98,42 +91,41 @@ function loadMessages(messages: ChatMessage[] = []) {
   for (const msg of messages) {
     messageGraph.value[msg.id] = omit(msg, ["data", "chatId", "id"]);
   }
-  setMessages(messages.map((e) => e.data) ?? []);
+  chat.messages = messages.map((e) => e.data) ?? [];
 }
 
 loadMessages(initialMessages);
 
 const showMessageList = computed(() => {
-  return messages.value.length || status.value != "ready";
+  return chat.messages.length || chat.status != "ready";
 });
 
 const settingsStore = useSettingsStore();
 
 provide(CHAT_ACTIONS, {
-  messages,
-  reload: () => {
-    return reload({
-      data: {
+  chat,
+  regenerate: () => {
+    return chat.regenerate({
+      body: {
         model: settingsStore.chatSettings.chatModel,
         webSearch: webSearch.value,
         mcpServers: settingsStore.chatSettings.mcpServers,
-      }
+      },
     });
   },
-  append(message: any) {
-    return append(message, {
-      data: {
+  sendMessage(message) {
+    const { text, files, body } = message;
+    return chat.sendMessage({
+      text,
+      files,
+    }, {
+      body: merge(body, {
         model: settingsStore.chatSettings.chatModel,
         webSearch: webSearch.value,
         mcpServers: settingsStore.chatSettings.mcpServers,
-      }
+      }),
     });
   },
-  input,
-  status,
-  setMessages,
-  handleSubmit,
-  stop,
 });
 
 provide(MESSAGE_GRAPH, {
@@ -147,17 +139,32 @@ provide(MESSAGE_GRAPH, {
   },
 });
 
-function onSubmit(data: any) {
-  handleSubmit(undefined, merge(data, {
-    data: {
+function onSubmit(data: {
+  text: string;
+  attachments?: FileAttachment[];
+}) {
+  // Convert FileAttachment to FileUIPart format
+  const files = data.attachments?.map(att => ({
+    type: 'file' as const,
+    mediaType: att.contentType || 'application/octet-stream',
+    filename: att.name,
+    url: att.url,
+  }));
+
+  chat.sendMessage({
+    text: data.text,
+    files,
+  }, {
+    body: {
       model: settingsStore.chatSettings.chatModel,
       webSearch: webSearch.value,
       mcpServers: settingsStore.chatSettings.mcpServers,
-    }
-  }));
+    },
+  });
+  input.value = '';
 }
 
-watch(status, (newStatus, oldStatus) => {
+watch(() => chat.status, (newStatus, oldStatus) => {
   if ((oldStatus === 'streaming' || oldStatus === 'submitted') && newStatus === 'ready') {
     eventBus.emit('tab_notify', { path: `/chat/${props.chatId}` });
   }
@@ -207,12 +214,12 @@ watch(status, (newStatus, oldStatus) => {
       </UPopover>
     </header>
     <div
-      v-if="error"
+      v-if="chat.error"
       class="mx-20 my-10"
     >
       <UAlert
         title="Error!"
-        :description="error.message"
+        :description="chat.error.message"
         color="error"
         icon="i-lucide-alert-octagon"
         :ui="{
@@ -226,8 +233,8 @@ watch(status, (newStatus, oldStatus) => {
         key="message-list"
         animate="visible"
         :width="viewWidth"
-        :messages="messages"
-        :status="status"
+        :messages="chat.messages"
+        :status="chat.status"
         :initial="initialMessages.length ? false : 'hidden'"
         :variants="{
           visible: { maxHeight: '100%' },
@@ -241,11 +248,11 @@ watch(status, (newStatus, oldStatus) => {
     <div class="px-8 my-4">
       <ChatBox
         v-model="input"
-        :status="status"
+        :status="chat.status"
         :style="{ width: viewWidth ? `${viewWidth}px` : '100%' }"
         :addons="['model-select']"
         @submit="onSubmit"
-        @stop="stop"
+        @stop="chat.stop"
       >
         <template #left-addons>
           <UTooltip v-if="!!settingsStore.webSearchSettings.apiKey" text="Web search">
@@ -255,7 +262,7 @@ watch(status, (newStatus, oldStatus) => {
               :class="webSearch ? '' : 'opacity-50'"
               variant="soft"
               size="sm"
-              :disabled="status == 'submitted' || status == 'streaming'"
+              :disabled="chat.status == 'submitted' || chat.status == 'streaming'"
               @click="webSearch = !webSearch"
             />
           </UTooltip>

@@ -32,7 +32,7 @@ interface TavilyExtractResponse {
 
 export const tavilySearchTool = tool({
   description: 'Search the web for current information using Tavily. Use this when you need up-to-date information or facts that may have changed recently.',
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe('The search query to search for'),
     maxResults: z.number().optional().default(5).describe('Maximum number of results to return (default: 5)'),
   }),
@@ -94,7 +94,7 @@ ${result.published_date ? `Published: ${result.published_date}` : ''}`;
 
 export const tavilyExtractTool = tool({
   description: 'Extract and parse the main content from a specific URL using Tavily. Use this when you need to read the full content of a specific web page.',
-  parameters: z.object({
+  inputSchema: z.object({
     url: z.string().describe('The URL to extract content from'),
   }),
   execute: async ({ url }) => {

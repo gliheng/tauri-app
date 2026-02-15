@@ -1,5 +1,5 @@
 import Database from '@tauri-apps/plugin-sql';
-import { Message } from 'ai';
+import { UIMessage } from 'ai';
 import { ROOT_NODE_ID } from '@/constants';
 
 const DB_PATH = 'sqlite:data.db';
@@ -27,7 +27,7 @@ export interface Chat {
 export interface ChatMessage {
   chatId: string;
   id: string;
-  data: Message;
+  data: UIMessage;
   parent?: string;
   children?: string[];
   siblingCount?: number;
@@ -186,12 +186,12 @@ export async function getChatsByAgentId(agentId: string): Promise<Chat[]> {
 // Message operations
 export async function writeMessages(
   chatId: string,
-  messages: Message[],
+  messages: UIMessage[],
   parent: string | undefined
 ): Promise<void> {
   if (!db) throw new Error('Database not initialized');
-
-  let prev: Message | undefined;
+  
+  let prev: UIMessage | undefined;
   for (const msg of messages) {
     const parentId = prev?.id ?? parent;
     const dataStr = JSON.stringify(msg);
@@ -216,7 +216,7 @@ export async function getChatMessages(chatId: string): Promise<ChatMessage[]> {
     chatId: row.chatId,
     id: row.messageId,
     parent: row.parent ?? undefined,
-    data: JSON.parse(row.data) as Message,
+    data: JSON.parse(row.data) as UIMessage,
   }));
 
   return selectMessagesFromTree(messages);
@@ -235,7 +235,7 @@ export async function getMessages(
     chatId: row.chatId,
     id: row.messageId,
     parent: row.parent ?? undefined,
-    data: JSON.parse(row.data) as Message,
+    data: JSON.parse(row.data) as UIMessage,
   }));
 
   return selectMessagesFromTree(messages, pathSelection);

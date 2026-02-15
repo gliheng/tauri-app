@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, PropType } from "vue";
 import { tv } from "tailwind-variants";
-import { Message } from "ai";
+import { UIMessage, isToolUIPart } from "ai";
 import MarkdownText from "@/components/MarkdownText.vue";
 import FileImage from "@/components/FileImage.vue";
 import MessageSwitcher from "./MessageSwitcher.vue";
@@ -11,19 +11,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  role: {
-    type: String,
+  message: {
+    type: Object as PropType<UIMessage>,
     required: true,
   },
-  content: {
-    type: String,
-    required: true,
-  },
-  parts: Array as PropType<Message["parts"][]>,
-  experimental_attachments: Array as PropType<
-    Message["experimental_attachments"]
-  >,
-  // createdAt: Date,
   last: {
     type: Boolean,
     default: false,
@@ -31,7 +22,7 @@ const props = defineProps({
   loading: Boolean,
 });
 
-const emit = defineEmits(["start-edit", "reload"]);
+const emit = defineEmits(["start-edit", "regenerate"]);
 
 const bubbleStyle = tv({
   base: "w-fit max-w-full flex flex-col",
@@ -43,16 +34,37 @@ const bubbleStyle = tv({
   },
 });
 
-const displayParts = computed(() => props.parts ?? []);
+const fileParts = computed(() =>
+  (props.message.parts ?? []).filter(
+    (part): part is {
+      type: "file";
+      url: string;
+      mediaType: string;
+      filename?: string;
+    } => part.type === "file"
+  )
+);
+
+// Extract tool name from part type (e.g., 'tool-web_search' -> 'web_search')
+function getToolNameFromPart(part: any): string {
+  if (part.type?.startsWith('tool-')) {
+    return part.type.slice(5);
+  }
+  return part.toolName || 'unknown';
+}
 
 function copyText() {
-  navigator.clipboard.writeText(props.content);
+  const textContent = (props.message.parts ?? [])
+    .filter((part) => part.type === "text")
+    .map((part) => (part as any).text)
+    .join("\n");
+  navigator.clipboard.writeText(textContent);
 }
 </script>
 
 <template>
-  <section :class="bubbleStyle({ role })">
-    <template v-if="role == 'assistant'">
+  <section :class="bubbleStyle({ role: message.role as any })">
+    <template v-if="message.role == 'assistant'">
       <h1 class="flex items-center gap-2 mb-2">
         <UAvatar
           :class="{ 'animate-bounce': loading }"
@@ -63,7 +75,7 @@ function copyText() {
       </h1>
       <div class="w-full">
         <div
-          v-for="(part, i) in displayParts"
+          v-for="(part, i) in message.parts"
           :key="i"
           class="mb-2"
         >
@@ -84,31 +96,31 @@ function copyText() {
               leading-icon="i-lucide-brain"
               trailing-icon="i-lucide-chevron-down"
               :ui="{
-                base: i === displayParts.length - 1 ? 'animate-pulse' : '',
+                base: i === (message.parts ?? []).length - 1 ? 'animate-pulse' : '',
                 trailingIcon:
                   'group-data-[state=open]:rotate-180 transition-transform duration-200',
               }"
             >
             </UButton>
             <template #content>
-              <MarkdownText class="opacity-60" v-if="part.reasoning" :markdown="part.reasoning" />
+              <MarkdownText class="opacity-60" v-if="part.text" :markdown="part.text" />
             </template>
           </UCollapsible>
           <UCollapsible
-            v-else-if="part.type == 'tool-invocation'"
+            v-else-if="isToolUIPart(part)"
             class="flex flex-col gap-2"
             :unmount-on-hide="false"
           >
             <UButton
               class="self-start group"
-              :label="`Tool: ${(part as any).toolInvocation?.toolName}`"
+              :label="`Tool: ${getToolNameFromPart(part)}`"
               color="neutral"
               variant="ghost"
               size="sm"
               leading-icon="i-lucide-terminal"
               trailing-icon="i-lucide-chevron-down"
               :ui="{
-                base: i === displayParts.length - 1 ? 'animate-pulse' : '',
+                base: i === (message.parts ?? []).length - 1 ? 'animate-pulse' : '',
                 trailingIcon:
                   'group-data-[state=open]:rotate-180 transition-transform duration-200',
               }"
@@ -116,58 +128,48 @@ function copyText() {
             </UButton>
             <template #content>
               <div class="flex flex-col gap-3 text-sm">
-                <div v-if="(part as any).toolInvocation?.args" class="flex flex-col gap-1">
+                <div v-if="(part as any).input" class="flex flex-col gap-1">
                   <span class="font-semibold">Arguments:</span>
-                  <pre class="p-2 rounded overflow-x-auto text-xs">{{ JSON.stringify((part as any).toolInvocation.args, null, 2) }}</pre>
+                  <pre class="p-2 rounded overflow-x-auto text-xs">{{ JSON.stringify((part as any).input, null, 2) }}</pre>
                 </div>
-                <div v-if="(part as any).toolInvocation?.result" class="flex flex-col gap-1">
+                <div v-if="(part as any).output" class="flex flex-col gap-1">
                   <span class="font-semibold">Result:</span>
                   <div class="p-2 rounded overflow-x-auto">
-                    <template v-if="typeof (part as any).toolInvocation.result === 'string'">
-                      <pre class="text-xs whitespace-pre-wrap break-words">{{ (part as any).toolInvocation.result }}</pre>
+                    <template v-if="typeof (part as any).output === 'string'">
+                      <pre class="text-xs whitespace-pre-wrap break-words">{{ (part as any).output }}</pre>
                     </template>
                     <template v-else>
-                      <pre class="text-xs">{{ JSON.stringify((part as any).toolInvocation.result, null, 2) }}</pre>
+                      <pre class="text-xs">{{ JSON.stringify((part as any).output, null, 2) }}</pre>
                     </template>
                   </div>
                 </div>
                 <div class="flex items-center gap-2 text-xs text-zinc-400">
-                  <span>State: {{ (part as any).toolInvocation?.state }}</span>
-                  <span v-if="(part as any).toolInvocation?.step !== undefined">Step: {{ (part as any).toolInvocation.step }}</span>
-                  <span v-if="(part as any).toolInvocation?.toolCallId" class="font-mono text-[10px] opacity-70">{{ (part as any).toolInvocation.toolCallId }}</span>
+                  <span>State: {{ (part as any).state }}</span>
+                  <span v-if="(part as any).toolCallId" class="font-mono text-[10px] opacity-70">{{ (part as any).toolCallId }}</span>
                 </div>
               </div>
             </template>
           </UCollapsible>
         </div>
-        <div
-          v-if="content && displayParts.length == 0"
-          class="mb-2"
-        >
-          <MarkdownText v-if="content" :markdown="content" />
-        </div>
       </div>
     </template>
     <template v-else>
       <div class="p-2 rounded-md bg-gray-100 dark:bg-gray-800">
-        <template v-if="parts?.length">
-          <div v-for="(part, i) in parts" :key="i" class="whitespace-pre-wrap">
-            {{ part?.text }}
-          </div>
-        </template>
-        <template v-else>
-          <div class="whitespace-pre-wrap">
-            {{ content }}
+        <template v-if="message.parts?.length">
+          <div v-for="(part, i) in message.parts" :key="i" class="whitespace-pre-wrap">
+            <template v-if="part.type === 'text'">
+              {{ part.text }}
+            </template>
           </div>
         </template>
       </div>
+      <FileImage
+        v-for="(file, index) of fileParts"
+        class="max-w-full mt-2"
+        :key="index"
+        :url="file.url"
+      />
     </template>
-    <FileImage
-      v-for="(attachment, index) of experimental_attachments"
-      class="max-w-full mt-2"
-      :key="index"
-      :url="attachment.url"
-    />
     <div class="flex flex-row items-center gap-1 mt-2">
       <MessageSwitcher :id="id" />
       <UTooltip text="Copy text">
@@ -178,7 +180,7 @@ function copyText() {
           @click="copyText"
         />
       </UTooltip>
-      <UTooltip v-if="role === 'user'" text="Edit">
+      <UTooltip v-if="message.role === 'user'" text="Edit">
         <UButton
           color="neutral"
           variant="soft"
@@ -186,12 +188,12 @@ function copyText() {
           @click="$emit('start-edit')"
         />
       </UTooltip>
-      <UTooltip v-if="last && role == 'assistant'" text="Reload">
+      <UTooltip v-if="last && message.role == 'assistant'" text="Reload">
         <UButton
           color="neutral"
           variant="soft"
           trailing-icon="i-lucide-refresh-cw"
-          @click="$emit('reload')"
+          @click="$emit('regenerate')"
         />
       </UTooltip>
     </div>

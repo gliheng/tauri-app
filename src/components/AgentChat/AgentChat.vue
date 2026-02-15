@@ -22,8 +22,7 @@ import {
 } from "@agentclientprotocol/sdk";
 import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/vue";
 import mime from "mime";
-import { Attachment } from "ai";
-import { isTextFile } from "@/utils/file";
+import { isTextFile, type FileAttachment } from "@/utils/file";
 
 const toast = useToast();
 
@@ -241,7 +240,7 @@ async function buildContentBlocks({
   text, attachments, editorJson, baseDirectory
 }: {
   text: string,
-  attachments?: Attachment[],
+  attachments?: FileAttachment[],
   editorJson: any,
   baseDirectory: string
 }): Promise<ContentBlock[]> {
@@ -317,7 +316,7 @@ async function buildContentBlocks({
   return parts;
 }
 
-const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) => {
+const handleSubmit = async (data: { attachments?: FileAttachment[] }) => {
   if (!input.value.trim() || !isInitialized.value || !client) return;
 
   try {
@@ -331,7 +330,7 @@ const handleSubmit = async (data: { experimental_attachments?: Attachment[] }) =
     // Build content blocks with text, mentions, and attachments
     const parts = await buildContentBlocks({
       text,
-      attachments: data.experimental_attachments,
+      attachments: data.attachments,
       editorJson: json,
       baseDirectory,
     });

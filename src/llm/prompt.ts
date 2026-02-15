@@ -1,8 +1,8 @@
-import { generateText } from "ai";
+import { generateText, ModelMessage } from "ai";
 import { getModel } from ".";
 import dedent from "dedent";
 
-export async function generateTopic(userInput: string) {
+export async function generateTopic(message: ModelMessage) {
   return generateText({
     model: getModel(),
     system: dedent`
@@ -11,6 +11,6 @@ export async function generateTopic(userInput: string) {
       - Topic must be in the same language as user input.
       - Output only the topic with no additional formatting.
     `,
-    messages: [{ role: "user", content: userInput }],
+    messages: [message],
   });
 }

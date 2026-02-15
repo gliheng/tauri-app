@@ -1,35 +1,47 @@
 <script setup lang="ts">
 import { CHAT_ACTIONS } from "@/constants";
-import { ref, inject } from "vue";
+import { ref, inject, PropType } from "vue";
+import type { UIMessage } from "ai";
 
-const emit = defineEmits(["cancel-edit"]);
 const props = defineProps({
-  id: {
-    type: String,
-    required: true,
-  },
-  content: {
-    type: String,
+  message: {
+    type: Object as PropType<UIMessage>,
     required: true,
   },
 });
 
-const text = ref(props.content);
-const { messages, setMessages, append } = inject(CHAT_ACTIONS) as any;
+const emit = defineEmits(["cancel-edit"]);
+
+const text = ref(
+  props.message.parts
+    ?.filter((p: any) => p.type === "text")
+    .map((p: any) => p.text)
+    .join('\n') ?? ''
+);
+const { chat, sendMessage } = inject(CHAT_ACTIONS)!;
 
 function saveEdit() {
-  const msgList = messages.value;
-  const index = msgList.findIndex((msg) => msg.id === props.id);
+  const msgList = chat.messages;
+  const index = msgList.findIndex((msg) => msg.id === props.message.id);
   if (index !== -1) {
     const oldMessage = msgList[index];
+
+    // Extract FileParts from the original message
+    const files = oldMessage.parts?.filter(
+      (part): part is {
+        type: "file";
+        url: string;
+        mediaType: string;
+        filename?: string;
+      } => part.type === "file"
+    );
+
     const newMessage = {
-      ...oldMessage,
-      parts: undefined,
-      id: undefined,
-      content: text.value,
+      text: text.value,
+      files,
     };
-    setMessages(msgList.slice(0, index));
-    append(newMessage);
+    chat.messages = msgList.slice(0, index);
+    sendMessage(newMessage);
   }
   emit("cancel-edit");
 }
@@ -37,11 +49,9 @@ function saveEdit() {
 
 <template>
   <section class="w-full max-w-full flex flex-col self-end items-end gap-2">
-    <UTextarea class="w-full" v-model="text" />
+    <UTextarea class="w-full" v-model="text" autofocus />
     <div class="flex gap-2 justify-end">
-      <UButton color="neutral" variant="subtle" @click="emit('cancel-edit')"
-        >Cancel</UButton
-      >
+      <UButton color="neutral" variant="subtle" @click="emit('cancel-edit')">Cancel</UButton>
       <UButton @click="saveEdit">Save</UButton>
     </div>
   </section>

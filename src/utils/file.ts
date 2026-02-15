@@ -1,4 +1,8 @@
-import { Attachment } from "ai";
+export interface FileAttachment {
+  name?: string;
+  url: string;
+  contentType?: string;
+}
 
 export function getFileIcon(name: string): string {
   const ext = name.split('.').pop()?.toLowerCase();
@@ -32,7 +36,7 @@ export function getFileIcon(name: string): string {
   }
 }
 
-export function file2DataUrl(file: File): Promise<Attachment> {
+export function file2DataUrl(file: File): Promise<FileAttachment> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () =>
