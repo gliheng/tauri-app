@@ -8,7 +8,7 @@
       <WorkspaceEditor cwd="/Users/juju/Develop/tauri-app" />
       <template #fallback>
         <div class="h-30 flex items-center justify-center">
-          <Loader />
+          <Spinner />
         </div>
       </template>
     </Suspense>

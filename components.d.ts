@@ -37,7 +37,6 @@ declare module 'vue' {
     JournalPage: typeof import('./src/components/Journal/JournalPage.vue')['default']
     JournalRecent: typeof import('./src/components/Journal/JournalRecent.vue')['default']
     JournalToolbar: typeof import('./src/components/Journal/JournalToolbar.vue')['default']
-    Loader: typeof import('./src/components/Loader.vue')['default']
     LoadingText: typeof import('./src/components/LoadingText.vue')['default']
     MarkdownText: typeof import('./src/components/MarkdownText.vue')['default']
     McpDetailsModal: typeof import('./src/components/Settings/McpDetailsModal.vue')['default']

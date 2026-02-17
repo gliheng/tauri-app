@@ -806,7 +806,7 @@ const slashExtension = Mention.extend({ name: 'slash' }).configure({
 <template>
   <div class="flex-1 flex flex-col min-h-0 justify-center relative">
     <section v-if="!isInitialized" class="flex-1 flex flex-col justify-center items-center gap-4">
-      <Loader />
+      <Spinner />
       <p class="text-gray-500 text-sm">Initializing agent...</p>
     </section>
     <template v-else>

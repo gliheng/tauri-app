@@ -62,7 +62,7 @@ function toggleArtifactView() {
                 <CommandPalette @close="commandPaletteOpen = false" />
                 <template #fallback>
                   <div class="h-30 flex items-center justify-center">
-                    <Loader />
+                    <Spinner />
                   </div>
                 </template>
               </Suspense>
