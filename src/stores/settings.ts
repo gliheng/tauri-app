@@ -113,7 +113,6 @@ export const useSettingsStore = defineStore("settings", () => {
   const chatSettings = ref<typeof defaultChatSettings>({} as typeof defaultChatSettings);
   const webSearchSettings = ref<typeof defaultWebSearchSettings>({} as typeof defaultWebSearchSettings);
   const mcpServers = ref<Record<string, McpServer>>({});
-  const isInitialized = ref(false);
   const isRestartingMcp = ref(false);
 
   // Start MCP servers from settings
@@ -142,9 +141,6 @@ export const useSettingsStore = defineStore("settings", () => {
 
     // Start MCP servers after settings are loaded
     await initializeMcpServers();
-
-    // Mark as initialized after all setup is complete
-    isInitialized.value = true;
   }
 
   initializeStore();
@@ -193,11 +189,6 @@ export const useSettingsStore = defineStore("settings", () => {
   }, 500);
 
   watch(mcpServers, async (v) => {
-    // Skip if not yet initialized
-    if (!isInitialized.value) {
-      return;
-    }
-
     // Persist to database
     for (const [id, server] of Object.entries(v)) {
       await settingsDb.writeMcpServer(server);
