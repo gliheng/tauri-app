@@ -80,7 +80,6 @@ watch(
             maxWidth: width ? `${width}px` : '100%',
           }"
         >
-          <p v-for="message in messages" :key="message.id">{{ JSON.stringify(message) }}</p>
           <Component
             v-for="message in messages"
             :message="message"
