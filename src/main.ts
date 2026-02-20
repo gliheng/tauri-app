@@ -5,7 +5,7 @@ import { init as initNative } from "./native";
 import { router } from "./router";
 import App from "./App.vue";
 import { init as initDb } from "./db";
-import { initSupabase } from "./lib/supabase/client";
+import { initSupabase } from "./lib/supabase";
 import { useChatsStore } from "./stores/chats";
 import { useAuthStore } from "./stores/auth";
 import "./assets/style.css";

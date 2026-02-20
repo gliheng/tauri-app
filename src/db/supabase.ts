@@ -1,4 +1,4 @@
-import { supabase, type UserSettingRow } from '@/lib/supabase/client'
+import { supabase, type UserSettingRow } from '@/lib/supabase'
 import type { ChatModelConfig, AgentConfig, McpServer } from '@/stores/settings'
 
 interface ChatSettings {

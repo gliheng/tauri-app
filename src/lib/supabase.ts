@@ -1,7 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
-import { supabaseConfig } from './config'
-import { createTauriStorage } from './storage'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { Store } from '@tauri-apps/plugin-store'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/constants";
+
+const supabaseConfig = {
+  url: SUPABASE_URL,
+  anonKey: SUPABASE_ANON_KEY,
+}
 
 let supabaseInstance: SupabaseClient | null = null
 let initPromise: Promise<SupabaseClient> | null = null
@@ -70,4 +75,26 @@ export interface UserSettingRow {
   value: string
   updated_at: string
   created_at: string
+}
+
+/**
+ * Custom storage adapter for Supabase using Tauri's secure Store.
+ * This persists auth tokens in the system's secure storage instead of localStorage.
+ */
+export async function createTauriStorage() {
+  const store = await Store.load('supabase_auth')
+
+  return {
+    getItem: async (key: string): Promise<string | null> => {
+      const value = await store.get<string>(key)
+      // Convert undefined to null for Supabase compatibility
+      return value ?? null
+    },
+    setItem: async (key: string, value: string): Promise<void> => {
+      await store.set(key, value)
+    },
+    removeItem: async (key: string): Promise<void> => {
+      await store.delete(key)
+    },
+  }
 }

@@ -3,7 +3,7 @@ import { computed, PropType } from "vue";
 import { tv } from "tailwind-variants";
 import MarkdownText from "@/components/MarkdownText.vue";
 import FileImage from "@/components/FileImage.vue";
-import type { Role, MessagePart } from "@/services/acp";
+import type { Role, MessagePart } from "@/lib/acp";
 
 const props = defineProps({
   message: {

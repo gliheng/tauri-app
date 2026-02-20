@@ -7,7 +7,7 @@ import { useTabsStore } from '@/stores/tabs';
 import { AnimatePresence, motion } from 'motion-v';
 import { nanoid } from "nanoid";
 import * as acp from "@agentclientprotocol/sdk";
-import { createTauriAcpConnection } from "@/services/acp";
+import { createTauriAcpConnection } from "@/lib/acp";
 import AgentSessionList from "@/components/AgentChat/AgentSessionList.vue";
 import PackageInstallStatus from "@/components/AgentChat/PackageInstallStatus.vue";
 import { confirm, message } from '@tauri-apps/plugin-dialog';
