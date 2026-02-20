@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PropType } from "vue";
-import type { Mode } from "@/hooks/useAcp";
+import type { Mode } from "@/composables/useAcp";
 
 defineProps({
   availableModes: {

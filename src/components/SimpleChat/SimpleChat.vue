@@ -10,7 +10,7 @@ import { getChatMessages, getMessages } from "@/db";
 import { CHAT_ACTIONS, MESSAGE_GRAPH, ROOT_NODE_ID } from "@/constants";
 import { useSettingsStore } from "@/stores/settings";
 import { eventBus } from "@/utils/eventBus";
-import { useChat } from "@/hooks/useChat";
+import { useChat } from "@/composables/useChat";
 import { FileAttachment } from "@/utils/file";
 
 const props = defineProps({

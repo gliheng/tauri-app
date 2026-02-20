@@ -28,7 +28,7 @@ An agent chat application built with vue and tauri.
 - Use `<script setup lang="ts">` syntax
 - Import order: Vue imports → third-party → local imports (use `@/` alias)
 - Props defined with `defineProps()` using explicit types
-- Composables imported from `@/hooks/`
+- Composables imported from `@/composables/`
 - Components from @nuxt/ui are auto-imported (no import statements needed)
 
 ```vue
@@ -129,7 +129,7 @@ pub async fn acp_initialize(
 - `src-tauri/` - Rust backend (handlers, migrations)
 - `src/components/` - Reusable Vue components
 - `src/stores/` - Pinia state management
-- `src/hooks/` - Vue composition API hooks
+- `src/composables/` - Vue composition API composables
 - `src-tauri/src/handlers.rs` - Tauri command definitions
 
 ## Important Notes

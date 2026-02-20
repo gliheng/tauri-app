@@ -10,7 +10,7 @@ import SlashCommandMenu from "./SlashCommandMenu.vue";
 import ContextDisplay from "./ContextDisplay.vue";
 import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
-import { useAcp } from "@/hooks/useAcp";
+import { useAcp } from "@/composables/useAcp";
 import { eventBus } from "@/utils/eventBus";
 import { invoke } from "@tauri-apps/api/core";
 import Mention from "@tiptap/extension-mention";
