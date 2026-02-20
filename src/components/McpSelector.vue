@@ -5,6 +5,17 @@ import type { McpServer } from '@/types/mcp'
 
 const modelValue = defineModel<string[]>({ default: () => [] })
 
+type ServerItem = { label: string; value: string; icon: string }
+
+const selectedItems = computed({
+  get: () => {
+    return enabledServers.value.filter((server: ServerItem) => modelValue.value.includes(server.value))
+  },
+  set: (items: ServerItem[]) => {
+    modelValue.value = items.map((item: ServerItem) => item.value)
+  }
+})
+
 const settingsStore = useSettingsStore()
 
 const enabledServers = computed(() => {
@@ -33,8 +44,8 @@ const getServerIcon = (type: string) => {
 
 <template>
   <UTooltip text="Select MCP servers">
-    <USelect
-      v-model="modelValue"
+    <USelectMenu
+      v-model="selectedItems"
       multiple
       size="sm"
       variant="soft"
