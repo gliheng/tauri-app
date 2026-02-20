@@ -3,8 +3,14 @@ import type { TabsItem } from "@nuxt/ui";
 import ModelsTab from "./ModelsTab.vue";
 import TavilyTab from "./TavilyTab.vue";
 import McpTab from "./McpTab.vue";
+import ProfileTab from "./ProfileTab.vue";
 
 const tabItems = [
+  {
+    label: "Profile",
+    icon: "i-lucide-circle-user",
+    slot: "profile" as const,
+  },
   {
     label: "Models",
     icon: "i-mdi-form-select",
@@ -33,6 +39,14 @@ const tabItems = [
   }">
     <template #list-leading>
       <h1 class="text-xl font-semibold pl-3 py-4">Settings</h1>
+    </template>
+    <template #profile>
+      <h1 class="text-xl font-semibold py-4">Profile</h1>
+      <div class="flex-1 min-h-0 overflow-y-auto">
+        <div class="pr-4 py-4">
+          <ProfileTab />
+        </div>
+      </div>
     </template>
     <template #models>
       <h1 class="text-xl font-semibold py-4">Models</h1>

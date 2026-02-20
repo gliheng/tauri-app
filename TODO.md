@@ -31,7 +31,7 @@
 - [ ] Website for downloading.
 - [ ] Buy me a coffee.
 - [ ] Cloud service: LLM & deep research.
-- [ ] Cloud service: Login and sync.
+- [x] Cloud service: Login and sync.
 - [ ] Browser control.
 - [ ] Cowork like feature investigation.
 - [ ] Update ai-sdk.
@@ -55,8 +55,8 @@
 - [x] Clicking outside chatbox dismiss @ menu.
 - [x] / command's description is too long.
 - [ ] Autoscroll does not work.
-- [ ] Editor save does not work.
-- [ ] Diff apply/reject does not work.
+- [x] Editor save does not work.
+- [x] Diff apply/reject does not work.
 - [ ] Shortcut in WindowHeader does not work.
-- [ ] Agent upgrade failed.
+- [x] Agent upgrade failed.
 - [ ] Configuring mcp leads to all servers restarting.

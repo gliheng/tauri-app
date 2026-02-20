@@ -4,6 +4,10 @@ import { defaultsDeep, debounce } from 'lodash-es';
 import * as settingsDb from "@/db/settings";
 import type { McpServer } from "@/types/mcp";
 import { useMcpStore } from "@/stores/mcp";
+import { useSupabaseStore } from '@/stores/supabase';
+
+// Re-export McpServer for use in other modules
+export type { McpServer };
 
 export interface ChatModelConfig {
   apiKey: string;
@@ -114,6 +118,42 @@ export const useSettingsStore = defineStore("settings", () => {
   const webSearchSettings = ref<typeof defaultWebSearchSettings>({} as typeof defaultWebSearchSettings);
   const mcpServers = ref<Record<string, McpServer>>({});
   const isRestartingMcp = ref(false);
+  const isMerging = ref(false);
+
+  // Supabase sync integration
+  const syncStore = useSupabaseStore();
+
+  // Merge remote settings pulled from Supabase into local state
+  syncStore.onPull(async (remote) => {
+    isMerging.value = true
+    try {
+      if (remote.model) {
+        modelSettings.value = defaultsDeep({}, remote.model, modelSettings.value)
+        await settingsDb.writeAllModelSettings(modelSettings.value)
+      }
+      if (remote.agent) {
+        agentSettings.value = defaultsDeep({}, remote.agent, agentSettings.value)
+        await settingsDb.writeAllAgentSettings(agentSettings.value)
+      }
+      if (remote.chat) {
+        chatSettings.value = defaultsDeep({}, remote.chat, chatSettings.value)
+        await settingsDb.writeChatSettings(chatSettings.value)
+      }
+      if (remote.websearch) {
+        webSearchSettings.value = defaultsDeep({}, remote.websearch, webSearchSettings.value)
+        await settingsDb.writeWebSearchSettings(webSearchSettings.value)
+      }
+      if (remote.mcp) {
+        mcpServers.value = defaultsDeep({}, remote.mcp, mcpServers.value)
+        for (const [, server] of Object.entries(mcpServers.value)) {
+          await settingsDb.writeMcpServer(server)
+        }
+      }
+      console.log('[Settings] Merged remote settings from Supabase')
+    } finally {
+      isMerging.value = false
+    }
+  })
 
   // Start MCP servers from settings
   async function initializeMcpServers() {
@@ -146,25 +186,41 @@ export const useSettingsStore = defineStore("settings", () => {
   initializeStore();
 
   watch(modelSettings, async (v) => {
+    if (isMerging.value) return;
     await settingsDb.writeAllModelSettings(v);
+    if (syncStore.syncEnabled) {
+      syncStore.debouncedPushSettings({ model: v });
+    }
   }, {
     deep: true,
   });
 
   watch(agentSettings, async (v) => {
+    if (isMerging.value) return;
     await settingsDb.writeAllAgentSettings(v);
+    if (syncStore.syncEnabled) {
+      syncStore.debouncedPushSettings({ agent: v });
+    }
   }, {
     deep: true,
   });
 
   watch(chatSettings, async (v) => {
+    if (isMerging.value) return;
     await settingsDb.writeChatSettings(v);
+    if (syncStore.syncEnabled) {
+      syncStore.debouncedPushSettings({ chat: v });
+    }
   }, {
     deep: true,
   });
 
   watch(webSearchSettings, async (v) => {
+    if (isMerging.value) return;
     await settingsDb.writeWebSearchSettings(v);
+    if (syncStore.syncEnabled) {
+      syncStore.debouncedPushSettings({ websearch: v });
+    }
   }, {
     deep: true,
   });
@@ -189,9 +245,15 @@ export const useSettingsStore = defineStore("settings", () => {
   }, 500);
 
   watch(mcpServers, async (v) => {
+    if (isMerging.value) return;
     // Persist to database
     for (const [id, server] of Object.entries(v)) {
       await settingsDb.writeMcpServer(server);
+    }
+
+    // Sync to Supabase
+    if (syncStore.syncEnabled) {
+      syncStore.debouncedPushSettings({ mcp: v });
     }
 
     // Restart MCP servers with debouncing
