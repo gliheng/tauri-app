@@ -17,4 +17,7 @@ export const MESSAGE_GRAPH = Symbol("message-graph") as InjectionKey<{
 }>;
 export const ROOT_NODE_ID = "__root";
 
+export const SUPABASE_URL = "https://xgazvyjwnjwablelrrsc.supabase.co";
+export const SUPABASE_ANON_KEY = "sb_publishable_wbwXXEx1TFLEz7zKTFHkOQ_HQaHIwAF";
+
 export const EDITOR_ACTIONS = Symbol("editor-actions");
