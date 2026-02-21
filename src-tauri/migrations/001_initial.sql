@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS chat (
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL,
   agentId TEXT,
-  sessionId TEXT,
   ext TEXT
 );
 

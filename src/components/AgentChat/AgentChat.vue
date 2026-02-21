@@ -3,7 +3,6 @@ import { ref, onMounted, onUnmounted, PropType, computed, useTemplateRef, watch 
 import { AnimatePresence } from "motion-v";
 import { Chat, updateChat, writeChat, type Agent } from "@/db";
 import ChatBox from "@/components/ChatBox.vue";
-import Loader from "@/components/Loader.vue";
 import MessageList from "./MessageList.vue";
 import ModeSelector from "./ModeSelector.vue";
 import SlashCommandMenu from "./SlashCommandMenu.vue";
@@ -44,7 +43,7 @@ const props = defineProps({
 const isInitialized = ref(false);
 const input = ref("");
 const error = ref<string | null>(null);
-const sessionId = ref<string | null>(props.chat?.sessionId ?? null);
+const sessionId = ref<string | null>(props.chat?.ext?.sessionId ?? null);
 const chatBoxRef = ref<InstanceType<typeof ChatBox> | null>(null);
 const expanded = ref(false);
 const selectionContextRef = useTemplateRef<InstanceType<typeof ContextDisplay> | null>("selectionContextRef");
@@ -138,7 +137,7 @@ const start = async () => {
 
     if (enableLoadSession && props.chat && sessionId.value) {
       status.value = 'streaming';
-      await client.sessionLoad(sessionId.value!);
+      await client.sessionLoad(sessionId.value);
       status.value = 'ready';
     } else {
       const ret = await client.sessionNew();
@@ -362,7 +361,9 @@ const handleSubmit = async (data: { attachments?: FileAttachment[] }) => {
           createdAt: new Date(),
           updatedAt: new Date(),
           agentId: props.agent.id,
-          sessionId: sessionId.value!,
+          ext: {
+            sessionId: sessionId.value ?? undefined,
+          },
         };
         await writeChat(agentChat);
         eventBus.emit("chat_created", { id: props.chatId, topic });

@@ -18,9 +18,9 @@ export interface Chat {
   createdAt: Date;
   updatedAt: Date;
   agentId?: string;
-  sessionId?: string;
   ext?: {
-    mcpServers?: string[];
+    // AgentChat use this to reference the external agent session
+    sessionId?: string;
   };
 }
 
@@ -93,15 +93,14 @@ function stringToDate(dateString: string): Date {
 export async function writeChat(data: Chat): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute(
-    `INSERT OR REPLACE INTO chat (id, topic, createdAt, updatedAt, agentId, sessionId, ext)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    `INSERT OR REPLACE INTO chat (id, topic, createdAt, updatedAt, agentId, ext)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
     [
       data.id,
       data.topic,
       dateToString(data.createdAt),
       dateToString(data.updatedAt),
       data.agentId ?? null,
-      data.sessionId ?? null,
       data.ext ? JSON.stringify(data.ext) : null,
     ]
   );
@@ -443,7 +442,7 @@ export async function exportData(): Promise<ExportData> {
     chatId: row.chatId,
     id: row.messageId,
     parent: row.parent ?? undefined,
-    data: JSON.parse(row.data) as Message,
+    data: JSON.parse(row.data) as UIMessage,
   }));
 
   return {
