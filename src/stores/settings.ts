@@ -172,7 +172,7 @@ export const useSettingsStore = defineStore("settings", () => {
     }
   }
 
-  async function initializeStore() {
+  async function initialize() {
     modelSettings.value = await loadModelSettings();
     agentSettings.value = await loadAgentSettings();
     chatSettings.value = await loadChatSettings();
@@ -182,8 +182,6 @@ export const useSettingsStore = defineStore("settings", () => {
     // Start MCP servers after settings are loaded
     await initializeMcpServers();
   }
-
-  initializeStore();
 
   watch(modelSettings, async (v) => {
     if (isMerging.value) return;
@@ -268,5 +266,6 @@ export const useSettingsStore = defineStore("settings", () => {
     chatSettings,
     webSearchSettings,
     mcpServers,
+    initialize,
   };
 });

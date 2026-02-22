@@ -9,6 +9,7 @@ import { initSupabase } from "./lib/supabase";
 import { useChatsStore } from "./stores/chats";
 import { useAuthStore } from "./stores/auth";
 import "./assets/style.css";
+import { useSettingsStore } from "./stores/settings";
 
 (async () => {
   const app = createApp(App);
@@ -16,20 +17,23 @@ import "./assets/style.css";
 
   await initDb();
   await initSupabase();
+  await initNative();
+  await initDataStores(pinia);
+
   app.use(pinia);
   app.use(router);
   app.use(ui);
   app.mount("#app");
-
-  initNative();
-  initDataStores(pinia);
 })();
 
-function initDataStores(pinia: Pinia) {
+async function initDataStores(pinia: Pinia) {
   const chatsStore = useChatsStore(pinia);
   chatsStore.loadChats();
 
   // Initialize auth store
   const authStore = useAuthStore(pinia);
   authStore.initialize();
+
+  const settingsStore = useSettingsStore();
+  await settingsStore.initialize();
 }
