@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { provide, computed, ref, PropType, watch } from "vue";
 import { AnimatePresence } from "motion-v";
-import { merge, omit } from "lodash-es";
+import { omit } from "lodash-es";
 import ChatBox from "@/components/ChatBox.vue";
 import McpSelector from "@/components/McpSelector.vue";
 import MessageList from "./MessageList.vue";
@@ -26,9 +26,17 @@ const props = defineProps({
 
 const initialMessages = props.chat ? await getChatMessages(props.chatId) : [];
 const expanded = ref(false);
+const settingsStore = useSettingsStore();
+
+const input = ref('');
+const model = ref<string>(props.chat?.ext?.model ?? settingsStore.chatSettings.chatModel);
+const mcpServers = ref<string[]>(props.chat?.ext?.mcpServers ?? settingsStore.chatSettings.mcpServers);
+const temperature = ref<number>(props.chat?.ext?.temperature ?? 0.5);
+const contextSize = ref<number>(props.chat?.ext?.contextSize ?? 10);
+const webSearch = ref<boolean>(props.chat?.ext?.webSearch ?? true);
+
 const messageGraph = ref<Record<string, any>>({});
 const pathSelection: Record<string, number> = {};
-const webSearch = ref(true);
 
 function addMessageToGraph(id: string, parent?: string) {
   const graph = messageGraph.value;
@@ -70,7 +78,6 @@ const viewWidth = computed(() =>
   expanded.value ? undefined : Math.min(screen.width / 3, 600),
 );
 
-const input = ref('');
 const chat = useChat({
   id: props.chatId,
   initialMessages: initialMessages.map((e) => e.data),
@@ -100,30 +107,32 @@ const showMessageList = computed(() => {
   return chat.messages.length || chat.status != "ready";
 });
 
-const settingsStore = useSettingsStore();
-
 provide(CHAT_ACTIONS, {
   chat,
   regenerate: () => {
     return chat.regenerate({
       body: {
-        model: settingsStore.chatSettings.chatModel,
+        model: model.value,
+        mcpServers: mcpServers.value,
         webSearch: webSearch.value,
-        mcpServers: settingsStore.chatSettings.mcpServers,
+        temperature: temperature.value,
+        contextSize: contextSize.value,
       },
     });
   },
   sendMessage(message) {
-    const { text, files, body } = message;
+    const { text, files } = message;
     return chat.sendMessage({
       text,
       files,
     }, {
-      body: merge(body, {
-        model: settingsStore.chatSettings.chatModel,
+      body: {
+        model: model.value,
+        mcpServers: mcpServers.value,
         webSearch: webSearch.value,
-        mcpServers: settingsStore.chatSettings.mcpServers,
-      }),
+        temperature: temperature.value,
+        contextSize: contextSize.value,
+      },
     });
   },
 });
@@ -156,9 +165,11 @@ function onSubmit(data: {
     files,
   }, {
     body: {
-      model: settingsStore.chatSettings.chatModel,
+      model: model.value,
+      mcpServers: mcpServers.value,
       webSearch: webSearch.value,
-      mcpServers: settingsStore.chatSettings.mcpServers,
+      temperature: temperature.value,
+      contextSize: contextSize.value,
     },
   });
   input.value = '';
@@ -195,7 +206,7 @@ watch(() => chat.status, (newStatus, oldStatus) => {
                 :step="0.01"
                 :min="0"
                 :max="1"
-                :default-value="0.5"
+                v-model="temperature"
                 tooltip
               />
             </label>
@@ -205,7 +216,7 @@ watch(() => chat.status, (newStatus, oldStatus) => {
                 :step="1"
                 :min="0"
                 :max="20"
-                :default-value="5"
+                v-model="contextSize"
                 tooltip
               />
             </label>
@@ -266,7 +277,8 @@ watch(() => chat.status, (newStatus, oldStatus) => {
               @click="webSearch = !webSearch"
             />
           </UTooltip>
-          <McpSelector v-model="settingsStore.chatSettings.mcpServers" />
+          <McpSelector v-model="mcpServers" />
+          <ModelSelector v-model="model" />
         </template>
       </ChatBox>
     </div>

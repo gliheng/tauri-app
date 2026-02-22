@@ -38,6 +38,14 @@ export class ChatSdkTransport implements ChatTransport<UIMessage> {
 
     // Async update chat meta data
     (async () => {
+      const ext = {
+        model: body?.model,
+        mcpServers: body?.mcpServers,
+        webSearch: body?.webSearch,
+        temperature: body?.temperature,
+        contextSize: body?.contextSize,
+      };
+      
       if (messages.length === 1) {
         const message = messages[0] as any;
         const { text: topic } = await generateTopic((
@@ -48,12 +56,14 @@ export class ChatSdkTransport implements ChatTransport<UIMessage> {
           topic,
           createdAt: new Date(),
           updatedAt: new Date(),
+          ext,
         });
         eventBus.emit("chat_created", { id: chatId, topic });
         useTabsStore().setTitle(`/chat/${chatId}`, topic);
       } else {
         await updateChat(chatId, {
           updatedAt: new Date(),
+          ext,
         });
         eventBus.emit("chat_updated", { id: chatId });
       }
@@ -70,8 +80,9 @@ export class ChatSdkTransport implements ChatTransport<UIMessage> {
 
     const result = streamText({
       model: getModel(body?.model),
-      messages: await convertToModelMessages(messages),
+      messages: await convertToModelMessages(messages.slice(-(body?.contextSize ?? 0))),
       stopWhen: stepCountIs(30),
+      temperature: body?.temperature,
       tools: Object.keys(allTools).length > 0 ? allTools : undefined,
       abortSignal: options.abortSignal,
     });

@@ -19,8 +19,14 @@ export interface Chat {
   updatedAt: Date;
   agentId?: string;
   ext?: {
-    // AgentChat use this to reference the external agent session
+    // AgentChat ext fields
     sessionId?: string;
+    // SimpleChat ext fields
+    model?: string;
+    mcpServers?: string[];
+    webSearch?: boolean;
+    temperature?: number;
+    contextSize?: number;
   };
 }
 
@@ -151,6 +157,23 @@ export async function updateChat(
   if (!existing) throw new Error(`Chat with ID ${id} not found`);
 
   const updated = { ...existing, ...data, updatedAt: new Date() };
+  await writeChat(updated);
+}
+
+export async function updateChatExt(
+  id: string,
+  extFields: Partial<NonNullable<Chat['ext']>>
+): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+
+  const existing = await getChat(id);
+  if (!existing) throw new Error(`Chat with ID ${id} not found`);
+
+  const updated = {
+    ...existing,
+    ext: { ...existing.ext, ...extFields },
+    updatedAt: new Date(),
+  };
   await writeChat(updated);
 }
 

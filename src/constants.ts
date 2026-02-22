@@ -8,7 +8,6 @@ export const CHAT_ACTIONS = Symbol("chat-actions") as InjectionKey<{
   sendMessage: (message: {
     text: string;
     files?: FileUIPart[];
-    body?: Record<string, any>,
   }) => Promise<void>;
 }>;
 export const MESSAGE_GRAPH = Symbol("message-graph") as InjectionKey<{

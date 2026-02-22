@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, PropType, nextTick, onMounted, onBeforeUnmount, watch } from "vue";
 import { file2DataUrl, type FileAttachment } from "@/utils/file";
-import { useSettingsStore } from "@/stores/settings";
 import FileImage from "./FileImage.vue";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import Document from "@tiptap/extension-document";
@@ -11,10 +10,6 @@ import HardBreak from "@tiptap/extension-hard-break";
 
 const props = defineProps({
   status: String,
-  addons: {
-    type: Array as PropType<string[]>,
-    required: false,
-  },
   extensions: {
     type: Array as PropType<any[]>,
     default: () => [],
@@ -163,12 +158,7 @@ defineExpose({
         @mousedown.prevent
       >
         <UploadButton :disabled="nonInteractive" @select-file="appendFiles" />
-
         <slot name="left-addons" />
-
-        <template v-for="addon of addons">
-          <ModelSelector v-if="addon == 'model-select'" key="model-select" />
-        </template>
         <div class="flex-1"></div>
         <UButton
           v-if="nonInteractive"

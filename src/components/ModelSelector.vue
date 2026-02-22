@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useSettingsStore } from "../stores/settings";
-import { modelRepo } from "../llm/models";
+import { useSettingsStore } from "@/stores/settings";
+import { modelRepo } from "@/llm/models";
 import ICustomAnthropic from '~icons/custom/anthropic';
 import ICustomOpenai from '~icons/custom/openai';
 import ICustomGemini from '~icons/custom/gemini';
@@ -12,6 +12,8 @@ import ICustomZai from '~icons/custom/zai';
 import ICustomDeepseek from '~icons/custom/deepseek';
 import ICustomOllama from '~icons/custom/ollama';
 import CircleQuestionMark from '~icons/lucide/circle-question-mark';
+
+const model = defineModel<string>();
 
 const iconMap = {
   anthropic: ICustomAnthropic,
@@ -52,28 +54,17 @@ const modelList = computed(() => {
   
   return models;
 });
-
-const selectedModel = computed({
-  get: () => {
-    const chatModel = settingsStore.chatSettings.chatModel;
-    return modelList.value.find(m => m.value === chatModel) || modelList.value[0];
-  },
-  set: (value) => {
-    if (value) {
-      settingsStore.chatSettings.chatModel = value.value;
-    }
-  }
-});
 </script>
 
 <template>
   <UTooltip text="Select Model for this conversation">
     <USelectMenu
       class="w-40"
-      v-model="selectedModel"
+      v-model="model"
       color="neutral"
       variant="soft"
       trailing-icon="i-lucide-chevrons-up-down"
+      value-key="value"
       size="sm"
       :items="modelList"
       :ui="{
