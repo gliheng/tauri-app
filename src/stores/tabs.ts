@@ -2,7 +2,6 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { defineStore } from "pinia";
 import { nanoid } from "nanoid";
-import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export const useTabsStore = defineStore("tabs", () => {
   const router = useRouter();
@@ -30,8 +29,8 @@ export const useTabsStore = defineStore("tabs", () => {
 
     tabs.value = tabs.value.filter((tab) => tab.path !== path);
     if (tabs.value.length === 0) {
-      const appWindow = getCurrentWindow();
-      appWindow.hide();
+      // const appWindow = getCurrentWindow();
+      // appWindow.hide();
       tabs.value = [
         {
           path: `/chat/${nanoid()}`,

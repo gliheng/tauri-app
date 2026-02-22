@@ -47,7 +47,7 @@
 - [x] When metion is open, pressing enter does not trigger submit.
 - [x] Support scrolling mention menu using keyboard.
 - [x] Stop auto scroll when user is scrolling.
-- [ ] Each chat has its own model setting. Now changing one will affect another.
+- [x] Each chat has its own model setting. Now changing one will affect another.
 - [x] Unify scroller experience.
 - [x] Workspace files tab removed when clicking x on terminal tab.
 - [x] Agent version gone in prod build.

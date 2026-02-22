@@ -30,10 +30,12 @@ async function initDataStores(pinia: Pinia) {
   const chatsStore = useChatsStore(pinia);
   chatsStore.loadChats();
 
-  // Initialize auth store
-  const authStore = useAuthStore(pinia);
-  authStore.initialize();
-
   const settingsStore = useSettingsStore();
   await settingsStore.initialize();
+
+  if (navigator.onLine) {
+    // Initialize auth store
+    const authStore = useAuthStore(pinia);
+    await authStore.initialize();
+  }
 }

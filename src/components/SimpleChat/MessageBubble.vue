@@ -5,6 +5,7 @@ import { UIMessage, isToolUIPart } from "ai";
 import MarkdownText from "@/components/MarkdownText.vue";
 import FileImage from "@/components/FileImage.vue";
 import MessageSwitcher from "./MessageSwitcher.vue";
+import { messageToText } from "@/utils/message";
 
 const props = defineProps({
   id: {
@@ -54,10 +55,7 @@ function getToolNameFromPart(part: any): string {
 }
 
 function copyText() {
-  const textContent = (props.message.parts ?? [])
-    .filter((part) => part.type === "text")
-    .map((part) => (part as any).text)
-    .join("\n");
+  const textContent = messageToText(props.message)
   navigator.clipboard.writeText(textContent);
 }
 </script>

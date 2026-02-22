@@ -14,8 +14,8 @@ import { generateTopic } from "@/llm/prompt";
 import { useTabsStore } from "@/stores/tabs";
 import { tavilySearchTool, tavilyExtractTool } from "@/llm/tools/tavily";
 import { eventBus } from "@/utils/eventBus";
+import { messageToText } from "@/utils/message";
 import { convertMcpToolsToAiSdk } from "@/mcp/tools";
-
 
 export class ChatSdkTransport implements ChatTransport<UIMessage> {
   async sendMessages(options: {
@@ -47,10 +47,8 @@ export class ChatSdkTransport implements ChatTransport<UIMessage> {
       };
       
       if (messages.length === 1) {
-        const message = messages[0] as any;
-        const { text: topic } = await generateTopic((
-          await convertToModelMessages([message])
-        )[0]);
+        const message = messages[0];
+        const { text: topic } = await generateTopic(messageToText(message));
         await writeChat({
           id: chatId,
           topic,
