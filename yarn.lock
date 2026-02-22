@@ -2858,9 +2858,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue-flow/core@npm:^1.48.1":
-  version: 1.48.1
-  resolution: "@vue-flow/core@npm:1.48.1"
+"@vue-flow/core@npm:^1.48.2":
+  version: 1.48.2
+  resolution: "@vue-flow/core@npm:1.48.2"
   dependencies:
     "@vueuse/core": "npm:^10.5.0"
     d3-drag: "npm:^3.0.0"
@@ -2869,7 +2869,7 @@ __metadata:
     d3-zoom: "npm:^3.0.0"
   peerDependencies:
     vue: ^3.3.0
-  checksum: 10c0/85b6b8b4dbdb0ed4a249fdd23ad543eca95ab734034450b479b38263622fcf2d37a5062cd65f9cb541742bf63f6b3d3d9350848d325005fb1ee84f39b3f4f9ae
+  checksum: 10c0/c3bfc385a331be3b3c8bef92bfbbc65da5493cf258bc8999e16f198e9fb33a970ab5c9c90b667b03da1bb53d946dd1ff58ab9eae25e82e76c1b4a33bfb0c7dfd
   languageName: node
   linkType: hard
 
@@ -5809,7 +5809,7 @@ __metadata:
     "@vitejs/plugin-vue": "npm:^5.2.1"
     "@vue-flow/background": "npm:^1.3.2"
     "@vue-flow/controls": "npm:^1.1.3"
-    "@vue-flow/core": "npm:^1.48.1"
+    "@vue-flow/core": "npm:^1.48.2"
     "@vue-flow/minimap": "npm:^1.5.4"
     "@vue-flow/node-resizer": "npm:^1.5.0"
     "@vue-flow/node-toolbar": "npm:^1.1.1"

@@ -102,12 +102,21 @@ function formatDate(date: Date) {
       </div>
 
       <div class="flex-1 overflow-auto p-6">
-        <div v-if="filteredDocuments.length === 0" class="flex items-center justify-center h-full text-white/50">
-          <div class="text-center">
-            <p class="text-lg mb-2">No documents found</p>
-            <p class="text-sm">Create your first document to get started!</p>
-          </div>
-        </div>
+        <UEmpty
+          v-if="filteredDocuments.length === 0"
+          icon="i-lucide-file-text"
+          title="No documents found"
+          description="Create your first document to get started!"
+          class="w-fit mx-auto"
+        >
+          <template #actions>
+            <UButton
+              icon="i-lucide-plus"
+              label="Create New"
+              @click="addDocument"
+            />
+          </template>
+        </UEmpty>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <UCard
             v-for="document in filteredDocuments"

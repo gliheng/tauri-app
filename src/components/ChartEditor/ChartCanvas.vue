@@ -12,7 +12,9 @@ import { useLayout } from './layout';
 import useDragAndDrop from './useDnD';
 import { isEqual } from 'lodash-es';
 
-const model = defineModel<FlowExportObject>();
+const flow = defineModel<FlowExportObject>({
+  required: true,
+});
 
 const {
   onInit,
@@ -34,8 +36,8 @@ const {
 
 function triggerChange() {
   const obj = toObject();
-  if (!isEqual(obj, model.value)) {
-    model.value = obj;
+  if (!isEqual(obj, flow.value)) {
+    flow.value = obj;
   }
 }
 
@@ -69,15 +71,16 @@ async function layoutGraph() {
   })
 }
 
-function addNode() {
+async function addNode() {
   const id = nanoid();
   addNodes([{
     id,
     type: 'text',
     data: {},
+    width: 320,
+    height: 200,
     position: { x: 0, y: 0 },
   }]);
-  focusOnNode(id);
   
   const changes: NodeChange[] = [{
     id,
@@ -85,6 +88,11 @@ function addNode() {
     selected: true,
   }];
   applyNodeChanges(changes);
+
+  // Await vue and dom update
+  await nextTick();
+  await new Promise(resolve => setTimeout(resolve, 0))
+  focusOnNode(id);
 }
 
 
@@ -93,7 +101,11 @@ function focusOnNode(nodeId: string) {
   if (!node) {
     return;
   }
-  fitBounds(getRectOfNodes([node]))
+  const rect = getRectOfNodes([node]);
+  console.log(rect);
+  fitBounds(rect, {
+    duration: 1000,
+  })
 }
 
 function logToObject() {
@@ -113,9 +125,9 @@ defineExpose({
   <div class="flex size-full" @drop="onDrop">
     <VueFlow
       class="flow-chart"
-      :nodes="model.nodes"
-      :edges="model.edges"
-      :min-zoom="0.5"
+      :nodes="flow.nodes"
+      :edges="flow.edges"
+      :min-zoom="0.2"
       :max-zoom="2"
       :node-types="nodeTypes"
       :default-edge-options="{
@@ -126,7 +138,7 @@ defineExpose({
         },
       }"
       :connection-mode="ConnectionMode.Loose"
-      :default-viewport="model?.viewport"
+      :default-viewport="flow?.viewport"
       @dragover="onDragOver"
       @dragleave="onDragLeave"
     >

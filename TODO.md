@@ -57,6 +57,5 @@
 - [ ] Autoscroll does not work.
 - [x] Editor save does not work.
 - [x] Diff apply/reject does not work.
-- [ ] Shortcut in WindowHeader does not work.
 - [x] Agent upgrade failed.
 - [ ] Configuring mcp leads to all servers restarting.
