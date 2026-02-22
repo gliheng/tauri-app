@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useSettingsStore } from "@/stores/settings";
 import { modelRepo } from "@/llm/models";
+import type { SelectMenuItem } from "@nuxt/ui";
 import ICustomAnthropic from '~icons/custom/anthropic';
 import ICustomOpenai from '~icons/custom/openai';
 import ICustomGemini from '~icons/custom/gemini';
@@ -34,20 +35,27 @@ function getIcon(provider: string) {
 const settingsStore = useSettingsStore();
 
 const modelList = computed(() => {
-  const models: Array<{ label: string; value: string; provider: string }> = [];
+  const models: SelectMenuItem[] = [];
   
   for (const [provider, config] of Object.entries(settingsStore.modelSettings)) {
     const providerConfig = config as { apiKey: string; models: Array<string> };
     const providerModels = modelRepo[provider as keyof typeof modelRepo] || [];
     
-    for (const modelValue of providerConfig.models) {
-      const modelInfo = providerModels.find(m => m.value === modelValue);
-      if (modelInfo) {
-        models.push({
-          label: modelInfo.label,
-          provider,
-          value: `${provider}::${modelValue}`,
-        });
+    if (providerConfig.models.length > 0) {
+      models.push({
+        type: 'label',
+        label: provider.charAt(0).toUpperCase() + provider.slice(1),
+      });
+      
+      for (const modelValue of providerConfig.models) {
+        const modelInfo = providerModels.find(m => m.value === modelValue);
+        if (modelInfo) {
+          models.push({
+            label: modelInfo.label,
+            provider,
+            value: `${provider}::${modelValue}`,
+          });
+        }
       }
     }
   }
@@ -77,7 +85,7 @@ const modelList = computed(() => {
           size="xs"
           color="neutral"
           variant="outline"
-          :icon="getIcon(item.provider as keyof typeof iconMap)"
+          :icon="getIcon((item as any).provider)"
         />
       </template>
     </USelectMenu>
