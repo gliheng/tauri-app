@@ -8,10 +8,6 @@ import MessageSwitcher from "./MessageSwitcher.vue";
 import { messageToText } from "@/utils/message";
 
 const props = defineProps({
-  id: {
-    type: String,
-    required: true,
-  },
   message: {
     type: Object as PropType<UIMessage>,
     required: true,
@@ -169,7 +165,7 @@ function copyText() {
       />
     </template>
     <div class="flex flex-row items-center gap-1 mt-2">
-      <MessageSwitcher :id="id" />
+      <MessageSwitcher :id="message.id" />
       <UTooltip text="Copy text">
         <UButton
           color="neutral"
