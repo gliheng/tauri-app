@@ -302,13 +302,13 @@ async function onDiffSaveFile(content: string, filePath: string) {
               </div>
               <div class="flex items-center gap-1">
                 <UTooltip v-if="isGitRepo && !showDiffView" text="Show diff">
-                  <UButton size="sm" icon="i-lucide-git-compare-arrows" @click="showDiff" />
+                  <UButton size="xs" icon="i-lucide-git-compare-arrows" @click="showDiff" />
                 </UTooltip>
                 <UTooltip v-if="showDiffView" text="Close diff">
-                  <UButton size="sm" icon="i-lucide-x" @click="closeDiff" />
+                  <UButton size="xs" icon="i-lucide-x" @click="closeDiff" />
                 </UTooltip>
                 <UTooltip text="Open terminal">
-                  <UButton size="sm" icon="i-lucide-square-terminal" @click="openTerminal" />
+                  <UButton size="xs" icon="i-lucide-square-terminal" @click="openTerminal" />
                 </UTooltip>
               </div>
             </header>

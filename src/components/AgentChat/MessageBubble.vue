@@ -18,8 +18,6 @@ const props = defineProps({
   loading: Boolean,
 });
 
-const emit = defineEmits(["start-edit", "reload"]);
-
 const bubbleStyle = tv({
   base: "w-fit max-w-full flex flex-col",
   variants: {
@@ -92,15 +90,24 @@ function copyText() {
             <UButton
               class="self-start group"
               :label="(() => {
+                const firstInProgress = part.plan.find(t => t.status === 'in_progress');
                 const lastCompleted = part.plan.filter(t => t.status === 'completed').pop();
-                const lastInProgress = part.plan.filter(t => t.status === 'in_progress').pop();
+                const completed = part.plan.filter(t => t.status === 'completed');
+                const allPending = part.plan.every(t => t.status === 'pending');
+             
+                if (allPending) {
+                  return `Created TODO list with ${part.plan.length} tasks`;
+                }
+                if (completed.length == part.plan.length) {
+                  return 'All completed';
+                }
+                if (firstInProgress) {
+                  return firstInProgress.content;
+                }
                 if (lastCompleted) {
                   return lastCompleted.content;
                 }
-                if (lastInProgress) {
-                  return lastInProgress.content;
-                }
-                return `Created TODO list with ${part.plan.length} tasks`;
+                return `TODO list ${completed.length}/${part.plan.length} done`;
               })()"
               color="neutral"
               variant="ghost"

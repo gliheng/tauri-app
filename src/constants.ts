@@ -1,6 +1,7 @@
 import { InjectionKey, Ref } from "vue";
 import { FileUIPart, UIMessage } from "ai";
 import { Chat } from "@ai-sdk/vue";
+import { FileEntry } from "./components/WorkspaceEditor/types";
 
 export const CHAT_ACTIONS = Symbol("chat-actions") as InjectionKey<{
   chat: Chat<UIMessage>;
@@ -19,4 +20,8 @@ export const ROOT_NODE_ID = "__root";
 export const SUPABASE_URL = "https://xgazvyjwnjwablelrrsc.supabase.co";
 export const SUPABASE_ANON_KEY = "sb_publishable_wbwXXEx1TFLEz7zKTFHkOQ_HQaHIwAF";
 
-export const EDITOR_ACTIONS = Symbol("editor-actions");
+export const EDITOR_ACTIONS = Symbol("editor-actions") as InjectionKey<{
+  listFiles(relativePath: string): Promise<FileEntry[]>;
+  loadFileContent(relativePath: string): Promise<string>;
+  saveFileContent(relativePath: string, content: string): Promise<void>;
+}>;

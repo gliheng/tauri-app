@@ -99,7 +99,7 @@ function findFileByPath(files: FileEntry[], segments: string[]): FileEntry | nul
   return found.children ? findFileByPath(found.children, rest) : null;
 }
 
-const { listFiles } = inject(EDITOR_ACTIONS);
+const { listFiles } = inject(EDITOR_ACTIONS) ?? {};
 
 const items = computed(() => toTreeItems(model.value));
 
@@ -116,7 +116,7 @@ async function onToggle(e: Event, item: any) {
       if (!entry.children) {
         loadingPaths.value.add(path);
         try {
-          entry.children = await listFiles(path);
+          entry.children = await listFiles?.(path);
         } finally {
           loadingPaths.value.delete(path);
         }
@@ -361,10 +361,10 @@ function fileExistsInTree(entries: FileEntry[], path: string): boolean {
       <h1 class="text-lg font-semibold truncate select-none" data-tauri-drag-region>Files</h1>
       <div class="flex-1"></div>
       <UTooltip text="Add file">
-        <UButton size="sm" icon="i-lucide-file-plus" @click="onAddFile" @mousedown.prevent />
+        <UButton size="xs" icon="i-lucide-file-plus" @click="onAddFile" @mousedown.prevent />
       </UTooltip>
       <UTooltip text="Add folder">
-        <UButton size="sm" icon="i-lucide-folder-plus" @click="onAddFolder" @mousedown.prevent />
+        <UButton size="xs" icon="i-lucide-folder-plus" @click="onAddFolder" @mousedown.prevent />
       </UTooltip>
     </header>
     <div class="flex-1 min-h-0 overflow-auto">
