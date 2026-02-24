@@ -1,5 +1,11 @@
 <script setup lang="ts">
-  
+import { onActivated } from 'vue';
+import { useTabsStore } from '@/stores/tabs';
+
+const tabsStore = useTabsStore();
+onActivated(() => {
+  tabsStore.openTab('/test-editor', "Test editor");
+});
 </script>
 
 <template>

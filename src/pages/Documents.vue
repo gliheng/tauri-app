@@ -17,6 +17,7 @@ const overlay = useOverlay();
 const documentCreateModal = overlay.create(DocumentConfig);
 
 onActivated(() => {
+  tabsStore.openTab('/documents', 'Documents');
   documentsStore.loadDocuments();
 });
 

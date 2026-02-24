@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, onActivated } from "vue";
 import { nanoid } from "nanoid";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
+import { useTabsStore } from "@/stores/tabs";
+
+const tabsStore = useTabsStore();
 
 // ============================================
 // Mock API Functions (inline implementation)
@@ -161,6 +164,10 @@ const selectedGalleryImage = ref<typeof galleryImages.value[0] | null>(null);
 const generatePanelSize = ref(40);
 const currentPanelSize = ref(30);
 const galleryPanelSize = ref(30);
+
+onActivated(() => {
+  tabsStore.openTab(`/image`, "Image Generation");
+});
 
 // Load from localStorage on mount
 onMounted(() => {

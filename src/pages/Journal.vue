@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onActivated } from "vue";
 import { useTabsStore } from "@/stores/tabs";
 import JournalPage from "@/components/Journal/JournalPage.vue";
 
 const tabsStore = useTabsStore();
 
-onMounted(() => {
+onActivated(() => {
   tabsStore.openTab('/journal', 'Journal');
 });
 </script>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onActivated, ref } from 'vue';
 import MessageList from '@/components/AgentChat/MessageList.vue';
+import { useTabsStore } from '@/stores/tabs';
 
 // Type definitions matching useAcp.ts
 interface Message {
@@ -104,6 +105,11 @@ const testMessages = ref<Message[]>([
     }],
   },
 ]);
+
+const tabsStore = useTabsStore();
+onActivated(() => {
+  tabsStore.openTab('/msglist', "Test message list");
+});
 </script>
 
 <template>

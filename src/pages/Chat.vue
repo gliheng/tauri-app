@@ -5,10 +5,12 @@ import { getChat, getAgent, Agent } from "@/db";
 import SimpleChat from "@/components/SimpleChat/SimpleChat.vue";
 import AgentChat from "@/components/AgentChat/AgentChat.vue";
 import { eventBus } from "@/utils/eventBus";
+import { useTabsStore } from "@/stores/tabs";
 
 const route = useRoute();
 const chatId = route.params.id as string;
 const chat = await getChat(chatId);
+const tabsStore = useTabsStore();
 
 const agentId = chat?.agentId ?? sessionStorage.getItem('chat-agent::' + chatId);
 let agent: Agent | null;
@@ -20,11 +22,11 @@ if (agentId) {
 }
 
 onActivated(() => {
+  tabsStore.openTab(`/chat/${chatId}`, "New chat");
   if (agent) {
     eventBus.emit('artifact', 'workspace::' + agent.directory);
   }
 });
-
 </script>
 
 <template>

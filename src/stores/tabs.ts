@@ -27,8 +27,11 @@ export const useTabsStore = defineStore("tabs", () => {
     // Find the index before filtering
     const removedIndex = tabs.value.findIndex((tab) => tab.path === path);
     const activeRemoved = router.currentRoute.value.path === path;
-
-    tabs.value = tabs.value.filter((tab) => tab.path !== path);
+    if (path == '__all__') {
+      tabs.value = [];
+    } else {
+      tabs.value = tabs.value.filter((tab) => tab.path !== path);
+    }
     if (tabs.value.length === 0) {
       if (preventClose) {
         tabs.value = [
@@ -86,7 +89,6 @@ export const useTabsStore = defineStore("tabs", () => {
 
   const createNewChat = () => {
     const id = nanoid();
-    openTab(`/chat/${id}`, "New chat");
     router.push({ name: "chat", params: { id } });
   };
 

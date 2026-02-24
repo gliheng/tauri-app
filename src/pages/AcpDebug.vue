@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, onActivated } from 'vue';
 import { eventBus } from '@/utils/eventBus';
 import { downloadFile } from '@/utils/file';
 import AcpDebugMessageModal from '@/components/AcpDebugMessageModal.vue';
+import { useTabsStore } from '@/stores/tabs';
 
 interface AcpDebugMessage {
   id: string;
@@ -18,6 +19,8 @@ const filterProgram = ref('__all__');
 const filterDirection = ref<'all' | 'sent' | 'received'>('all');
 const searchQuery = ref('');
 const messageListRef = ref<HTMLElement | null>(null);
+
+const tabsStore = useTabsStore();
 
 // Create modal overlay
 const overlay = useOverlay();
@@ -50,6 +53,10 @@ const handleReceivedMessage = ({ program, message, timestamp }: { program: strin
     timestamp
   });
 };
+
+onActivated(() => {
+  tabsStore.openTab('/acpdebug', "ACP debug");
+});
 
 onMounted(() => {
   // Subscribe to sent messages

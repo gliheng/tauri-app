@@ -5,7 +5,6 @@ import moment from "moment";
 import { useTabsStore } from "@/stores/tabs";
 import { useChatsStore } from "@/stores/chats";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { nanoid } from "nanoid";
 
 const tabsStore = useTabsStore();
 const chatsStore = useChatsStore();
@@ -57,7 +56,6 @@ const groups = computed(() => {
           suffix: "Test all messages",
           icon: "i-lucide-list",
           onSelect() {
-            tabsStore.openTab('/msglist', "Message list render");
             router.push({
               name: "msglist",
             });
@@ -69,7 +67,6 @@ const groups = computed(() => {
           suffix: "Test code editor",
           icon: "i-lucide-code",
           onSelect() {
-            tabsStore.openTab(`/editor`, "Editor");
             router.push({
               name: "editor",
             });
@@ -81,7 +78,6 @@ const groups = computed(() => {
           suffix: "Test ACP",
           icon: "i-lucide-list",
           onSelect() {
-            tabsStore.openTab('/acpdebug', "ACP debug");
             router.push({
               name: "acpdebug",
             });

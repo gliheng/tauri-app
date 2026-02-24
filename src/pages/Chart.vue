@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { ref, watch, onActivated } from "vue";
+import { useRoute } from "vue-router";
 import { throttle } from "lodash-es";
 import { getDocument, writeDocument, updateDocument } from "@/db";
 
@@ -11,7 +11,6 @@ import ChartCanvas from "@/components/ChartEditor/ChartCanvas.vue";
 import DocumentsSlideover from "@/components/DocumentsSlideover.vue";
 
 const tabsStore = useTabsStore();
-const router = useRouter();
 const route = useRoute();
 
 const initialData = await getDocument(route.params.id as string);
@@ -58,6 +57,10 @@ const throttledWatcher = throttle(async () => {
 
 watch(chart, throttledWatcher, {
   deep: true,
+});
+
+onActivated(() => {
+  tabsStore.openTab(`/chart/${route.params.id}`, chart.value.name);
 });
 </script>
 

@@ -92,6 +92,10 @@ async function openDirectory() {
   }
 }
 
+onActivated(() => {
+  tabsStore.openTab(`/agent/${agent.id}`, agent.name);
+});
+
 const enableLoadSession = ref(false);
 onMounted(async () => {
   try {

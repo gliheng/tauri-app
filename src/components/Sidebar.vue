@@ -3,7 +3,6 @@ import { useRouter } from "vue-router";
 import { nanoid } from "nanoid";
 import { tv } from "tailwind-variants";
 import { useColorMode } from "@vueuse/core";
-import { useTabsStore } from "@/stores/tabs";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Agent, writeAgent } from "@/db";
 import AgentModal from "./AgentChat/AgentModal.vue";
@@ -15,7 +14,6 @@ const buttonStyle = tv({
 });
 
 const router = useRouter();
-const tabsStore = useTabsStore();
 const sidebarStore = useSidebarStore();
 const mode = useColorMode();
 
@@ -30,7 +28,6 @@ sidebarStore.load();
 
 function addChat() {
   const id = nanoid();
-  tabsStore.openTab(`/chat/${id}`, "New chat");
   router.push({
     name: "chat",
     params: { id },
@@ -56,8 +53,6 @@ async function addAgent() {
   
   await writeAgent(fullAgent);
   sidebarStore.loadAgents();
-
-  tabsStore.openTab(`/agent/${id}`, agent.name);
   router.push({
     name: "agent",
     params: {
@@ -67,7 +62,6 @@ async function addAgent() {
 }
 
 function addImage() {
-  tabsStore.openTab(`/image`, "Image Generation");
   router.push({
     name: "image",
   });
@@ -78,7 +72,6 @@ function agentUrl(agent: Agent) {
 }
 
 function openAgent(agent: Agent) {
-  tabsStore.openTab(agentUrl(agent), agent.name);
   router.push({
     name: "agent",
     params: {
@@ -88,12 +81,10 @@ function openAgent(agent: Agent) {
 }
 
 function goToDocuments() {
-  tabsStore.openTab('/documents', 'Documents');
   router.push({ name: 'documents' });
 }
 
 function goToJournal() {
-  tabsStore.openTab('/journal', 'Journal');
   router.push({ name: 'journal' });
 }
 

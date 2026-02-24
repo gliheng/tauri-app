@@ -15,7 +15,7 @@ let unlistenFn: (() => void) | null = null;
 onMounted(async () => {
   try {
     unlistenFn = await listen("window-event", () => {
-      tabsStore.closeActiveTab();
+      tabsStore.closeTab('__all__');
     });
   } catch (e) {
     console.error("Failed to listen for window-event:", e);

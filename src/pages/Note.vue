@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, onMounted, onActivated } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { throttle } from "lodash-es";
 import { getDocument, writeDocument, updateDocument } from "@/db";
@@ -68,6 +68,10 @@ function downloadNote() {
     color: 'success'
   });
 }
+
+onActivated(() => {
+  tabsStore.openTab(`/note/${route.params.id}`, note.value.name);
+});
 </script>
 
 <template>
