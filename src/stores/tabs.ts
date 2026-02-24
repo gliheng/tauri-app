@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { defineStore } from "pinia";
 import { nanoid } from "nanoid";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export const useTabsStore = defineStore("tabs", () => {
   const router = useRouter();
@@ -22,21 +23,24 @@ export const useTabsStore = defineStore("tabs", () => {
     saveTabs(tabs.value);
   };
 
-  const closeTab = (path: string) => {
+  const closeTab = (path: string, preventClose = false) => {
     // Find the index before filtering
     const removedIndex = tabs.value.findIndex((tab) => tab.path === path);
     const activeRemoved = router.currentRoute.value.path === path;
 
     tabs.value = tabs.value.filter((tab) => tab.path !== path);
     if (tabs.value.length === 0) {
-      // const appWindow = getCurrentWindow();
-      // appWindow.hide();
-      tabs.value = [
-        {
-          path: `/chat/${nanoid()}`,
-          title: "New chat",
-        },
-      ];
+      if (preventClose) {
+        tabs.value = [
+          {
+            path: `/chat/${nanoid()}`,
+            title: "New chat",
+          },
+        ];
+      } else {
+        const appWindow = getCurrentWindow();
+        appWindow.hide();
+      }
     }
     if (activeRemoved) {
       // Activate the nearest tab (prefer the one before, otherwise the one after)
@@ -49,9 +53,9 @@ export const useTabsStore = defineStore("tabs", () => {
     saveTabs(tabs.value);
   };
 
-  const closeActiveTab = () => {
+  const closeActiveTab = (preventClose?: boolean) => {
     const path = router.currentRoute.value.path;
-    closeTab(path);
+    closeTab(path, preventClose);
   };
 
   const reorderTab = (from: number, to: number) => {
