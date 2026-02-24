@@ -35,7 +35,7 @@ defineShortcuts({
     commandPaletteOpen.value = !commandPaletteOpen.value;
   },
   meta_w: () => {
-    tabsStore.closeActiveTab(true);
+    tabsStore.closeActiveTab();
   },
 });
 

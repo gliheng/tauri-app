@@ -23,7 +23,7 @@ export const useTabsStore = defineStore("tabs", () => {
     saveTabs(tabs.value);
   };
 
-  const closeTab = (path: string, preventClose = false) => {
+  const closeTab = (path: string) => {
     // Find the index before filtering
     const removedIndex = tabs.value.findIndex((tab) => tab.path === path);
     const activeRemoved = router.currentRoute.value.path === path;
@@ -33,17 +33,11 @@ export const useTabsStore = defineStore("tabs", () => {
       tabs.value = tabs.value.filter((tab) => tab.path !== path);
     }
     if (tabs.value.length === 0) {
-      if (preventClose) {
-        tabs.value = [
-          {
-            path: `/chat/${nanoid()}`,
-            title: "New chat",
-          },
-        ];
-      } else {
-        const appWindow = getCurrentWindow();
-        appWindow.hide();
-      }
+      router.push({
+        path: '/',
+      });
+      const appWindow = getCurrentWindow();
+      appWindow.hide();
     }
     if (activeRemoved) {
       // Activate the nearest tab (prefer the one before, otherwise the one after)
@@ -56,9 +50,9 @@ export const useTabsStore = defineStore("tabs", () => {
     saveTabs(tabs.value);
   };
 
-  const closeActiveTab = (preventClose?: boolean) => {
+  const closeActiveTab = () => {
     const path = router.currentRoute.value.path;
-    closeTab(path, preventClose);
+    closeTab(path);
   };
 
   const reorderTab = (from: number, to: number) => {
