@@ -46,7 +46,25 @@ const selectDirectory = async () => {
   }
 };
 
+const nameError = ref('');
+const directoryError = ref('');
+
+const validate = (): boolean => {
+  nameError.value = '';
+  directoryError.value = '';
+  
+  if (!agent.value.name.trim()) {
+    nameError.value = 'Name is required';
+  }
+  if (!agent.value.directory.trim()) {
+    directoryError.value = 'Working directory is required';
+  }
+  
+  return !nameError.value && !directoryError.value;
+};
+
 const createAgent = () => {
+  if (!validate()) return;
   emit('close', toRaw(agent.value) as AgentFormData);
 };
 </script>
@@ -55,10 +73,11 @@ const createAgent = () => {
   <UModal>
     <template #content>
       <div class="size-full p-6 space-y-4">
-        <hgroup class="flex flex-row gap-2 items-center">
+<hgroup class="flex flex-row gap-2 items-center">
           <IconEdit v-model:icon="agent.icon" />
           <UInput class="flex-1" v-model="agent.name" />
         </hgroup>
+        <p v-if="nameError" class="text-red-500 text-sm">{{ nameError }}</p>
         <section>
           <h2 class="text-lg mb-2">Agent Program</h2>
           <ToggleButtonGroup
@@ -72,7 +91,7 @@ const createAgent = () => {
             ]"
           />
         </section>
-        <section>
+<section>
           <h2 class="text-lg mb-2">Working Directory</h2>
           <div class="flex gap-2">
             <UInput
@@ -87,6 +106,7 @@ const createAgent = () => {
               @click="selectDirectory"
             />
           </div>
+          <p v-if="directoryError" class="text-red-500 text-sm mt-1">{{ directoryError }}</p>
         </section>
         <section class="flex justify-center mt-10">
           <UButton
