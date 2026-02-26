@@ -5,9 +5,9 @@ import { useTabsStore } from "@/stores/tabs";
 import { useArtifactsStore } from "@/stores/artifacts";
 import { storeToRefs } from "pinia";
 import { eventBus } from "@/utils/eventBus";
-import WindowHeader from "@/components/WindowHeader.vue";
-import Sidebar from "@/components/Sidebar.vue";
-import ArtifactsPanel from "@/components/ArtifactsPanel.vue";
+import WindowHeader from "@/components/Window/WindowHeader.vue";
+import Sidebar from "@/components/Window/Sidebar.vue";
+import ArtifactsPanel from "@/components/Window/ArtifactsPanel.vue";
 import Loader from "@/components/Loader.vue";
 
 const tabsStore = useTabsStore();

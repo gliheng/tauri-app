@@ -4,7 +4,7 @@ import { useRouter } from "vue-router";
 import { useDocumentsStore } from "@/stores/documents";
 import { useTabsStore } from "@/stores/tabs";
 import { nanoid } from "nanoid";
-import DocumentConfig from "@/components/DocumentConfig.vue";
+import DocumentConfig from "@/components/Document/DocumentConfig.vue";
 import type { TabsItem } from "@nuxt/ui";
 
 const documentsStore = useDocumentsStore();

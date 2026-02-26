@@ -8,7 +8,7 @@ import { useTabsStore } from "@/stores/tabs";
 import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";
 import ChartCanvas from "@/components/ChartEditor/ChartCanvas.vue";
-import DocumentsSlideover from "@/components/DocumentsSlideover.vue";
+import DocumentsSlideover from "@/components/Document/DocumentsSlideover.vue";
 
 const tabsStore = useTabsStore();
 const route = useRoute();

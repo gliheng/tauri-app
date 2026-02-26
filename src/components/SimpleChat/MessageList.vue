@@ -58,6 +58,7 @@ watch(
   () => {
     if (isAutoScrollEnabled.value) {
       const el = listRef.value;
+      console.log('scroll!', el, el?.scrollHeight);
       if (el) {
         el.scrollTo({
           top: el.scrollHeight,

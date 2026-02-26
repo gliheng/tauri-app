@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import Tabs from "@/components/Tabs.vue";
+import Tabs from "@/components/Window/Tabs.vue";
 import { useTabsStore } from "@/stores/tabs";
 import { storeToRefs } from "pinia";
 import { listen } from "@tauri-apps/api/event";

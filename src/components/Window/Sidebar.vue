@@ -5,8 +5,8 @@ import { tv } from "tailwind-variants";
 import { useColorMode } from "@vueuse/core";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Agent, writeAgent } from "@/db";
-import AgentModal from "./AgentChat/AgentModal.vue";
-import type { AgentFormData } from "./AgentChat/AgentModal.vue";
+import AgentModal from "../AgentChat/AgentModal.vue";
+import type { AgentFormData } from "../AgentChat/AgentModal.vue";
 
 
 const buttonStyle = tv({
