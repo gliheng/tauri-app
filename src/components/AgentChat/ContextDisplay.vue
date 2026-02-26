@@ -107,19 +107,20 @@ defineExpose({
 </script>
 
 <template>
-  <UButton
-    v-if="contextText"
-    size="sm"
-    class="max-w-40"
-    color="primary"
-    variant="soft"
-    :trailing-icon="eyeIcon"
-    @click.stop="toggleEye"
-  >
-    <span class="truncate">
-      {{ isVisible ? contextText : 'Context hidden' }}
-    </span>
-  </UButton>
+  <UTooltip v-if="contextText" text="Toggle context visibility">
+    <UButton
+      size="sm"
+      class="max-w-40"
+      color="primary"
+      variant="soft"
+      :trailing-icon="eyeIcon"
+      @click.stop="toggleEye"
+    >
+      <span class="truncate">
+        {{ isVisible ? contextText : 'Context hidden' }}
+      </span>
+    </UButton>
+  </UTooltip>
 </template>
 
 <style lang="scss" scoped>

@@ -159,7 +159,7 @@ export async function createTauriAcpConnection(
     async write(chunk: Uint8Array) {
       const text = new TextDecoder().decode(chunk);
       const message = JSON.parse(text);
-      console.log('Sending to Tauri:', message);
+      console.debug('Sending to Tauri:', message);
       eventBus.emit('acp_message_sent', {
         program,
         message,
@@ -394,7 +394,6 @@ export class TauriACPClient implements acp.Client {
     return {};
   }
 
-  // Service methods
   async initialize() {
     const { connection, dispose } = await createTauriAcpConnection({
       program: this.config.programId,
@@ -404,7 +403,7 @@ export class TauriACPClient implements acp.Client {
     }, (agent) => this);
     this.connection = connection;
     this.onDispose = dispose;
-
+   
     const result = await this.connection.initialize({
       protocolVersion: acp.PROTOCOL_VERSION,
       clientCapabilities: {

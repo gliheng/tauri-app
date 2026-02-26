@@ -51,11 +51,11 @@
 - [x] Unify scroller experience.
 - [x] Workspace files tab removed when clicking x on terminal tab.
 - [x] Agent version gone in prod build.
-- [ ] Clicking outside the code editor should remove cursor and selection.
 - [x] Clicking outside chatbox dismiss @ menu.
 - [x] / command's description is too long.
-- [ ] Autoscroll does not work.
+- [x] Autoscroll does not work.
 - [x] Editor save does not work.
 - [x] Diff apply/reject does not work.
 - [x] Agent upgrade failed.
 - [ ] Configuring mcp leads to all servers restarting.
+- [ ] File editor on windows fail because of path style.

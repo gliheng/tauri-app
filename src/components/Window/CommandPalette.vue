@@ -33,6 +33,56 @@ const groups = computed(() => {
     slot: "chat-item",
   }));
 
+  const actionItems = [
+    {
+      label: "Add new chat",
+      suffix: "Add new chat",
+      icon: "i-lucide-file-plus",
+      onSelect() {
+        tabsStore.createNewChat();
+        emit("close");
+      },
+    },
+    {
+      label: "Open ACP debug",
+      suffix: "Test ACP",
+      icon: "i-lucide-list",
+      onSelect() {
+        router.push({
+          name: "acpdebug",
+        });
+        emit("close");
+      },
+    },
+  ];
+
+  if (import.meta.env.DEV) {
+    actionItems.push(
+      {
+        label: "Open message list",
+        suffix: "Test all messages",
+        icon: "i-lucide-list",
+        onSelect() {
+          router.push({
+            name: "msglist",
+          });
+          emit("close");
+        },
+      },
+      {
+        label: "Open editor",
+        suffix: "Test code editor",
+        icon: "i-lucide-code",
+        onSelect() {
+          router.push({
+            name: "editor",
+          });
+          emit("close");
+        },
+      }
+    );
+  }
+
   return [
     {
       id: "chat-sessions",
@@ -41,50 +91,7 @@ const groups = computed(() => {
     },
     {
       id: "actions",
-      items: [
-        {
-          label: "Add new chat",
-          suffix: "Add new chat",
-          icon: "i-lucide-file-plus",
-          onSelect() {
-            tabsStore.createNewChat();
-            emit("close");
-          },
-        },
-        {
-          label: "Open message list",
-          suffix: "Test all messages",
-          icon: "i-lucide-list",
-          onSelect() {
-            router.push({
-              name: "msglist",
-            });
-            emit("close");
-          },
-        },
-        {
-          label: "Open editor",
-          suffix: "Test code editor",
-          icon: "i-lucide-code",
-          onSelect() {
-            router.push({
-              name: "editor",
-            });
-            emit("close");
-          },
-        },
-        {
-          label: "Open ACP debug",
-          suffix: "Test ACP",
-          icon: "i-lucide-list",
-          onSelect() {
-            router.push({
-              name: "acpdebug",
-            });
-            emit("close");
-          },
-        },
-      ],
+      items: actionItems,
     },
   ];
 });
