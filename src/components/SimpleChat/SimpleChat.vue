@@ -260,7 +260,7 @@ watch(() => chat.status, (newStatus, oldStatus) => {
       <ChatBox
         v-model="input"
         :status="chat.status"
-        :style="{ width: viewWidth ? `${viewWidth}px` : '100%' }"
+        :style="{ maxWidth: viewWidth ? `${viewWidth}px` : '100%' }"
         :addons="['model-select']"
         @submit="onSubmit"
         @stop="chat.stop"

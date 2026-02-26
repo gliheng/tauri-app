@@ -58,7 +58,6 @@ watch(
   () => {
     if (isAutoScrollEnabled.value) {
       const el = listRef.value;
-      console.log('scroll!', el, el?.scrollHeight);
       if (el) {
         el.scrollTo({
           top: el.scrollHeight,
@@ -67,13 +66,16 @@ watch(
       }
     }
   },
+  {
+    deep: true,
+  },
 );
 
 </script>
 
 <template>
-  <motion.div class="flex-1 flex min-h-0 relative">
-    <div class="w-full overflow-y-auto" ref="listRef" @scroll="handleScroll">
+  <motion.div class="flex-1 flex min-h-0 max-w-full relative">
+    <div class="w-full overflow-y-auto overfloww-w-hidden" ref="listRef" @scroll="handleScroll">
       <div class="px-8">
         <div
           class="flex-1 flex flex-col gap-2 min-h-0 mx-auto my-4 max"

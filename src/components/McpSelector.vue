@@ -51,6 +51,7 @@ const getServerIcon = (type: string) => {
       variant="soft"
       trailing-icon="i-lucide-chevrons-up-down"
       :items="enabledServers"
+      placeholder="MCP servers"
       :class="[$style.selectMenu, enabledServers.length === 0 && $style.disabled]"
       :ui="{
         base: 'bg-primary/10 hover:bg-primary/15 text-primary-500 focus-visible:bg-primary/15',

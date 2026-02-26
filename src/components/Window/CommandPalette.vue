@@ -120,7 +120,7 @@ async function onRemoveChat(item: any) {
     <template #chat-item-trailing="{ item }">
       <UButton
         color="error"
-        size="sm"
+        size="xs"
         icon="i-lucide-trash"
         @click.stop="onRemoveChat(item)"
       />

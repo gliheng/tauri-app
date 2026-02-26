@@ -82,9 +82,10 @@ function getArtifactDisplayName(id: string): string {
             <UButton
               @click.stop="artifactsStore.removeArtifact(artifact.id, artifact.type)"
               :class="ui.triggerIcon"
+              class="p-0"
               size="xs"
               variant="ghost"
-              class="group-hover:opacity-100 transition-opacity hover:bg-elevated"
+              color="neutral"
               icon="i-lucide-x"
             />
           </TabsTrigger>

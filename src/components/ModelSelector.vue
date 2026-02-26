@@ -75,6 +75,7 @@ const modelList = computed(() => {
       value-key="value"
       size="sm"
       :items="modelList"
+      placeholder="Model"
       :ui="{
         base: 'bg-primary/10 hover:bg-primary/15 text-primary-500 focus-visible:bg-primary/15',
         trailingIcon: 'text-primary-500',

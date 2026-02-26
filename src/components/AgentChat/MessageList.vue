@@ -47,13 +47,16 @@ watch(
       listRef.value.scrollTop = listRef.value.scrollHeight;
     }
   },
+  {
+    deep: true,
+  },
 );
 </script>
 
 <template>
-  <motion.div class="flex-1 flex min-h-0 relative">
+  <motion.div class="flex-1 flex min-h-0 max-w-full relative">
     <div
-      class="w-full overflow-y-auto"
+      class="w-full overflow-y-auto overflow-x-hidden"
       ref="listRef"
       @scroll="handleScroll"
     >
