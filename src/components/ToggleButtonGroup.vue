@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
+
 interface Props {
   options: Array<{
     value: string;
     label: string;
-    icon: string;
+    icon: string | Component;
   }>;
 }
 

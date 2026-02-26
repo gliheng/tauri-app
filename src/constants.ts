@@ -25,3 +25,135 @@ export const EDITOR_ACTIONS = Symbol("editor-actions") as InjectionKey<{
   loadFileContent(relativePath: string): Promise<string>;
   saveFileContent(relativePath: string, content: string): Promise<void>;
 }>;
+
+export interface AgentProgramOption {
+  value: string;
+  label: string;
+}
+
+export const AGENT_PROGRAMS: AgentProgramOption[] = [
+  { value: 'codex', label: 'Codex' },
+  { value: 'gemini', label: 'Gemini CLI' },
+  { value: 'claude', label: 'Claude Code' },
+  { value: 'qwen', label: 'Qwen Code' },
+  { value: 'opencode', label: 'OpenCode' },
+];
+
+export const MODELS_BY_PROVIDER: Record<
+  string,
+  { label: string; value: string }[]
+> = {
+  openai: [
+    { label: "DALL-E 3", value: "dall-e-3" },
+    { label: "DALL-E 2", value: "dall-e-2" },
+  ],
+  stability: [
+    { label: "SDXL 1.0", value: "sdxl-1.0" },
+    { label: "SD 3.0", value: "sd-3.0" },
+  ],
+  replicate: [
+    { label: "Stable Diffusion XL", value: "sdxl" },
+    { label: "FLUX.1", value: "flux-1" },
+  ],
+  midjourney: [
+    { label: "MJ v6", value: "v6" },
+    { label: "MJ v5.2", value: "v5.2" },
+  ],
+};
+
+export const MODEL_REPO = {
+  deepseek: [
+    {
+      label: "Deepseek",
+      value: "deepseek-chat",
+    },
+    {
+      label: "Deepseek R1",
+      value: "deepseek-reasoner",
+    },
+  ],
+  minimax: [
+    {
+      label: "Minimax M2.1",
+      value: "MiniMax-M2.1",
+    },
+  ],
+  zai: [
+    {
+      label: "GLM 5",
+      value: "glm-5",
+    },
+    {
+      label: "GLM 4.7",
+      value: "glm-4.7",
+    },
+    {
+      label: "GLM 4.6v",
+      value: "glm-4.6v",
+    },
+    {
+      label: "GLM 4.7 Flash",
+      value: "glm-4.7-flash",
+    },
+    {
+      label: "GLM 4.5 Flash",
+      value: "glm-4.5-flash",
+    },
+  ],
+  openrouter: [
+    {
+      label: "Claude haiku 4.5",
+      value: "anthropic/claude-haiku-4.5",
+    },
+    {
+      label: "Claude opus 4.5",
+      value: "anthropic/claude-opus-4.5",
+    },
+    {
+      label: "Claude sonnet 4.5",
+      value: "anthropic/claude-sonnet-4.5",
+    },
+    {
+      label: "Claude haiku 4",
+      value: "anthropic/claude-haiku-4",
+    },
+    {
+      label: "Claude opus 4",
+      value: "anthropic/claude-opus-4",
+    },
+    {
+      label: "Claude sonnet 4",
+      value: "anthropic/claude-sonnet-4",
+    },
+    {
+      label: "Gemini 2.5 flash",
+      value: "google/gemini-2.5-flash",
+    },
+    {
+      label: "Gemini 2.5 pro",
+      value: "google/gemini-2.5-pro-preview",
+    },
+  ],
+  siliconflow: [
+    {
+      label: "Qwen3 32B",
+      value: "Qwen/Qwen3-32B",
+    },
+    {
+      label: "QwQ 32B",
+      value: "Qwen/QwQ-32B",
+    },
+    {
+      label: "MiniMax M2",
+      value: "MiniMaxAI/MiniMax-M2",
+    },
+    {
+      label: "GLM 4.7",
+      value: "Pro/zai-org/GLM-4.7",
+    },
+    {
+      label: "Kimi K2.5",
+      value: "Pro/moonshotai/Kimi-K2.5",
+    },
+  ],
+};

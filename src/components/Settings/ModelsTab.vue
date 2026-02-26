@@ -3,7 +3,7 @@ import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
 import { computed } from "vue";
 import { useSettingsStore } from "@/stores/settings";
-import { modelRepo } from "@/llm/models";
+import { MODEL_REPO } from "@/constants";
 
 const providerItems = [
   {
@@ -61,7 +61,7 @@ const modelList = computed(() => {
   
   for (const [provider, config] of Object.entries(modelSettings.value)) {
     const providerConfig = config as { apiKey: string; models: Array<string> };
-    const providerModels = modelRepo[provider as keyof typeof modelRepo] || [];
+    const providerModels = MODEL_REPO[provider as keyof typeof MODEL_REPO] || [];
     
     for (const modelValue of providerConfig.models) {
       const modelInfo = providerModels.find(m => m.value === modelValue);
@@ -91,7 +91,7 @@ const selectedModel = computed({
 });
 
 const getAvailableModels = (provider: string) => {
-  const providerConfig = modelRepo[provider as keyof typeof modelRepo];
+  const providerConfig = MODEL_REPO[provider as keyof typeof MODEL_REPO];
   if (!providerConfig) return [];
   
   return providerConfig.filter((m: any) => {
@@ -169,7 +169,7 @@ const toggleModel = (provider: string, modelValue: string) => {
                   ].models"
                   :key="modelValue"
                   :label="
-                    modelRepo[item.value as keyof typeof modelRepo]?.find(
+                    MODEL_REPO[item.value as keyof typeof MODEL_REPO]?.find(
                       (m: any) => m.value === modelValue,
                     )?.label || modelValue
                   "
@@ -194,8 +194,8 @@ const toggleModel = (provider: string, modelValue: string) => {
               </div>
               <p
                 v-if="
-                  modelRepo[
-                    item.value as keyof typeof modelRepo
+                  MODEL_REPO[
+                    item.value as keyof typeof MODEL_REPO
                   ].filter(
                     (m: any) =>
                       !modelSettings[

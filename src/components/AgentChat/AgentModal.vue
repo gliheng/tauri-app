@@ -1,13 +1,30 @@
 <script setup lang="ts">
-import { ref, toRaw } from "vue";
+import { ref, toRaw, computed } from "vue";
 import IconEdit from "@/components/IconEdit.vue";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup.vue";
 import { AgentProgram } from "@/db";
+import { AGENT_PROGRAMS } from "@/constants";
 import ICustomOpencode from '~icons/custom/opencode';
 import ICustomQwen from '~icons/custom/qwen';
 import ICustomCodex from '~icons/custom/codex';
 import ICustomClaude from '~icons/custom/claude';
 import ICustomGemini from '~icons/custom/gemini';
+
+const iconMap: Record<string, any> = {
+  'codex': ICustomCodex,
+  'gemini': ICustomGemini,
+  'claude': ICustomClaude,
+  'qwen': ICustomQwen,
+  'opencode': ICustomOpencode,
+};
+const defaultIcon = 'i-lucide-bot';
+
+const programs = computed(() =>
+  AGENT_PROGRAMS.map(p => ({
+    ...p,
+    icon: iconMap[p.value] || defaultIcon,
+  }))
+);
 
 export interface AgentFormData {
   name: string;
@@ -82,13 +99,7 @@ const createAgent = () => {
           <h2 class="text-lg mb-2">Agent Program</h2>
           <ToggleButtonGroup
             v-model="agent.program"
-            :options="[
-              { value: 'codex', label: 'Codex', icon: ICustomCodex },
-              { value: 'gemini', label: 'Gemini CLI', icon: ICustomGemini },
-              { value: 'claude', label: 'Claude Code', icon: ICustomClaude },
-              { value: 'qwen', label: 'Qwen Code', icon: ICustomQwen },
-              { value: 'opencode', label: 'OpenCode', icon: ICustomOpencode },
-            ]"
+            :options="programs"
           />
         </section>
 <section>

@@ -3,6 +3,7 @@ import { ref, onMounted, watch, onActivated } from "vue";
 import { nanoid } from "nanoid";
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from "reka-ui";
 import { useTabsStore } from "@/stores/tabs";
+import { MODELS_BY_PROVIDER } from "@/constants";
 
 const tabsStore = useTabsStore();
 
@@ -99,25 +100,6 @@ const providers = [
   { label: "Midjourney", value: "midjourney" },
 ];
 
-const modelsByProvider: Record<string, { label: string; value: string }[]> = {
-  openai: [
-    { label: "DALL-E 3", value: "dall-e-3" },
-    { label: "DALL-E 2", value: "dall-e-2" },
-  ],
-  stability: [
-    { label: "SDXL 1.0", value: "sdxl-1.0" },
-    { label: "SD 3.0", value: "sd-3.0" },
-  ],
-  replicate: [
-    { label: "Stable Diffusion XL", value: "sdxl" },
-    { label: "FLUX.1", value: "flux-1" },
-  ],
-  midjourney: [
-    { label: "MJ v6", value: "v6" },
-    { label: "MJ v5.2", value: "v5.2" },
-  ],
-};
-
 const sizesByModel: Record<string, { label: string; value: string }[]> = {
   "dall-e-3": [
     { label: "1024×1024", value: "1024x1024" },
@@ -191,7 +173,7 @@ watch(
 
 // Watch provider change to update model options
 watch(selectedProvider, (newProvider) => {
-  const models = modelsByProvider[newProvider] || modelsByProvider.openai;
+  const models = MODELS_BY_PROVIDER[newProvider] || MODELS_BY_PROVIDER.openai;
   if (models.length > 0) {
     selectedModel.value = models[0].value;
   }
@@ -207,7 +189,7 @@ watch(selectedModel, (newModel) => {
 
 // Get available models for current provider
 const availableModels = () =>
-  modelsByProvider[selectedProvider.value] || modelsByProvider.openai;
+  MODELS_BY_PROVIDER[selectedProvider.value] || MODELS_BY_PROVIDER.openai;
 
 // Get available sizes for current model
 const availableSizes = () =>
