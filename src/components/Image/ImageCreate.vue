@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, reactive, watch, onMounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useImagesStore } from "@/stores/images";
 import { IMAGE_MODELS_BY_PROVIDER } from "@/constants";
 import { IMAGE_GENERATION_CONFIG, type FormField } from "./config";
@@ -36,7 +36,7 @@ const providers = [
 const selectedProvider = ref(props.initialImage?.provider ?? "openai");
 const selectedModel = ref(props.initialImage?.model ?? "dall-e-3");
 const numImages = ref(1);
-const formValues = reactive<Record<string, any>>({});
+const formValues = ref<Record<string, any>>({});
 const isGenerating = ref(false);
 
 const availableModels = computed(() =>
@@ -64,17 +64,15 @@ watch([selectedProvider, selectedModel], () => {
       }
     });
   });
-}, { immediate: true });
+});
 
 onMounted(() => {
   if (props.initialImage) {
-    nextTick(() => {
-      formValues.prompt = props.initialImage!.prompt;
-      formValues.negativePrompt = props.initialImage!.negativePrompt || "";
-      formValues.size = props.initialImage!.size;
-      formValues.seed = props.initialImage!.seed;
-      numImages.value = 1;
-    });
+    formValues.value.prompt = props.initialImage!.prompt;
+    formValues.value.negativePrompt = props.initialImage!.negativePrompt || "";
+    formValues.value.size = props.initialImage!.size;
+    formValues.value.seed = props.initialImage!.seed;
+    numImages.value = 1;
   }
 });
 
@@ -98,7 +96,7 @@ async function generateMockImage(
 }
 
 async function generateImages() {
-  if (!formValues.prompt?.trim()) return;
+  if (!formValues.value.prompt?.trim()) return;
 
   isGenerating.value = true;
 
@@ -107,11 +105,11 @@ async function generateImages() {
       provider: selectedProvider.value,
       model: selectedModel.value,
       numImages: numImages.value,
-      ...formValues,
+      ...formValues.value,
     };
 
     const mockResults = await generateMockImage(request);
-    const actualSeed = formValues.seed === -1 ? Math.floor(Math.random() * 999999) : formValues.seed;
+    const actualSeed = formValues.value.seed === -1 ? Math.floor(Math.random() * 999999) : formValues.value.seed;
 
     for (let i = 0; i < mockResults.length; i++) {
       const imageId = nanoid();
@@ -131,8 +129,8 @@ async function generateImages() {
         provider: selectedProvider.value,
         model: selectedModel.value,
         size,
-        prompt: formValues.prompt,
-        negativePrompt: formValues.negativePrompt,
+        prompt: formValues.value.prompt,
+        negativePrompt: formValues.value.negativePrompt,
         seed: actualSeed + i,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -203,7 +201,7 @@ async function generateImages() {
               v-model="formValues[field.key]"
               :placeholder="field.placeholder"
               :rows="field.rows"
-              class="resize-none"
+              class="w-full"
             />
           </UFormField>
         </UForm>
