@@ -708,6 +708,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@iconify-json/mdi@npm:^1.2.3":
+  version: 1.2.3
+  resolution: "@iconify-json/mdi@npm:1.2.3"
+  dependencies:
+    "@iconify/types": "npm:*"
+  checksum: 10c0/4d11426abba03464e5ebe4675c87cc39c720e54b7c28265ff9ccd93f229a51f7616bb0a8f1c01412eac3cc9a1ebdc0a122bbaa3395c14d30834d96f8a141e96d
+  languageName: node
+  linkType: hard
+
 "@iconify-json/vscode-icons@npm:^1.2.37":
   version: 1.2.40
   resolution: "@iconify-json/vscode-icons@npm:1.2.40"
@@ -5775,6 +5784,7 @@ __metadata:
     "@floating-ui/vue": "npm:^1.1.9"
     "@iconify-json/heroicons": "npm:^1.2.3"
     "@iconify-json/lucide": "npm:^1.2.86"
+    "@iconify-json/mdi": "npm:^1.2.3"
     "@iconify-json/vscode-icons": "npm:^1.2.37"
     "@nuxt/ui": "npm:^4.3.0"
     "@openrouter/ai-sdk-provider": "npm:^2.2.3"

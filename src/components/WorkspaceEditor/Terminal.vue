@@ -90,7 +90,7 @@ onMounted(async () => {
   terminal = new XTerm({
     cursorBlink: true,
     fontSize: 14,
-    fontFamily: 'Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace',
+    fontFamily: 'Menlo, Monaco, Consolas, "Ubuntu Mono", "Courier New", monospace',
     theme: terminalTheme.value,
   });
 
@@ -210,7 +210,7 @@ useResizeObserver(terminalRef, () => {
   color: white;
   border-radius: 6px;
   font-size: 14px;
-  font-family: Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace;
+  font-family: Menlo, Monaco, Consolas, "Ubuntu Mono", "Courier New", monospace;
   pointer-events: none;
   z-index: 10;
 }

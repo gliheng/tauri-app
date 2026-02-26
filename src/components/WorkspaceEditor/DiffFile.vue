@@ -63,7 +63,7 @@ function initUnifiedView() {
           color: props.theme === 'dark' ? '#d4d4d4' : '#24292e',
         },
         '.cm-scroller': {
-          fontFamily: 'Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace',
+          fontFamily: 'Menlo, Monaco, Consolas, "Ubuntu Mono", "Courier New", monospace',
           fontSize: '13px',
         },
         '.cm-diff-deleted': {
@@ -95,7 +95,7 @@ function initSplitView() {
             color: props.theme === 'dark' ? '#d4d4d4' : '#24292e',
           },
           '.cm-scroller': {
-            fontFamily: 'Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace',
+            fontFamily: 'Menlo, Monaco, Consolas, "Ubuntu Mono", "Courier New", monospace',
             fontSize: '13px',
           }
         }),
@@ -112,7 +112,7 @@ function initSplitView() {
             color: props.theme === 'dark' ? '#d4d4d4' : '#24292e',
           },
           '.cm-scroller': {
-            fontFamily: 'Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace',
+            fontFamily: 'Menlo, Monaco, Consolas, "Ubuntu Mono", "Courier New", monospace',
             fontSize: '13px',
           }
         }),

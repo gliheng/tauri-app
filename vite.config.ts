@@ -39,6 +39,7 @@ export default defineConfig(async () => ({
       '@nuxt/ui > prosemirror-gapcursor',
       '@iconify-json/heroicons',
       '@iconify-json/lucide',
+      '@iconify-json/mdi',
       '@iconify-json/vscode-icons',
     ],
   },

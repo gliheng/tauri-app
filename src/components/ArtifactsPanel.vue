@@ -3,7 +3,6 @@ import { ref, computed } from "vue";
 import { TabsContent, TabsIndicator, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 import { useArtifactsStore } from "@/stores/artifacts";
 import { storeToRefs } from "pinia";
-import Loader from "@/components/Loader.vue";
 import WorkspaceEditor from "@/components/WorkspaceEditor/WorkspaceEditor.vue";
 import Terminal from "@/components/WorkspaceEditor/Terminal.vue";
 
@@ -15,7 +14,7 @@ const isExpanded = ref(false);
 const ui = {
   root: 'relative flex flex-col h-full',
   list(expanded: boolean): string {
-    return `relative flex items-center gap-1 border-none bg-[--ui-bg-default] rounded-t-md overflow-x-auto p-1 select-none bg-elevated/50 shadow ${expanded ? 'ml-20' : ''}`;
+    return `relative flex items-center gap-1 border-none bg-[--ui-bg-default] rounded-t-md overflow-x-auto p-1 select-none bg-elevated/50 shadow ${expanded ? 'pl-10' : ''}`;
   },
   indicator: 'absolute left-0 inset-y-2 w-(--reka-tabs-indicator-size) translate-x-(--reka-tabs-indicator-position) transition-[translate,width] duration-200 bg-primary rounded-md shadow-xs',
   trigger: 'relative inline-flex items-center gap-1.5 text-default hover:bg-[var(--ui-bg-elevated)]/25 px-2 py-1.5 text-sm rounded-md disabled:cursor-not-allowed disabled:opacity-75 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ui-color-primary)] focus:outline-none transition-colors group data-[state=active]:text-white',
@@ -80,13 +79,14 @@ function getArtifactDisplayName(id: string): string {
             <UIcon v-if="artifact.type === 'terminal'" name="i-lucide-square-terminal" :class="ui.triggerIcon" />
             <UIcon v-else name="i-lucide-folder" :class="ui.triggerIcon" />
             <span :class="ui.triggerLabel">{{ artifact.type === 'terminal' ? 'Terminal' : getArtifactDisplayName(artifact.id) }}</span>
-            <button
+            <UButton
               @click.stop="artifactsStore.removeArtifact(artifact.id, artifact.type)"
               :class="ui.triggerIcon"
-              class="group-hover:opacity-100 opacity-0 transition-opacity hover:bg-elevated rounded p-0.5"
-            >
-              <UIcon name="i-lucide-x" class="w-full h-full" />
-            </button>
+              size="xs"
+              variant="ghost"
+              class="group-hover:opacity-100 transition-opacity hover:bg-elevated"
+              icon="i-lucide-x"
+            />
           </TabsTrigger>
         </TabsList>
 

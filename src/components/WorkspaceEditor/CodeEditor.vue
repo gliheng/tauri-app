@@ -235,6 +235,6 @@ watch(
 
 :deep(.cm-content) {
   padding: 8px;
-  font-family: Menlo, Monaco, "Ubuntu Mono", "Courier New", monospace;
+  font-family: Menlo, Monaco, Consolas, "Ubuntu Mono", "Courier New", monospace;
 }
 </style>
