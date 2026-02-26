@@ -76,9 +76,10 @@ export class ChatSdkTransport implements ChatTransport<UIMessage> {
       ...mcpTools,
     };
 
+    const modelMessages = await convertToModelMessages(messages.slice(-(body?.contextSize ?? 0)));
     const result = streamText({
       model: getModel(body?.model),
-      messages: await convertToModelMessages(messages.slice(-(body?.contextSize ?? 0))),
+      messages: modelMessages,
       stopWhen: stepCountIs(30),
       temperature: body?.temperature,
       tools: Object.keys(allTools).length > 0 ? allTools : undefined,

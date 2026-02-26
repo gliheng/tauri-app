@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { nanoid } from "nanoid";
 import { storeToRefs } from "pinia";
 import { useSettingsStore } from "@/stores/settings";
 import { useMcpStore } from "@/stores/mcp";
@@ -9,6 +8,7 @@ import McpImportModal from "./McpImportModal.vue";
 import McpDetailsModal from "./McpDetailsModal.vue";
 import McpLogsModal from "./McpLogsModal.vue";
 import type { McpServer } from "@/types/mcp";
+import { generateId } from "@/utils/id";
 
 const overlay = useOverlay();
 const mcpServerModal = overlay.create(McpServerModal);
@@ -171,7 +171,7 @@ const importMcpServers = async () => {
 
     let imported = 0;
     for (const { config } of serversToImport) {
-      const id = nanoid();
+      const id = generateId();
 
       mcpServers.value[id] = {
         id,

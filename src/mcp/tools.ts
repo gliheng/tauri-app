@@ -36,7 +36,7 @@ export async function convertMcpToolsToAiSdk(serverIds?: string[]): Promise<Reco
 
     for (const tool of mcpTools) {
       // Prefix tool name with server ID to avoid collisions
-      const prefixedName = `${connection.serverId}:${tool.name}`
+      const prefixedName = `${connection.serverId}__${tool.name}`
 
       tools[prefixedName] = {
         description: tool.description || `Tool: ${tool.name}`,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, watch, reactive } from "vue";
-import { nanoid } from "nanoid";
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { McpServer } from "@/types/mcp";
+import { generateId } from "@/utils/id";
 
 export interface McpServerFormData {
   id: string;
@@ -158,7 +158,7 @@ const buildConfig = (): McpServer['config'] => {
 
 async function saveServer(event: FormSubmitEvent<Schema>) {
   const data = event.data
-  const id = isEditing.value ? props.server!.id : nanoid()
+  const id = isEditing.value ? props.server!.id : generateId()
 
   try {
     const config = buildConfig()
