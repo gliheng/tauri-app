@@ -86,6 +86,23 @@ export interface Chart {
   updatedAt: Date;
 }
 
+export interface Image {
+  id: string;
+  fileId: number;
+  provider: string;
+  model: string;
+  size: string;
+  prompt: string;
+  negativePrompt: string;
+  seed: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ImageWithFile extends Image {
+  fileUrl: string;
+}
+
 // Helper function to serialize/deserialize Date objects
 function dateToString(date: Date): string {
   return date.toISOString();
@@ -404,6 +421,149 @@ export async function getDocument(id: string): Promise<Document | undefined> {
 export async function deleteDocument(id: string): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute('DELETE FROM document WHERE id = $1', [id]);
+}
+
+// Image operations
+export async function writeImage(data: Image): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  await db.execute(
+    `INSERT OR REPLACE INTO image (id, fileId, provider, model, size, prompt, negativePrompt, seed, createdAt, updatedAt)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [
+      data.id,
+      data.fileId,
+      data.provider,
+      data.model,
+      data.size,
+      data.prompt,
+      data.negativePrompt ?? null,
+      data.seed,
+      dateToString(data.createdAt),
+      dateToString(data.updatedAt),
+    ]
+  );
+}
+
+export async function getImages(): Promise<ImageWithFile[]> {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = await db.select<
+    {
+      id: string;
+      fileId: number;
+      provider: string;
+      model: string;
+      size: string;
+      prompt: string;
+      negativePrompt: string;
+      seed: number;
+      createdAt: string;
+      updatedAt: string;
+      fileName: string;
+      fileType: string;
+      fileData: string | number[];
+    }[]
+  >(
+    `SELECT i.*, f.fileName, f.fileType, f.fileData
+     FROM image i
+     JOIN file_store f ON i.fileId = f.id
+     ORDER BY i.updatedAt DESC`
+  );
+
+  const images: ImageWithFile[] = [];
+
+  for (const row of result) {
+    const fileDataArray = typeof row.fileData === 'string' 
+      ? JSON.parse(row.fileData)
+      : row.fileData;
+
+    const uint8Array = new Uint8Array(fileDataArray);
+    const blob = new Blob([uint8Array], { type: row.fileType });
+    const fileUrl = URL.createObjectURL(blob);
+
+    images.push({
+      id: row.id,
+      fileId: row.fileId,
+      provider: row.provider,
+      model: row.model,
+      size: row.size,
+      prompt: row.prompt,
+      negativePrompt: row.negativePrompt ?? '',
+      seed: row.seed,
+      createdAt: stringToDate(row.createdAt),
+      updatedAt: stringToDate(row.updatedAt),
+      fileUrl,
+    });
+  }
+
+  return images;
+}
+
+export async function getImage(id: string): Promise<ImageWithFile | undefined> {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = await db.select<
+    {
+      id: string;
+      fileId: number;
+      provider: string;
+      model: string;
+      size: string;
+      prompt: string;
+      negativePrompt: string;
+      seed: number;
+      createdAt: string;
+      updatedAt: string;
+      fileName: string;
+      fileType: string;
+      fileData: string | number[];
+    }[]
+  >(
+    `SELECT i.*, f.fileName, f.fileType, f.fileData
+     FROM image i
+     JOIN file_store f ON i.fileId = f.id
+     WHERE i.id = $1`,
+    [id]
+  );
+
+  if (result.length === 0) return undefined;
+
+  const row = result[0];
+  const fileDataArray = typeof row.fileData === 'string' 
+    ? JSON.parse(row.fileData)
+    : row.fileData;
+
+  const uint8Array = new Uint8Array(fileDataArray);
+  const blob = new Blob([uint8Array], { type: row.fileType });
+  const fileUrl = URL.createObjectURL(blob);
+
+  return {
+    id: row.id,
+    fileId: row.fileId,
+    provider: row.provider,
+    model: row.model,
+    size: row.size,
+    prompt: row.prompt,
+    negativePrompt: row.negativePrompt ?? '',
+    seed: row.seed,
+    createdAt: stringToDate(row.createdAt),
+    updatedAt: stringToDate(row.updatedAt),
+    fileUrl,
+  };
+}
+
+export async function deleteImage(id: string): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+
+  // First get the image to get the fileId for file cleanup
+  const result = await db.select<
+    { fileId: number }[]
+  >(`SELECT fileId FROM image WHERE id = $1`, [id]);
+
+  if (result.length === 0) return;
+
+  // Delete from file_store (CASCADE will handle this via foreign key)
+  await db.execute('DELETE FROM image WHERE id = $1', [id]);
 }
 
 // File operations

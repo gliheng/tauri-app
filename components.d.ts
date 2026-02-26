@@ -34,6 +34,8 @@ declare module 'vue' {
     FileTree: typeof import('./src/components/WorkspaceEditor/FileTree.vue')['default']
     FileTreeItem: typeof import('./src/components/WorkspaceEditor/FileTreeItem.vue')['default']
     IconEdit: typeof import('./src/components/IconEdit.vue')['default']
+    ImageCreate: typeof import('./src/components/Image/ImageCreate.vue')['default']
+    ImageDetail: typeof import('./src/components/Image/ImageDetail.vue')['default']
     JournalCalendar: typeof import('./src/components/Journal/JournalCalendar.vue')['default']
     JournalPage: typeof import('./src/components/Journal/JournalPage.vue')['default']
     JournalRecent: typeof import('./src/components/Journal/JournalRecent.vue')['default']

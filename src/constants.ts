@@ -39,29 +39,7 @@ export const AGENT_PROGRAMS: AgentProgramOption[] = [
   { value: 'opencode', label: 'OpenCode' },
 ];
 
-export const MODELS_BY_PROVIDER: Record<
-  string,
-  { label: string; value: string }[]
-> = {
-  openai: [
-    { label: "DALL-E 3", value: "dall-e-3" },
-    { label: "DALL-E 2", value: "dall-e-2" },
-  ],
-  stability: [
-    { label: "SDXL 1.0", value: "sdxl-1.0" },
-    { label: "SD 3.0", value: "sd-3.0" },
-  ],
-  replicate: [
-    { label: "Stable Diffusion XL", value: "sdxl" },
-    { label: "FLUX.1", value: "flux-1" },
-  ],
-  midjourney: [
-    { label: "MJ v6", value: "v6" },
-    { label: "MJ v5.2", value: "v5.2" },
-  ],
-};
-
-export const MODEL_REPO = {
+export const MODELS_BY_PROVIDER = {
   deepseek: [
     {
       label: "Deepseek",
@@ -155,5 +133,27 @@ export const MODEL_REPO = {
       label: "Kimi K2.5",
       value: "Pro/moonshotai/Kimi-K2.5",
     },
+  ],
+};
+
+export const IMAGE_MODELS_BY_PROVIDER: Record<
+  string,
+  { label: string; value: string }[]
+> = {
+  openai: [
+    { label: "DALL-E 3", value: "dall-e-3" },
+    { label: "DALL-E 2", value: "dall-e-2" },
+  ],
+  stability: [
+    { label: "SDXL 1.0", value: "sdxl-1.0" },
+    { label: "SD 3.0", value: "sd-3.0" },
+  ],
+  replicate: [
+    { label: "Stable Diffusion XL", value: "sdxl" },
+    { label: "FLUX.1", value: "flux-1" },
+  ],
+  midjourney: [
+    { label: "MJ v6", value: "v6" },
+    { label: "MJ v5.2", value: "v5.2" },
   ],
 };

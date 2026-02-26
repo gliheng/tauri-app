@@ -23,6 +23,12 @@ fn get_migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/003_journal.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "create_image_table",
+            sql: include_str!("../migrations/004_image.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

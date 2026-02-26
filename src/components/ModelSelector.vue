@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useSettingsStore } from "@/stores/settings";
-import { MODEL_REPO } from "@/constants";
+import { MODELS_BY_PROVIDER } from "@/constants";
 import type { SelectMenuItem } from "@nuxt/ui";
 import ICustomAnthropic from '~icons/custom/anthropic';
 import ICustomOpenai from '~icons/custom/openai';
@@ -39,7 +39,7 @@ const modelList = computed(() => {
   
   for (const [provider, config] of Object.entries(settingsStore.modelSettings)) {
     const providerConfig = config as { apiKey: string; models: Array<string> };
-    const providerModels = MODEL_REPO[provider as keyof typeof MODEL_REPO] || [];
+    const providerModels = MODELS_BY_PROVIDER[provider as keyof typeof MODELS_BY_PROVIDER] || [];
     
     if (providerConfig.models.length > 0) {
       models.push({
