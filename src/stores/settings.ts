@@ -37,6 +37,18 @@ const defaultModelSettings: Record<string, ChatModelConfig> = {
   },
 };
 
+const defaultImageModelSettings: Record<string, { apiKey: string }> = {
+  openai: {
+    apiKey: "",
+  },
+  stability: {
+    apiKey: "",
+  },
+  siliconflow: {
+    apiKey: "",
+  },
+};
+
 export interface AgentConfig {
   useCustomModel?: boolean;
   baseUrl?: string;
@@ -111,6 +123,15 @@ export async function loadMcpSettings() {
   return defaultsDeep({}, dbSettings, defaultMcpSettings) as Record<string, McpServer>;
 }
 
+export async function loadImageModelSettings() {
+  const dbSettings = await settingsDb.getAllImageModelSettings();
+  const settings: Record<string, { apiKey: string }> = {};
+  for (const [key, value] of Object.entries(dbSettings)) {
+    settings[key] = { apiKey: value.apiKey };
+  }
+  return defaultsDeep({}, settings, defaultImageModelSettings) as Record<string, { apiKey: string }>;
+}
+
 export const useSettingsStore = defineStore("settings", () => {
   const modelSettings = ref<Record<string, ChatModelConfig>>({});
   const agentSettings = ref<Record<string, AgentConfig>>({});
@@ -119,6 +140,7 @@ export const useSettingsStore = defineStore("settings", () => {
   const mcpServers = ref<Record<string, McpServer>>({});
   const isRestartingMcp = ref(false);
   const isMerging = ref(false);
+  const imageModelSettings = ref<Record<string, { apiKey: string }>>({});
 
   // Supabase sync integration
   const syncStore = useSupabaseStore();
@@ -149,6 +171,11 @@ export const useSettingsStore = defineStore("settings", () => {
           await settingsDb.writeMcpServer(server)
         }
       }
+      if (remote.imageModel) {
+        const merged = defaultsDeep({}, remote.imageModel, imageModelSettings.value) as Record<string, { apiKey: string }>;
+        imageModelSettings.value = merged;
+        await settingsDb.writeAllImageModelSettings(merged);
+      }
       console.log('[Settings] Merged remote settings from Supabase')
     } finally {
       isMerging.value = false
@@ -178,6 +205,7 @@ export const useSettingsStore = defineStore("settings", () => {
     chatSettings.value = await loadChatSettings();
     webSearchSettings.value = await loadWebSearchSettings();
     mcpServers.value = await loadMcpSettings();
+    imageModelSettings.value = await loadImageModelSettings();
 
     // Start MCP servers after settings are loaded
     await initializeMcpServers();
@@ -223,6 +251,13 @@ export const useSettingsStore = defineStore("settings", () => {
     deep: true,
   });
 
+  watch(imageModelSettings, async (v) => {
+    if (isMerging.value) return;
+    await settingsDb.writeAllImageModelSettings(v);
+  }, {
+    deep: true,
+  });
+
   // Debounced MCP server restart function
   const restartMcpServers = debounce(async () => {
     // Skip if already restarting
@@ -245,7 +280,7 @@ export const useSettingsStore = defineStore("settings", () => {
   watch(mcpServers, async (v) => {
     if (isMerging.value) return;
     // Persist to database
-    for (const [id, server] of Object.entries(v)) {
+    for (const [, server] of Object.entries(v)) {
       await settingsDb.writeMcpServer(server);
     }
 
@@ -266,6 +301,7 @@ export const useSettingsStore = defineStore("settings", () => {
     chatSettings,
     webSearchSettings,
     mcpServers,
+    imageModelSettings,
     initialize,
   };
 });

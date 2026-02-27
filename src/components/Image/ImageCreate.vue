@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from "vue";
+import { storeToRefs } from "pinia";
 import { useImagesStore } from "@/stores/images";
+import { useSettingsStore } from "@/stores/settings";
 import { IMAGE_MODELS_BY_PROVIDER } from "@/constants";
 import { IMAGE_GENERATION_CONFIG, type FormField } from "./config";
 import { writeFile, writeImage, type Image, type ImageWithFile } from "@/db";
 import { nanoid } from "nanoid";
+import { generateImage } from "@/lib/imageGeneration";
 
 const emit = defineEmits<{
   close: [];
@@ -15,22 +18,28 @@ const props = defineProps<{
 }>();
 
 const imagesStore = useImagesStore();
+const settingsStore = useSettingsStore();
+const { imageModelSettings } = storeToRefs(settingsStore);
 
 type ImageGenerationRequest = {
   provider: string;
   model: string;
+  prompt: string;
+  negativePrompt?: string;
+  size?: string;
+  numImages?: number;
+  seed?: number;
+  cfgScale?: number;
+  guidanceScale?: number;
+  numInferenceSteps?: number;
+  batchSize?: number;
   [key: string]: any;
-};
-
-type GeneratedImage = {
-  url: string;
 };
 
 const providers = [
   { label: "OpenAI (DALL-E)", value: "openai" },
   { label: "Stability AI", value: "stability" },
-  { label: "Replicate", value: "replicate" },
-  { label: "Midjourney", value: "midjourney" },
+  { label: "SiliconFlow", value: "siliconflow" },
 ];
 
 const selectedProvider = ref(props.initialImage?.provider ?? "openai");
@@ -76,73 +85,84 @@ onMounted(() => {
   }
 });
 
-async function generateMockImage(
-  request: ImageGenerationRequest
-): Promise<GeneratedImage[]> {
-  await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
-
-  const size = request.size || "1024x1024";
-  const [width, height] = size.split("x").map(Number);
-  const numImages = request.numImages || 1;
-  const results: GeneratedImage[] = [];
-
-  for (let i = 0; i < numImages; i++) {
-    const imageSeed = request.seed === -1 ? Math.floor(Math.random() * 999999) : request.seed + i;
-    const url = `https://picsum.photos/seed/${imageSeed}/${width}/${height}`;
-    results.push({ url });
-  }
-
-  return results;
-}
-
 async function generateImages() {
   if (!formValues.value.prompt?.trim()) return;
 
   isGenerating.value = true;
 
   try {
+    const providerConfig = (imageModelSettings.value as any)[selectedProvider.value];
+    if (!providerConfig?.apiKey) {
+      throw new Error(`API key not configured for ${selectedProvider.value}`);
+    }
+
     const request: ImageGenerationRequest = {
       provider: selectedProvider.value,
       model: selectedModel.value,
       numImages: numImages.value,
+      prompt: formValues.value.prompt || "",
       ...formValues.value,
-    };
+    } as ImageGenerationRequest;
 
-    const mockResults = await generateMockImage(request);
-    const actualSeed = formValues.value.seed === -1 ? Math.floor(Math.random() * 999999) : formValues.value.seed;
+    const results = await generateImage(request, providerConfig.apiKey);
+    const actualSeed = formValues.value.seed === -1
+      ? Math.floor(Math.random() * 999999)
+      : formValues.value.seed;
 
-    for (let i = 0; i < mockResults.length; i++) {
+    for (let i = 0; i < results.length; i++) {
       const imageId = nanoid();
-      const url = mockResults[i].url;
+      const url = results[i].url;
 
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const file = new File([blob], `${imageId}.jpg`, { type: 'image/jpeg' });
+      if (url.startsWith('blob:')) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const file = new File([blob], `${imageId}.png`, { type: 'image/png' });
+        const fileId = await writeFile(file);
 
-      const fileId = await writeFile(file);
+        const imageData: Image = {
+          id: imageId,
+          fileId,
+          provider: selectedProvider.value,
+          model: selectedModel.value,
+          size: request.size || "1024x1024",
+          prompt: formValues.value.prompt,
+          negativePrompt: formValues.value.negativePrompt,
+          seed: actualSeed + i,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
 
-      const size = request.size || "1024x1024";
+        await writeImage(imageData);
+      } else {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const file = new File([blob], `${imageId}.jpg`, { type: 'image/jpeg' });
+        const fileId = await writeFile(file);
 
-      const imageData: Image = {
-        id: imageId,
-        fileId,
-        provider: selectedProvider.value,
-        model: selectedModel.value,
-        size,
-        prompt: formValues.value.prompt,
-        negativePrompt: formValues.value.negativePrompt,
-        seed: actualSeed + i,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        const size = request.size || "1024x1024";
 
-      await writeImage(imageData);
+        const imageData: Image = {
+          id: imageId,
+          fileId,
+          provider: selectedProvider.value,
+          model: selectedModel.value,
+          size,
+          prompt: formValues.value.prompt,
+          negativePrompt: formValues.value.negativePrompt,
+          seed: actualSeed + i,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        await writeImage(imageData);
+      }
     }
 
     await imagesStore.loadImages();
     emit('close');
   } catch (error) {
     console.error("Error generating images:", error);
+    alert(error instanceof Error ? error.message : "Failed to generate images");
   } finally {
     isGenerating.value = false;
   }

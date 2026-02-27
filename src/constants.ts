@@ -148,12 +148,10 @@ export const IMAGE_MODELS_BY_PROVIDER: Record<
     { label: "SDXL 1.0", value: "sdxl-1.0" },
     { label: "SD 3.0", value: "sd-3.0" },
   ],
-  replicate: [
-    { label: "Stable Diffusion XL", value: "sdxl" },
-    { label: "FLUX.1", value: "flux-1" },
-  ],
-  midjourney: [
-    { label: "MJ v6", value: "v6" },
-    { label: "MJ v5.2", value: "v5.2" },
+  siliconflow: [
+    { label: "Kolors", value: "kolors" },
+    { label: "Qwen Image", value: "qwen-image" },
+    { label: "Qwen Image Edit", value: "qwen-image-edit" },
+    { label: "Qwen Image Edit 2509", value: "qwen-image-edit-2509" },
   ],
 };

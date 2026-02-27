@@ -6,6 +6,10 @@ export interface ChatModelConfig {
   models: string[];
 }
 
+export interface ImageModelConfig {
+  apiKey: string;
+}
+
 export interface AgentConfig {
   useCustomModel?: boolean;
   baseUrl?: string;
@@ -127,6 +131,57 @@ export async function getAllAgentSettings(): Promise<Record<string, AgentConfig>
   const settings: Record<string, AgentConfig> = {};
   for (const row of result) {
     settings[row.key] = JSON.parse(row.value) as AgentConfig;
+  }
+  return settings;
+}
+
+// ============== IMAGE MODEL SETTINGS ==============
+
+export async function writeImageModelSetting(
+  key: string,
+  apiKey: string
+): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  const id = `imageModel::${key}`;
+  const value = JSON.stringify({ apiKey });
+
+  await db.execute(
+    `INSERT OR REPLACE INTO settings (id, type, key, value)
+     VALUES ($1, $2, $3, $4)`,
+    [id, 'imageModel', key, value]
+  );
+}
+
+export async function writeAllImageModelSettings(
+  settings: Record<string, ImageModelConfig>
+): Promise<void> {
+  for (const [key, config] of Object.entries(settings)) {
+    await writeImageModelSetting(key, config.apiKey);
+  }
+}
+
+export async function getImageModelSetting(
+  key: string
+): Promise<{ apiKey: string } | null> {
+  if (!db) throw new Error('Database not initialized');
+  const id = `imageModel::${key}`;
+  const result = await db.select<SettingRecord[]>(
+    `SELECT * FROM settings WHERE id = $1`,
+    [id]
+  );
+  if (result.length === 0) return null;
+  return JSON.parse(result[0].value) as { apiKey: string };
+}
+
+export async function getAllImageModelSettings(): Promise<Record<string, ImageModelConfig>> {
+  if (!db) throw new Error('Database not initialized');
+  const result = await db.select<SettingRecord[]>(
+    `SELECT * FROM settings WHERE type = 'imageModel'`
+  );
+
+  const settings: Record<string, ImageModelConfig> = {};
+  for (const row of result) {
+    settings[row.key] = JSON.parse(row.value) as ImageModelConfig;
   }
   return settings;
 }

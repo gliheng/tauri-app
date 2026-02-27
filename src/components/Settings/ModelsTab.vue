@@ -51,10 +51,25 @@ const agentItems = [
   },
 ] satisfies TabsItem[];
 
+const imageProviderItems = [
+  {
+    label: "OpenAI",
+    value: "openai",
+  },
+  {
+    label: "Stability AI",
+    value: "stability",
+  },
+  {
+    label: "SiliconFlow",
+    value: "siliconflow",
+  },
+] satisfies TabsItem[];
+
 const defaultProvider = "deepseek";
 const defaultAgent = "codex";
 
-const { modelSettings, agentSettings, chatSettings } = storeToRefs(useSettingsStore());
+const { modelSettings, agentSettings, chatSettings, imageModelSettings } = storeToRefs(useSettingsStore());
 
 const modelList = computed(() => {
   const models: Array<{ label: string; value: string; provider: string }> = [];
@@ -101,10 +116,11 @@ const getAvailableModels = (provider: string) => {
 };
 
 const toggleModel = (provider: string, modelValue: string) => {
-  if (!modelSettings.value[provider]?.models) {
+  const providerConfig = (modelSettings.value as any)[provider];
+  if (!providerConfig?.models) {
     return;
   }
-  const models = modelSettings.value[provider].models;
+  const models = providerConfig.models;
   const index = models.indexOf(modelValue);
   if (index > -1) {
     models.splice(index, 1);
@@ -112,6 +128,9 @@ const toggleModel = (provider: string, modelValue: string) => {
     models.push(modelValue);
   }
 };
+
+
+
 </script>
 
 <template>
@@ -212,7 +231,7 @@ const toggleModel = (provider: string, modelValue: string) => {
         </template>
       </UTabs>
     </div>
-    <h2 class="text-lg font-semibold mt-4">Agent Program</h2>
+    <h2 class="text-lg font-semibold mt-4">Agent Models</h2>
     <div class="flex-1 min-h-0">
       <UTabs
         orientation="vertical"
@@ -261,6 +280,28 @@ const toggleModel = (provider: string, modelValue: string) => {
               />
             </UFormField>
           </UForm>
+        </template>
+      </UTabs>
+    </div>
+    <h2 class="text-lg font-semibold mt-4">Image Models</h2>
+    <div class="flex-1 min-h-0">
+      <UTabs
+        orientation="vertical"
+        variant="link"
+        class="w-full items-start"
+        :default-value="'openai'"
+        :items="imageProviderItems"
+      >
+        <template #content="{ item }">
+          <div class="flex flex-col relative">
+            <p class="text-center">{{ item.label }}</p>
+            <UFormField label="Api Key" name="apiKey">
+              <UInput
+                v-model.trim="(imageModelSettings.value as any)[item.value].apiKey"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
         </template>
       </UTabs>
     </div>
