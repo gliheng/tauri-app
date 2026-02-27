@@ -19,7 +19,7 @@ const props = defineProps<{
 
 const imagesStore = useImagesStore();
 const settingsStore = useSettingsStore();
-const { imageModelSettings } = storeToRefs(settingsStore);
+const { imageSettings } = storeToRefs(settingsStore);
 
 type ImageGenerationRequest = {
   provider: string;
@@ -91,7 +91,7 @@ async function generateImages() {
   isGenerating.value = true;
 
   try {
-    const providerConfig = (imageModelSettings.value as any)[selectedProvider.value];
+    const providerConfig = (imageSettings.value as any)[selectedProvider.value];
     if (!providerConfig?.apiKey) {
       throw new Error(`API key not configured for ${selectedProvider.value}`);
     }
@@ -175,11 +175,11 @@ async function generateImages() {
       <div class="flex flex-col h-full">
         <UForm class="flex-1 overflow-auto space-y-4">
           <UFormField label="Provider">
-            <USelectMenu v-model="selectedProvider" :items="providers" value-key="value" />
+            <USelectMenu class="w-full" v-model="selectedProvider" :items="providers" value-key="value" />
           </UFormField>
 
           <UFormField label="Model">
-            <USelectMenu v-model="selectedModel" :items="availableModels" value-key="value" />
+            <USelectMenu class="w-full" v-model="selectedModel" :items="availableModels" value-key="value" />
           </UFormField>
 
           <UFormField label="Number of Images">

@@ -135,12 +135,12 @@ export async function loadImageModelSettings() {
 export const useSettingsStore = defineStore("settings", () => {
   const modelSettings = ref<Record<string, ChatModelConfig>>({});
   const agentSettings = ref<Record<string, AgentConfig>>({});
+  const imageSettings = ref<Record<string, { apiKey: string }>>({});
   const chatSettings = ref<typeof defaultChatSettings>({} as typeof defaultChatSettings);
   const webSearchSettings = ref<typeof defaultWebSearchSettings>({} as typeof defaultWebSearchSettings);
   const mcpServers = ref<Record<string, McpServer>>({});
   const isRestartingMcp = ref(false);
   const isMerging = ref(false);
-  const imageModelSettings = ref<Record<string, { apiKey: string }>>({});
 
   // Supabase sync integration
   const syncStore = useSupabaseStore();
@@ -172,8 +172,8 @@ export const useSettingsStore = defineStore("settings", () => {
         }
       }
       if (remote.imageModel) {
-        const merged = defaultsDeep({}, remote.imageModel, imageModelSettings.value) as Record<string, { apiKey: string }>;
-        imageModelSettings.value = merged;
+        const merged = defaultsDeep({}, remote.imageModel, imageSettings.value) as Record<string, { apiKey: string }>;
+        imageSettings.value = merged;
         await settingsDb.writeAllImageModelSettings(merged);
       }
       console.log('[Settings] Merged remote settings from Supabase')
@@ -205,7 +205,7 @@ export const useSettingsStore = defineStore("settings", () => {
     chatSettings.value = await loadChatSettings();
     webSearchSettings.value = await loadWebSearchSettings();
     mcpServers.value = await loadMcpSettings();
-    imageModelSettings.value = await loadImageModelSettings();
+    imageSettings.value = await loadImageModelSettings();
 
     // Start MCP servers after settings are loaded
     await initializeMcpServers();
@@ -251,7 +251,7 @@ export const useSettingsStore = defineStore("settings", () => {
     deep: true,
   });
 
-  watch(imageModelSettings, async (v) => {
+  watch(imageSettings, async (v) => {
     if (isMerging.value) return;
     await settingsDb.writeAllImageModelSettings(v);
   }, {
@@ -301,7 +301,7 @@ export const useSettingsStore = defineStore("settings", () => {
     chatSettings,
     webSearchSettings,
     mcpServers,
-    imageModelSettings,
+    imageSettings,
     initialize,
   };
 });

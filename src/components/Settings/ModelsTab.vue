@@ -68,8 +68,9 @@ const imageProviderItems = [
 
 const defaultProvider = "deepseek";
 const defaultAgent = "codex";
+const defaultImageProvider = "openai";
 
-const { modelSettings, agentSettings, chatSettings, imageModelSettings } = storeToRefs(useSettingsStore());
+const { modelSettings, agentSettings, chatSettings, imageSettings } = storeToRefs(useSettingsStore());
 
 const modelList = computed(() => {
   const models: Array<{ label: string; value: string; provider: string }> = [];
@@ -289,7 +290,7 @@ const toggleModel = (provider: string, modelValue: string) => {
         orientation="vertical"
         variant="link"
         class="w-full items-start"
-        :default-value="'openai'"
+        :default-value="defaultImageProvider"
         :items="imageProviderItems"
       >
         <template #content="{ item }">
@@ -297,7 +298,7 @@ const toggleModel = (provider: string, modelValue: string) => {
             <p class="text-center">{{ item.label }}</p>
             <UFormField label="Api Key" name="apiKey">
               <UInput
-                v-model.trim="(imageModelSettings.value as any)[item.value].apiKey"
+                v-model.trim="(imageSettings as any)[item.value].apiKey"
                 class="w-full"
               />
             </UFormField>

@@ -7,7 +7,6 @@
 export {}
 declare global {
   const avatarGroupInjectionKey: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/useAvatarGroup.js').avatarGroupInjectionKey
-  const buttonGroupInjectionKey: typeof import('./node_modules/.pnpm/@nuxt+ui@3.3.0_@babel+parser@7.28.0_embla-carousel@8.6.0_typescript@5.6.3_vite@6.3.5_ji_91cd4c35ade7d82620fd3d09b92fc06a/node_modules/@nuxt/ui/dist/runtime/composables/useButtonGroup.js')['buttonGroupInjectionKey']
   const defineLocale: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/defineLocale.js').defineLocale
   const defineShortcuts: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/defineShortcuts.js').defineShortcuts
   const extendLocale: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/defineLocale.js').extendLocale
@@ -27,7 +26,6 @@ declare global {
   const toastMaxInjectionKey: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/useToast.js').toastMaxInjectionKey
   const useAppConfig: typeof import('./node_modules/@nuxt/ui/dist/runtime/vue/composables/useAppConfig.js').useAppConfig
   const useAvatarGroup: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/useAvatarGroup.js').useAvatarGroup
-  const useButtonGroup: typeof import('./node_modules/.pnpm/@nuxt+ui@3.3.0_@babel+parser@7.28.0_embla-carousel@8.6.0_typescript@5.6.3_vite@6.3.5_ji_91cd4c35ade7d82620fd3d09b92fc06a/node_modules/@nuxt/ui/dist/runtime/composables/useButtonGroup.js')['useButtonGroup']
   const useComponentIcons: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/useComponentIcons.js').useComponentIcons
   const useContentSearch: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/useContentSearch.js').useContentSearch
   const useEditorMenu: typeof import('./node_modules/@nuxt/ui/dist/runtime/composables/useEditorMenu.js').useEditorMenu
