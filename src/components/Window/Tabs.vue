@@ -57,9 +57,9 @@ const resizeObserver = new ResizeObserver(() => {
 
 function calcScroll() {
   const container = tabContainerRef.value!;
-  canScrollLeft.value = container.scrollLeft > 0;
+  canScrollLeft.value = container.scrollLeft > 0.5;
   canScrollRight.value =
-    container.scrollLeft < container.scrollWidth - container.clientWidth;
+    container.scrollLeft < container.scrollWidth - container.clientWidth - 0.5;
   showScrollButtons.value = canScrollLeft.value || canScrollRight.value;
 }
 
