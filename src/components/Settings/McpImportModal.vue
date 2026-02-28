@@ -45,11 +45,10 @@ const cancel = () => {
 </script>
 
 <template>
-  <UModal>
+  <UModal title="Import MCP Servers from JSON" description="Paste your MCP server configuration in JSON format (Claude Desktop format supported)">
     <template #content>
       <div class="size-full p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold">Import MCP Servers from JSON</h2>
+        <div class="flex justify-end">
           <UButton
             icon="i-lucide-info"
             variant="ghost"
@@ -60,11 +59,6 @@ const cancel = () => {
           </UButton>
         </div>
 
-        <p class="text-sm text-muted">
-          Paste your MCP server configuration in JSON format (Claude Desktop format supported).
-        </p>
-
-        <!-- JSON Editor -->
         <div class="border rounded-lg overflow-hidden" :class="{ 'border-error': !!validationError }">
           <CodeEditor
             v-model="jsonContent"

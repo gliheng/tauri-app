@@ -189,11 +189,9 @@ const cancel = () => {
 </script>
 
 <template>
-  <UModal>
+  <UModal :title="isEditing ? 'Edit MCP Server' : 'Add MCP Server'" description="Configure your MCP server connection settings">
     <template #content>
       <UForm :state="state" :schema="mcpServerSchema" @submit="saveServer" class="size-full p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-        <h2 class="text-xl font-semibold">{{ isEditing ? 'Edit' : 'Add' }} MCP Server</h2>
-
         <!-- Server Type -->
         <UFormField label="Server Type" name="type">
           <USelect

@@ -87,7 +87,7 @@ const createAgent = () => {
 </script>
 
 <template>
-  <UModal>
+  <UModal title="Create Agent" description="Configure your AI agent with a name, program, and working directory">
     <template #content>
       <div class="size-full p-6 space-y-4">
 <hgroup class="flex flex-row gap-2 items-center">
