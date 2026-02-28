@@ -29,13 +29,19 @@ const checkIsNearBottom = (): boolean => {
 };
 
 const handleScroll = () => {
-  isAutoScrollEnabled.value = checkIsNearBottom();
+  if (props.status !== "streaming") {
+    isAutoScrollEnabled.value = checkIsNearBottom();
+  }
 };
 
 const scrollToBottom = () => {
-  const element = listRef.value;
-  if (element) {
-    element.scrollTop = element.scrollHeight;
+  const el = listRef.value;
+  if (el) {
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: "smooth",
+    });
+    isAutoScrollEnabled.value = true;
   }
 };
 
@@ -43,12 +49,19 @@ const scrollToBottom = () => {
 watch(
   () => props.messages,
   () => {
-    if (isAutoScrollEnabled.value && listRef.value) {
-      listRef.value.scrollTop = listRef.value.scrollHeight;
+    if (isAutoScrollEnabled.value) {
+      const el = listRef.value;
+      if (el) {
+        el.scrollTo({
+          top: el.scrollHeight,
+          behavior: props.status === "streaming" ? "instant" : "smooth",
+        });
+      }
     }
   },
   {
     deep: true,
+    flush: "post",
   },
 );
 </script>

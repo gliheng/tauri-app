@@ -39,7 +39,9 @@ const checkIsNearBottom = (): boolean => {
 };
 
 const handleScroll = () => {
-  isAutoScrollEnabled.value = checkIsNearBottom();
+  if (props.status !== "streaming") {
+    isAutoScrollEnabled.value = checkIsNearBottom();
+  }
 };
 
 const scrollToBottom = () => {
@@ -49,6 +51,7 @@ const scrollToBottom = () => {
       top: el.scrollHeight,
       behavior: "smooth",
     });
+    isAutoScrollEnabled.value = true;
   }
 };
 
@@ -61,13 +64,14 @@ watch(
       if (el) {
         el.scrollTo({
           top: el.scrollHeight,
-          behavior: "smooth",
+          behavior: props.status === "streaming" ? "instant" : "smooth",
         });
       }
     }
   },
   {
     deep: true,
+    flush: "post",
   },
 );
 
