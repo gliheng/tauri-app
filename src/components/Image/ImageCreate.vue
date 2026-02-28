@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { storeToRefs } from "pinia";
+import { nanoid } from "nanoid";
+import { defaults } from "lodash-es";
 import { useImagesStore } from "@/stores/images";
 import { useSettingsStore } from "@/stores/settings";
 import { IMAGE_MODELS_BY_PROVIDER } from "@/constants";
 import { IMAGE_GENERATION_CONFIG, type FormField } from "./config";
+import { generateImage, type ImageGenerationRequest } from "./api";
 import { writeFile, writeImage, type Image, type ImageWithFile } from "@/db";
-import { nanoid } from "nanoid";
-import { generateImage } from "@/lib/imageGeneration";
 
 const emit = defineEmits<{
   close: [];
@@ -21,24 +22,6 @@ const imagesStore = useImagesStore();
 const settingsStore = useSettingsStore();
 const { imageSettings } = storeToRefs(settingsStore);
 
-type ImageGenerationRequest = {
-  provider: string;
-  model: string;
-  prompt: string;
-  negativePrompt?: string;
-  size?: string;
-  numImages?: number;
-  seed?: number;
-  cfgScale?: number;
-  guidanceScale?: number;
-  numInferenceSteps?: number;
-  batchSize?: number;
-  image?: string;
-  image2?: string;
-  image3?: string;
-  [key: string]: any;
-};
-
 const providers = [
   { label: "OpenAI (DALL-E)", value: "openai" },
   { label: "Stability AI", value: "stability" },
@@ -47,9 +30,10 @@ const providers = [
 
 const selectedProvider = ref(props.initialImage?.provider ?? "openai");
 const selectedModel = ref(props.initialImage?.model ?? "dall-e-3");
-const formValues = ref<Record<string, any>>({
-  ...props.initialImage,
-});
+const formValues = ref<Record<string, any>>(
+  defaults({}, props.initialImage?.params, defaultsFromProvierAndModel(selectedProvider.value, selectedModel.value))
+);
+
 const form = ref<any>(null);
 const isGenerating = ref(false);
 
@@ -69,16 +53,20 @@ watch(selectedProvider, (newProvider) => {
   }
 });
 
-watch([selectedProvider, selectedModel], () => {
-  const fields = formFields.value;
+watch([selectedProvider, selectedModel], ([provider, model]) => {
+  formValues.value = defaultsFromProvierAndModel(provider, model);
+});
+
+function defaultsFromProvierAndModel(provider: string, model: string) {
+  const formFields = IMAGE_GENERATION_CONFIG[`${provider}::${model}`];
   const newValues: Record<string, any> = {};
-  fields.forEach(field => {
+  formFields.forEach(field => {
     if (field.defaultValue !== undefined) {
       newValues[field.key] = field.defaultValue;
     }
   });
-  formValues.value = newValues;
-});
+  return newValues;
+}
 
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -129,7 +117,6 @@ async function onSubmit() {
     const request: ImageGenerationRequest = {
       provider,
       model,
-      numImages: formValues.value.batchSize ?? 1,
       ...params,
     } as ImageGenerationRequest;
 

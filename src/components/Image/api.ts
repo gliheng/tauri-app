@@ -2,17 +2,6 @@ export interface ImageGenerationRequest {
   provider: string;
   model: string;
   prompt: string;
-  negativePrompt?: string;
-  size?: string;
-  numImages?: number;
-  seed?: number;
-  cfgScale?: number;
-  guidanceScale?: number;
-  numInferenceSteps?: number;
-  batchSize?: number;
-  image?: string;
-  image2?: string;
-  image3?: string;
   [key: string]: any;
 }
 
@@ -27,7 +16,7 @@ async function generateOpenAIImage(
   const body: any = {
     model: request.model,
     prompt: request.prompt,
-    n: request.numImages || 1,
+    n: request.n || 1,
     size: request.size || "1024x1024",
   };
 
@@ -61,47 +50,34 @@ async function generateStabilityImage(
   request: ImageGenerationRequest,
   apiKey: string
 ): Promise<GeneratedImage[]> {
-  const modelMap: Record<string, string> = {
-    "sdxl-1.0": "stable-diffusion-xl-1024-v1-0",
-    "sd-3.0": "sd3-medium",
-  };
-
-  const stabilityModel = modelMap[request.model] || request.model;
-
-  const textPrompts: any[] = [
-    {
-      text: request.prompt,
-      weight: 1,
-    }
-  ];
-
+  const formData = new FormData();
+  
+  formData.append("prompt", request.prompt);
+  formData.append("mode", "text-to-image");
+  formData.append("model", request.model);
+  formData.append("output_format", "png");
+  
   if (request.negativePrompt) {
-    textPrompts.push({
-      text: request.negativePrompt,
-      weight: -1,
-    });
+    formData.append("negative_prompt", request.negativePrompt);
+  }
+  
+  if (request.aspectRatio) {
+    formData.append("aspect_ratio", request.aspectRatio);
+  }
+  
+  if (request.seed !== undefined && request.seed !== -1) {
+    formData.append("seed", request.seed.toString());
   }
 
-  const body = {
-    text_prompts: textPrompts,
-    cfg_scale: request.cfgScale || 7,
-    height: parseInt(request.size?.split("x")[1] || "1024"),
-    width: parseInt(request.size?.split("x")[0] || "1024"),
-    seed: request.seed && request.seed !== -1 ? request.seed : 0,
-    steps: request.numInferenceSteps || 30,
-    samples: request.numImages || 1,
-  };
-
   const response = await fetch(
-    `https://api.stability.ai/v1/generation/${stabilityModel}/text-to-image`,
+    `https://api.stability.ai/v2beta/stable-image/generate/${request.model}`,
     {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
+        "Accept": "image/*",
       },
-      body: JSON.stringify(body),
+      body: formData,
     }
   );
 
@@ -110,18 +86,9 @@ async function generateStabilityImage(
     throw new Error(`Stability AI API error: ${error}`);
   }
 
-  const data = await response.json();
-  return data.artifacts.map((artifact: any) => {
-    const base64Data = artifact.base64;
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/png' });
-    return { url: URL.createObjectURL(blob) };
-  });
+  const imageBlob = await response.blob();
+  const blob = new Blob([imageBlob], { type: 'image/png' });
+  return [{ url: URL.createObjectURL(blob) }];
 }
 
 async function generateSiliconflowImage(
@@ -146,7 +113,7 @@ async function generateSiliconflowImage(
   };
 
   if (request.model === "kolors") {
-    body.batch_size = request.batchSize || request.numImages || 1;
+    body.batch_size = request.batchSize || 1;
     body.guidance_scale = request.guidanceScale || 7.5;
     body.num_inference_steps = request.numInferenceSteps || 20;
   }

@@ -145,8 +145,9 @@ export const IMAGE_MODELS_BY_PROVIDER: Record<
     { label: "DALL-E 2", value: "dall-e-2" },
   ],
   stability: [
-    { label: "SDXL 1.0", value: "sdxl-1.0" },
-    { label: "SD 3.0", value: "sd-3.0" },
+    { label: "Stable Image Core", value: "core" },
+    { label: "Stable Image Ultra", value: "ultra" },
+    { label: "Stable Diffusion 3", value: "sd3" },
   ],
   siliconflow: [
     { label: "Kolors", value: "kolors" },

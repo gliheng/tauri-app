@@ -62,8 +62,7 @@ onActivated(async () => {
 const providerLabel: Record<string, string> = {
   openai: 'OpenAI',
   stability: 'Stability AI',
-  replicate: 'Replicate',
-  midjourney: 'Midjourney',
+  siliconflow: 'Siliconflow',
 };
 </script>
 
