@@ -10,8 +10,9 @@ import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki';
 import { ImageUpload, FileImageExtension } from './EditorImageUploadExtension';
 import { useEditorCompletion } from './EditorUseCompletion';
 import EditorLinkPopover from './EditorLinkPopover.vue';
-import { readFile } from '@/db';
+import { readFile, writeFile } from '@/db';
 import { downloadFile } from '@/utils/file';
+import { Slice } from '@tiptap/pm/model';
 
 const toast = useToast();
 
@@ -510,6 +511,41 @@ const suggestionItems = [
 ] as any;
 
 const emojiItems: EditorEmojiMenuItem[] = gitHubEmojis.filter((emoji) => !emoji.name.startsWith('regional_indicator_'));
+
+async function handlePaste(e: ClipboardEvent, slice: Slice): Promise<void> {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      
+      const file = item.getAsFile();
+      if (!file) continue;
+
+      try {
+        const id = await writeFile(file);
+        const fileUrl = `file://${id}`;
+        
+        const editor = editorRef.value?.editor;
+        if (editor) {
+          editor.chain().focus().setImage({ src: fileUrl }).run();
+        }
+        
+        return;
+      } catch (err) {
+        toast.add({
+          title: 'Failed to paste image',
+          description: err instanceof Error ? err.message : 'An error occurred while pasting the image',
+          icon: 'i-lucide-alert-circle',
+          color: 'error'
+        });
+      }
+    }
+  }
+}
 </script>
 
 <template>
@@ -521,6 +557,7 @@ const emojiItems: EditorEmojiMenuItem[] = gitHubEmojis.filter((emoji) => !emoji.
     :starter-kit="{
       codeBlock: false,
     }"
+    :onPaste="handlePaste"
     :extensions="[
       Emoji,
       TextAlign.configure({ types: ['heading', 'paragraph'] }), 
