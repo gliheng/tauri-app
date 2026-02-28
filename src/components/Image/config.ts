@@ -1,4 +1,4 @@
-export type FormFieldType = "select" | "slider" | "input" | "textarea";
+export type FormFieldType = "select" | "slider" | "input" | "textarea" | "image";
 
 export interface FormFieldOption {
   label: string;
@@ -16,6 +16,7 @@ export interface FormField {
   placeholder?: string;
   rows?: number;
   defaultValue?: any;
+  required?: boolean;
 }
 
 export interface ProviderModelConfig {
@@ -24,6 +25,14 @@ export interface ProviderModelConfig {
 
 export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
   "openai::dall-e-3": [
+    {
+      key: "prompt",
+      label: "Prompt",
+      type: "textarea",
+      placeholder: "Describe image you want to generate...",
+      rows: 4,
+      required: true,
+    },
     {
       key: "size",
       label: "Size",
@@ -42,15 +51,16 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       placeholder: "-1",
       defaultValue: -1,
     },
+  ],
+  "openai::dall-e-2": [
     {
       key: "prompt",
       label: "Prompt",
       type: "textarea",
       placeholder: "Describe image you want to generate...",
       rows: 4,
+      required: true,
     },
-  ],
-  "openai::dall-e-2": [
     {
       key: "size",
       label: "Size",
@@ -69,15 +79,16 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       placeholder: "-1",
       defaultValue: -1,
     },
+  ],
+  "stability::sdxl-1.0": [
     {
       key: "prompt",
       label: "Prompt",
       type: "textarea",
       placeholder: "Describe image you want to generate...",
       rows: 4,
+      required: true,
     },
-  ],
-  "stability::sdxl-1.0": [
     {
       key: "size",
       label: "Size",
@@ -95,13 +106,6 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       type: "input",
       placeholder: "-1",
       defaultValue: -1,
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
     },
     {
       key: "negativePrompt",
@@ -122,6 +126,14 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
   ],
   "stability::sd-3.0": [
     {
+      key: "prompt",
+      label: "Prompt",
+      type: "textarea",
+      placeholder: "Describe image you want to generate...",
+      rows: 4,
+      required: true,
+    },
+    {
       key: "size",
       label: "Size",
       type: "select",
@@ -138,13 +150,6 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       type: "input",
       placeholder: "-1",
       defaultValue: -1,
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
     },
     {
       key: "negativePrompt",
@@ -163,172 +168,26 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       defaultValue: 7,
     },
   ],
-  "replicate::sdxl": [
-    {
-      key: "size",
-      label: "Size",
-      type: "select",
-      options: [
-        { label: "1024×1024", value: "1024x1024" },
-        { label: "512×512", value: "512x512" },
-        { label: "768×768", value: "768x768" },
-        { label: "512×768", value: "512x768" },
-        { label: "768×512", value: "768x512" },
-      ],
-      defaultValue: "1024x1024",
-    },
-    {
-      key: "seed",
-      label: "Seed (-1 for random)",
-      type: "input",
-      placeholder: "-1",
-      defaultValue: -1,
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
-    },
-    {
-      key: "negativePrompt",
-      label: "Negative Prompt",
-      type: "textarea",
-      placeholder: "What to avoid in image...",
-      rows: 2,
-    },
-    {
-      key: "guidanceScale",
-      label: "Guidance Scale",
-      type: "slider",
-      min: 1,
-      max: 20,
-      step: 0.5,
-      defaultValue: 7.5,
-    },
-    {
-      key: "numInferenceSteps",
-      label: "Inference Steps",
-      type: "slider",
-      min: 10,
-      max: 100,
-      step: 1,
-      defaultValue: 30,
-    },
-  ],
-  "replicate::flux-1": [
-    {
-      key: "size",
-      label: "Size",
-      type: "select",
-      options: [
-        { label: "1024×1024", value: "1024x1024" },
-        { label: "512×512", value: "512x512" },
-        { label: "768×768", value: "768x768" },
-        { label: "512×768", value: "512x768" },
-        { label: "768×512", value: "768x512" },
-      ],
-      defaultValue: "1024x1024",
-    },
-    {
-      key: "seed",
-      label: "Seed (-1 for random)",
-      type: "input",
-      placeholder: "-1",
-      defaultValue: -1,
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
-    },
-    {
-      key: "numInferenceSteps",
-      label: "Inference Steps",
-      type: "slider",
-      min: 4,
-      max: 50,
-      step: 1,
-      defaultValue: 28,
-    },
-  ],
-  "midjourney::v6": [
-    {
-      key: "aspectRatio",
-      label: "Aspect Ratio",
-      type: "select",
-      options: [
-        { label: "1:1 (Square)", value: "1:1" },
-        { label: "16:9 (Landscape)", value: "16:9" },
-        { label: "9:16 (Portrait)", value: "9:16" },
-        { label: "4:3", value: "4:3" },
-        { label: "3:2", value: "3:2" },
-      ],
-      defaultValue: "1:1",
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
-    },
-    {
-      key: "quality",
-      label: "Quality",
-      type: "select",
-      options: [
-        { label: "Standard", value: "1" },
-        { label: "High", value: "2" },
-      ],
-      defaultValue: "1",
-    },
-  ],
-  "midjourney::v5.2": [
-    {
-      key: "aspectRatio",
-      label: "Aspect Ratio",
-      type: "select",
-      options: [
-        { label: "1:1 (Square)", value: "1:1" },
-        { label: "16:9 (Landscape)", value: "16:9" },
-        { label: "9:16 (Portrait)", value: "9:16" },
-        { label: "4:3", value: "4:3" },
-        { label: "3:2", value: "3:2" },
-      ],
-      defaultValue: "1:1",
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
-    },
-    {
-      key: "stylize",
-      label: "Stylize",
-      type: "slider",
-      min: 0,
-      max: 1000,
-      step: 100,
-      defaultValue: 250,
-    },
-  ],
+
   "siliconflow::kolors": [
     {
+      key: "prompt",
+      label: "Prompt",
+      type: "textarea",
+      placeholder: "Describe image you want to generate...",
+      rows: 4,
+      required: true,
+    },
+    {
       key: "size",
       label: "Size",
       type: "select",
       options: [
-        { label: "1024×1024", value: "1024x1024" },
-        { label: "960×1280", value: "960x1280" },
-        { label: "768×1024", value: "768x1024" },
-        { label: "720×1440", value: "720x1440" },
-        { label: "720×1280", value: "720x1280" },
+        { label: "1024×1024 (1:1)", value: "1024x1024" },
+        { label: "960×1280 (3:4)", value: "960x1280" },
+        { label: "768×1024 (3:4)", value: "768x1024" },
+        { label: "720×1440 (1:2)", value: "720x1440" },
+        { label: "720×1280 (9:16)", value: "720x1280" },
       ],
       defaultValue: "1024x1024",
     },
@@ -338,13 +197,6 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       type: "input",
       placeholder: "-1",
       defaultValue: -1,
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
     },
     {
       key: "negativePrompt",
@@ -355,7 +207,7 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
     },
     {
       key: "batchSize",
-      label: "Batch Size",
+      label: "Number of Images",
       type: "slider",
       min: 1,
       max: 4,
@@ -383,13 +235,25 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
   ],
   "siliconflow::qwen-image": [
     {
+      key: "prompt",
+      label: "Prompt",
+      type: "textarea",
+      placeholder: "Describe image you want to generate...",
+      rows: 4,
+      required: true,
+    },
+    {
       key: "size",
       label: "Size",
       type: "select",
       options: [
-        { label: "1024×1024", value: "1024x1024" },
-        { label: "768×1024", value: "768x1024" },
-        { label: "896×1152", value: "896x1152" },
+        { label: "1328×1328 (1:1)", value: "1328x1328" },
+        { label: "1664×928 (16:9)", value: "1664x928" },
+        { label: "928×1664 (9:16)", value: "928x1664" },
+        { label: "1472×1140 (4:3)", value: "1472x1140" },
+        { label: "1140×1472 (3:4)", value: "1140x1472" },
+        { label: "1584×1056 (3:2)", value: "1584x1056" },
+        { label: "1056×1584 (2:3)", value: "1056x1584" },
       ],
       defaultValue: "1024x1024",
     },
@@ -399,13 +263,6 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       type: "input",
       placeholder: "-1",
       defaultValue: -1,
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
     },
     {
       key: "negativePrompt",
@@ -435,19 +292,17 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
   ],
   "siliconflow::qwen-image-edit": [
     {
-      key: "size",
-      label: "Size",
-      type: "select",
-      options: [
-        { label: "1328×1328", value: "1328x1328" },
-        { label: "1664×928", value: "1664x928" },
-        { label: "928×1664", value: "928x1664" },
-        { label: "1472×1140", value: "1472x1140" },
-        { label: "1140×1472", value: "1140x1472" },
-        { label: "1584×1056", value: "1584x1056" },
-        { label: "1056×1584", value: "1056x1584" },
-      ],
-      defaultValue: "1328x1328",
+      key: "prompt",
+      label: "Prompt",
+      type: "textarea",
+      placeholder: "Describe image you want to generate...",
+      rows: 4,
+      required: true,
+    },
+    {
+      key: "image",
+      label: "Image",
+      type: "image",
     },
     {
       key: "seed",
@@ -455,13 +310,6 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       type: "input",
       placeholder: "-1",
       defaultValue: -1,
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
     },
     {
       key: "negativePrompt",
@@ -491,15 +339,27 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
   ],
   "siliconflow::qwen-image-edit-2509": [
     {
-      key: "size",
-      label: "Size",
-      type: "select",
-      options: [
-        { label: "1024×1024", value: "1024x1024" },
-        { label: "768×1024", value: "768x1024" },
-        { label: "896×1152", value: "896x1152" },
-      ],
-      defaultValue: "1024x1024",
+      key: "prompt",
+      label: "Prompt",
+      type: "textarea",
+      placeholder: "Describe image you want to generate...",
+      rows: 4,
+      required: true,
+    },
+    {
+      key: "image",
+      label: "Image",
+      type: "image",
+    },
+    {
+      key: "image2",
+      label: "Image 2 (Optional)",
+      type: "image",
+    },
+    {
+      key: "image3",
+      label: "Image 3 (Optional)",
+      type: "image",
     },
     {
       key: "seed",
@@ -507,13 +367,6 @@ export const IMAGE_GENERATION_CONFIG: ProviderModelConfig = {
       type: "input",
       placeholder: "-1",
       defaultValue: -1,
-    },
-    {
-      key: "prompt",
-      label: "Prompt",
-      type: "textarea",
-      placeholder: "Describe image you want to generate...",
-      rows: 4,
     },
     {
       key: "negativePrompt",

@@ -8,7 +8,7 @@ import { eventBus } from "@/utils/eventBus";
 import WindowHeader from "@/components/Window/WindowHeader.vue";
 import Sidebar from "@/components/Window/Sidebar.vue";
 import ArtifactsPanel from "@/components/Window/ArtifactsPanel.vue";
-import Loader from "@/components/Loader.vue";
+import Spinner from "@/components/Spinner.vue";
 
 const tabsStore = useTabsStore();
 const { showArtifactView } = storeToRefs(tabsStore);

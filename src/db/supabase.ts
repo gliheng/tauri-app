@@ -215,6 +215,49 @@ export async function fetchMcpServers(): Promise<Record<string, McpServer>> {
   return servers
 }
 
+// ============== IMAGE MODEL SETTINGS ==============
+
+export async function syncImageModelSettings(settings: Record<string, { apiKey: string }>) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const promises = Object.entries(settings).map(([key, config]) => {
+    const id = `imageModel::${key}`
+    return (supabase
+      .from('user_settings') as any)
+      .upsert({
+        id,
+        user_id: user.id,
+        type: 'imageModel',
+        key,
+        value: JSON.stringify(config),
+        updated_at: new Date().toISOString(),
+      })
+  })
+
+  await Promise.all(promises)
+}
+
+export async function fetchImageModelSettings(): Promise<Record<string, { apiKey: string }>> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('type', 'imageModel')
+    .returns<UserSettingRow[]>()
+
+  if (error) throw error
+
+  const settings: Record<string, { apiKey: string }> = {}
+  for (const row of data ?? []) {
+    settings[row.key] = JSON.parse(row.value) as { apiKey: string }
+  }
+  return settings
+}
+
 // ============== BATCH OPERATIONS ==============
 
 export async function fetchAllSettings() {
@@ -235,6 +278,7 @@ export async function fetchAllSettings() {
     chat: null,
     websearch: null,
     mcp: {},
+    imageModel: {},
   }
 
   for (const row of data ?? []) {

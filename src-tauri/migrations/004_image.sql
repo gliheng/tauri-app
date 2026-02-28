@@ -4,10 +4,7 @@ CREATE TABLE IF NOT EXISTS image (
   fileId INTEGER NOT NULL,
   provider TEXT NOT NULL,
   model TEXT NOT NULL,
-  size TEXT NOT NULL,
-  prompt TEXT NOT NULL,
-  negativePrompt TEXT,
-  seed INTEGER NOT NULL,
+  params TEXT NOT NULL,
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL,
   FOREIGN KEY (fileId) REFERENCES file_store(id) ON DELETE CASCADE

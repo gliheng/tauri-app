@@ -91,10 +91,7 @@ export interface Image {
   fileId: number;
   provider: string;
   model: string;
-  size: string;
-  prompt: string;
-  negativePrompt: string;
-  seed: number;
+  params: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -427,17 +424,14 @@ export async function deleteDocument(id: string): Promise<void> {
 export async function writeImage(data: Image): Promise<void> {
   if (!db) throw new Error('Database not initialized');
   await db.execute(
-    `INSERT OR REPLACE INTO image (id, fileId, provider, model, size, prompt, negativePrompt, seed, createdAt, updatedAt)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    `INSERT OR REPLACE INTO image (id, fileId, provider, model, params, createdAt, updatedAt)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [
       data.id,
       data.fileId,
       data.provider,
       data.model,
-      data.size,
-      data.prompt,
-      data.negativePrompt ?? null,
-      data.seed,
+      JSON.stringify(data.params),
       dateToString(data.createdAt),
       dateToString(data.updatedAt),
     ]
@@ -453,10 +447,7 @@ export async function getImages(): Promise<ImageWithFile[]> {
       fileId: number;
       provider: string;
       model: string;
-      size: string;
-      prompt: string;
-      negativePrompt: string;
-      seed: number;
+      params: string;
       createdAt: string;
       updatedAt: string;
       fileName: string;
@@ -481,15 +472,14 @@ export async function getImages(): Promise<ImageWithFile[]> {
     const blob = new Blob([uint8Array], { type: row.fileType });
     const fileUrl = URL.createObjectURL(blob);
 
+    const params = row.params ? JSON.parse(row.params) : {};
+
     images.push({
       id: row.id,
       fileId: row.fileId,
       provider: row.provider,
       model: row.model,
-      size: row.size,
-      prompt: row.prompt,
-      negativePrompt: row.negativePrompt ?? '',
-      seed: row.seed,
+      params,
       createdAt: stringToDate(row.createdAt),
       updatedAt: stringToDate(row.updatedAt),
       fileUrl,
@@ -508,10 +498,7 @@ export async function getImage(id: string): Promise<ImageWithFile | undefined> {
       fileId: number;
       provider: string;
       model: string;
-      size: string;
-      prompt: string;
-      negativePrompt: string;
-      seed: number;
+      params: string;
       createdAt: string;
       updatedAt: string;
       fileName: string;
@@ -537,15 +524,14 @@ export async function getImage(id: string): Promise<ImageWithFile | undefined> {
   const blob = new Blob([uint8Array], { type: row.fileType });
   const fileUrl = URL.createObjectURL(blob);
 
+  const params = row.params ? JSON.parse(row.params) : {};
+
   return {
     id: row.id,
     fileId: row.fileId,
     provider: row.provider,
     model: row.model,
-    size: row.size,
-    prompt: row.prompt,
-    negativePrompt: row.negativePrompt ?? '',
-    seed: row.seed,
+    params,
     createdAt: stringToDate(row.createdAt),
     updatedAt: stringToDate(row.updatedAt),
     fileUrl,

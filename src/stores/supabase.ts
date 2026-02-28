@@ -64,6 +64,7 @@ export const useSupabaseStore = defineStore('supabase', () => {
     chat?: any
     websearch?: any
     mcp?: Record<string, any>
+    imageModel?: Record<string, any>
   }) {
     if (!syncEnabled.value || isSyncing.value) return
     if (!isOnline.value) {
@@ -92,6 +93,9 @@ export const useSupabaseStore = defineStore('supabase', () => {
       }
       if (settings.mcp) {
         promises.push(supabaseDb.syncMcpServers(settings.mcp))
+      }
+      if (settings.imageModel) {
+        promises.push(supabaseDb.syncImageModelSettings(settings.imageModel))
       }
 
       await Promise.all(promises)

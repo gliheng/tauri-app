@@ -10,6 +10,9 @@ export interface ImageGenerationRequest {
   guidanceScale?: number;
   numInferenceSteps?: number;
   batchSize?: number;
+  image?: string;
+  image2?: string;
+  image3?: string;
   [key: string]: any;
 }
 
@@ -150,6 +153,22 @@ async function generateSiliconflowImage(
 
   if (request.model === "qwen-image" || request.model === "qwen-image-edit" || request.model === "qwen-image-edit-2509") {
     body.cfg = request.cfgScale || 4;
+  }
+
+  if (request.model === "qwen-image-edit-2509") {
+    if (request.image) {
+      body.image = request.image;
+    }
+    if (request.image2) {
+      body.image2 = request.image2;
+    }
+    if (request.image3) {
+      body.image3 = request.image3;
+    }
+  }
+
+  if (request.model === "qwen-image-edit" && request.image) {
+    body.image = request.image;
   }
 
   if (request.negativePrompt) {

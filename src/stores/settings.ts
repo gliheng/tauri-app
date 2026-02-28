@@ -254,6 +254,9 @@ export const useSettingsStore = defineStore("settings", () => {
   watch(imageSettings, async (v) => {
     if (isMerging.value) return;
     await settingsDb.writeAllImageModelSettings(v);
+    if (syncStore.syncEnabled) {
+      syncStore.debouncedPushSettings({ imageModel: v });
+    }
   }, {
     deep: true,
   });

@@ -43,6 +43,7 @@ async function handleDelete(image: ImageWithFile) {
     if (ok) {
       await imagesStore.deleteImage(image.id);
       await imagesStore.loadImages();
+      detailModal.value = false;
     }
   } catch (error) {
     console.error('Error deleting image:', error);
@@ -102,16 +103,16 @@ const providerLabel: Record<string, string> = {
           @click="viewImage(image)"
         >
           <div class="aspect-square bg-black/50 rounded overflow-hidden">
-            <img
-              :src="image.fileUrl"
-              :alt="image.prompt"
-              class="w-full h-full object-cover transition-transform group-hover:scale-110"
-              loading="lazy"
-            />
-          </div>
-          <div class="mt-3">
-            <p class="text-sm line-clamp-2 mb-2">{{ image.prompt }}</p>
-            <div class="flex items-center justify-between text-xs">
+             <img
+               :src="image.fileUrl"
+               :alt="image.params.prompt"
+               class="w-full h-full object-cover transition-transform group-hover:scale-110"
+               loading="lazy"
+             />
+           </div>
+           <div class="mt-3">
+             <p class="text-sm line-clamp-2 mb-2">{{ image.params.prompt }}</p>
+             <div class="flex items-center justify-between text-xs">
               <span>{{ providerLabel[image.provider] }} · {{ image.model }}</span>
               <span>{{ formatDate(image.updatedAt) }}</span>
             </div>
