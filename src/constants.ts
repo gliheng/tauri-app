@@ -52,8 +52,16 @@ export const MODELS_BY_PROVIDER = {
   ],
   minimax: [
     {
+      label: "Minimax M2.5",
+      value: "MiniMax-M2.5",
+    },
+    {
       label: "Minimax M2.1",
       value: "MiniMax-M2.1",
+    },
+    {
+      label: "Minimax M2",
+      value: "MiniMax-M2",
     },
   ],
   zai: [
@@ -124,6 +132,18 @@ export const MODELS_BY_PROVIDER = {
     {
       label: "MiniMax M2",
       value: "MiniMaxAI/MiniMax-M2",
+    },
+    {
+      label: "MiniMax M2.1",
+      value: "MiniMaxAI/MiniMax-M2.1",
+    },
+    {
+      label: "MiniMax M2.5",
+      value: "Pro/MiniMaxAI/MiniMax-M2.5",
+    },
+    {
+      label: "GLM 5",
+      value: "Pro/zai-org/GLM-5",
     },
     {
       label: "GLM 4.7",
