@@ -1,12 +1,13 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 
-export type ArtifactType = 'workspace' | 'terminal';
+export type ArtifactType = 'workspace' | 'terminal' | 'webview';
 
 export interface Artifact {
   id: string;
   type: ArtifactType;
   key: string;
+  content?: string;
 }
 
 export interface SelectionContext {
@@ -33,13 +34,16 @@ export const useArtifactsStore = defineStore("artifacts", () => {
     return selectionContexts.value.get(activeArtifactKey.value);
   });
 
-  function addArtifact(id: string, type: ArtifactType) {
+  function addArtifact(id: string, type: ArtifactType, content?: string) {
     const key = `${type}::${id}`;
     const existing = artifacts.value.find(a => a.key === key);
     if (existing) {
+      if (content !== undefined) {
+        existing.content = content;
+      }
       activeArtifactKey.value = key;
     } else {
-      artifacts.value.push({ id, type, key });
+      artifacts.value.push({ id, type, key, content });
       activeArtifactKey.value = key;
     }
   }

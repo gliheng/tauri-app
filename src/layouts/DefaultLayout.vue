@@ -38,10 +38,27 @@ watch(() => artifacts.value.length, (count) => {
   }
 }, { immediate: true });
 
-eventBus.on('artifact', (msg: string) => {
-  const [type, id] = msg.split('::');
+async function hashContent(content: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex.substring(0, 16);
+}
+
+eventBus.on('artifact', async (msg: string) => {
+  const parts = msg.split('::');
+  const type = parts[0];
+  
   if (type === 'workspace' || type === 'terminal') {
+    const id = parts[1];
     artifactsStore.addArtifact(id, type);
+  } else if (type === 'webview') {
+    const contentType = parts[1];
+    const content = parts.slice(2).join('::');
+    const id = `${contentType}::${await hashContent(content)}`;
+    artifactsStore.addArtifact(id, 'webview', content);
   }
 });
 

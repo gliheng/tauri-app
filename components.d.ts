@@ -117,6 +117,7 @@ declare module 'vue' {
     UTextarea: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Textarea.vue')['default']
     UTooltip: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Tooltip.vue')['default']
     UTree: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Tree.vue')['default']
+    WebView: typeof import('./src/components/WebView/WebView.vue')['default']
     WindowControls: typeof import('./src/components/Window/WindowControls.vue')['default']
     WindowHeader: typeof import('./src/components/Window/WindowHeader.vue')['default']
     WorkspaceEditor: typeof import('./src/components/WorkspaceEditor/WorkspaceEditor.vue')['default']

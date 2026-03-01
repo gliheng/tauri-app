@@ -16,6 +16,7 @@ import { tavilySearchTool, tavilyExtractTool } from "@/llm/tools/tavily";
 import { eventBus } from "@/utils/eventBus";
 import { messageToText } from "@/utils/message";
 import { convertMcpToolsToAiSdk } from "@/mcp/tools";
+import { presentTool } from "@/llm/tools/present";
 
 export class ChatSdkTransport implements ChatTransport<UIMessage> {
   async sendMessages(options: {
@@ -74,6 +75,7 @@ export class ChatSdkTransport implements ChatTransport<UIMessage> {
         web_extract: tavilyExtractTool,
       } : {}),
       ...mcpTools,
+      present: presentTool,
     };
 
     const modelMessages = await convertToModelMessages(messages.slice(-(body?.contextSize ?? 0)));

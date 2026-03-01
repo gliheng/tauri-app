@@ -6,6 +6,7 @@ import MarkdownText from "@/components/MarkdownText.vue";
 import FileImage from "@/components/FileImage.vue";
 import MessageSwitcher from "./MessageSwitcher.vue";
 import { messageToText } from "@/utils/message";
+import { eventBus } from "@/utils/eventBus";
 
 const props = defineProps({
   message: {
@@ -54,6 +55,24 @@ function copyText() {
   const textContent = messageToText(props.message)
   navigator.clipboard.writeText(textContent);
 }
+
+function openInArtifacts(type: string, content: string) {
+  eventBus.emit('artifact', `webview::${type}::${content}`);
+}
+
+function isPresentTool(part: any): boolean {
+  const toolName = getToolNameFromPart(part);
+  return toolName === 'present';
+}
+
+function getPresentToolData(part: any): { type: string; content: string } | null {
+  if (!isPresentTool(part)) return null;
+  const output = (part as any).output;
+  if (output && typeof output === 'object' && output.type && output.content) {
+    return { type: output.type, content: output.content };
+  }
+  return null;
+}
 </script>
 
 <template>
@@ -87,7 +106,7 @@ function copyText() {
               color="neutral"
               variant="ghost"
               size="sm"
-              leading-icon="i-lucide-brain"
+              leading-icon="i-lucide-lightbulb"
               trailing-icon="i-lucide-chevron-down"
               :ui="{
                 base: i === (message.parts ?? []).length - 1 ? 'animate-pulse' : '',
@@ -100,6 +119,28 @@ function copyText() {
               <MarkdownText class="opacity-60" v-if="part.text" :markdown="part.text" />
             </template>
           </UCollapsible>
+          <div
+            v-else-if="isToolUIPart(part) && isPresentTool(part) && getPresentToolData(part)"
+            class="flex flex-col gap-2 border border-muted rounded-lg p-3 bg-muted"
+          >
+            <div class="flex items-center gap-2 text-sm font-semibold">
+              <UIcon name="i-lucide-file-code" class="size-4" />
+              <span>{{ getPresentToolData(part)!.type.toUpperCase() }} Content</span>
+            </div>
+            <div class="max-h-60 overflow-auto rounded p-2 font-mono">
+              <pre class="text-xs whitespace-pre-wrap break-words">{{ getPresentToolData(part)!.content }}</pre>
+            </div>
+            <UButton
+              class="self-center"
+              label="Open in Artifacts"
+              color="primary"
+              variant="soft"
+              size="sm"
+              trailing-icon="i-lucide-external-link"
+              @click="openInArtifacts(getPresentToolData(part)!.type, getPresentToolData(part)!.content)"
+            >
+            </UButton>
+          </div>
           <UCollapsible
             v-else-if="isToolUIPart(part)"
             class="flex flex-col gap-2"

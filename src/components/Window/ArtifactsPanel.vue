@@ -5,6 +5,7 @@ import { useArtifactsStore } from "@/stores/artifacts";
 import { storeToRefs } from "pinia";
 import WorkspaceEditor from "@/components/WorkspaceEditor/WorkspaceEditor.vue";
 import Terminal from "@/components/WorkspaceEditor/Terminal.vue";
+import WebView from "@/components/WebView/WebView.vue";
 
 const artifactsStore = useArtifactsStore();
 const { artifacts, activeArtifactKey } = storeToRefs(artifactsStore);
@@ -77,8 +78,9 @@ function getArtifactDisplayName(id: string): string {
             :class="ui.trigger"
           >
             <UIcon v-if="artifact.type === 'terminal'" name="i-lucide-square-terminal" :class="ui.triggerIcon" />
+            <UIcon v-else-if="artifact.type === 'webview'" name="i-lucide-globe" :class="ui.triggerIcon" />
             <UIcon v-else name="i-lucide-folder" :class="ui.triggerIcon" />
-            <span :class="ui.triggerLabel">{{ artifact.type === 'terminal' ? 'Terminal' : getArtifactDisplayName(artifact.id) }}</span>
+            <span :class="ui.triggerLabel">{{ artifact.type === 'terminal' ? 'Terminal' : artifact.type === 'webview' ? 'WebView' : getArtifactDisplayName(artifact.id) }}</span>
             <UButton
               @click.stop="artifactsStore.removeArtifact(artifact.id, artifact.type)"
               :class="ui.triggerIcon"
@@ -104,6 +106,11 @@ function getArtifactDisplayName(id: string): string {
           <Terminal
             v-else-if="artifact.type === 'terminal'"
             :cwd="artifact.id.replace('terminal::', '')"
+          />
+          <WebView
+            v-else-if="artifact.type === 'webview'"
+            :content="artifact.content || ''"
+            :content-type="artifact.id.split('::')[0]"
           />
         </TabsContent>
       </TabsRoot>
