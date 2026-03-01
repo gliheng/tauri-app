@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, toRaw, computed } from "vue";
+import { ref, toRaw, computed, watch } from "vue";
 import IconEdit from "@/components/IconEdit.vue";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup.vue";
 import { AgentProgram } from "@/db";
@@ -37,6 +37,8 @@ const emit = defineEmits<{
   close: [agent: AgentFormData];
 }>();
 
+const useAutoCreate = ref(false);
+
 const agent = ref<AgentFormData>({
   name: 'New Agent',
   icon: 'i-lucide-brain',
@@ -63,6 +65,12 @@ const selectDirectory = async () => {
   }
 };
 
+watch(useAutoCreate, (newValue) => {
+  if (newValue) {
+    agent.value.directory = '';
+  }
+});
+
 const nameError = ref('');
 const directoryError = ref('');
 
@@ -73,7 +81,8 @@ const validate = (): boolean => {
   if (!agent.value.name.trim()) {
     nameError.value = 'Name is required';
   }
-  if (!agent.value.directory.trim()) {
+  
+  if (!useAutoCreate.value && !agent.value.directory.trim()) {
     directoryError.value = 'Working directory is required';
   }
   
@@ -102,19 +111,29 @@ const createAgent = () => {
             :options="programs"
           />
         </section>
-<section>
+        <section>
           <h2 class="text-lg mb-2">Working Directory</h2>
-          <div class="flex gap-2">
-            <UInput
-              class="flex-1"
-              placeholder="Select a directory..."
-              :model-value="agent.directory"
-              readonly
-            />
+          
+          <div class="mb-2">
+            <div class="flex items-center gap-2">
+              <USwitch
+                v-model="useAutoCreate"
+                label="Auto create directory"
+              />
+            </div>
+          </div>
+          
+          <div class="flex gap-2" v-if="!useAutoCreate">
             <UButton
               icon="i-lucide-folder"
               label="Browse"
               @click="selectDirectory"
+            />
+            <UInput
+              class="flex-1"
+              placeholder="Select a directory..."
+              :model-value="useAutoCreate ? '' : agent.directory"
+              readonly
             />
           </div>
           <p v-if="directoryError" class="text-red-500 text-sm mt-1">{{ directoryError }}</p>

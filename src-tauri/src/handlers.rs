@@ -2006,3 +2006,47 @@ pub async fn mcp_get_prompt(request: McpPromptGetRequest) -> Result<serde_json::
             })
         })?
 }
+
+#[tauri::command]
+pub async fn delete_agent_directory(
+    agent_id: &str,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
+    
+    let agent_dir = app_data_dir.join("agents").join(agent_id);
+    
+    // Canonicalize paths for proper comparison
+    let canonical_agent = agent_dir.canonicalize()
+        .map_err(|e| format!("Failed to canonicalize agent directory: {}", e))?;
+    
+    let canonical_app_data = app_data_dir.canonicalize()
+        .map_err(|e| format!("Failed to canonicalize app data directory: {}", e))?;
+    
+    // Only delete if it's inside app data directory
+    if canonical_agent.starts_with(&canonical_app_data) {
+        fs::remove_dir_all(&canonical_agent)
+            .map_err(|e| format!("Failed to delete agent directory: {}", e))?;
+        
+        Ok("Agent directory deleted".to_string())
+    } else {
+        Ok("Agent directory is outside app data, skipping deletion".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn create_agent_directory(
+    agent_id: &str,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
+    
+    let agent_dir = app_data_dir.join("agents").join(agent_id);
+    
+    fs::create_dir_all(&agent_dir)
+        .map_err(|e| format!("Failed to create agent directory: {}", e))?;
+    
+    Ok(agent_dir.to_string_lossy().to_string())
+}

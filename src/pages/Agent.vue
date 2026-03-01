@@ -57,7 +57,7 @@ function onChat() {
 }
 
 async function onDelete() {
-  const ok = await confirm(`Are you sure you want to delete "${agent!.name}"? This will also delete all associated chats.`, {
+  const ok = await confirm(`Are you sure you want to delete "${agent!.name}"? This will also delete all associated chats and data.`, {
     title: 'Delete Agent',
     kind: 'warning'
   });

@@ -3,6 +3,7 @@ import { useRouter } from "vue-router";
 import { nanoid } from "nanoid";
 import { tv } from "tailwind-variants";
 import { useColorMode } from "@vueuse/core";
+import { invoke } from "@tauri-apps/api/core";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Agent, writeAgent } from "@/db";
 import AgentModal from "../AgentChat/AgentModal.vue";
@@ -44,8 +45,21 @@ async function addAgent() {
   }
 
   const id = nanoid();
+  
+  let directory = agent.directory;
+  
+  if (!directory) {
+    try {
+      directory = await invoke<string>('create_agent_directory', { agentId: id });
+    } catch (error) {
+      console.error('Failed to create agent directory:', error);
+      return;
+    }
+  }
+  
   const fullAgent: Agent = {
     ...agent,
+    directory,
     id,
     createdAt: new Date(),
     updatedAt: new Date(),
