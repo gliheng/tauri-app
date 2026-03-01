@@ -51,7 +51,11 @@ function toggleArtifactView() {
     <Tabs>
       <template #extra>
         <slot name="extra">
-          <UModal v-model:open="commandPaletteOpen">
+          <UModal
+            v-model:open="commandPaletteOpen"
+            title="Command Palette"
+            description="Search for commands"
+          >
             <UButton
               icon="i-mdi-history"
               color="neutral"
