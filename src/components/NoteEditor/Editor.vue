@@ -6,6 +6,7 @@ import { upperFirst } from 'scule';
 import { mapEditorItems } from '@nuxt/ui/utils/editor';
 import { Emoji, gitHubEmojis } from '@tiptap/extension-emoji';
 import { TextAlign } from '@tiptap/extension-text-align';
+import { TaskList, TaskItem } from '@tiptap/extension-list';
 import { CodeBlockShiki } from 'tiptap-extension-code-block-shiki';
 import { ImageUpload, FileImageExtension } from './EditorImageUploadExtension';
 import { useEditorCompletion } from './EditorUseCompletion';
@@ -166,6 +167,11 @@ const bubbleToolbarItems = computed(() => [
           kind: 'orderedList',
           icon: 'i-lucide-list-ordered',
           label: 'Ordered List',
+        },
+        {
+          kind: 'taskList',
+          icon: 'i-lucide-check-square',
+          label: 'Task List',
         },
         {
           kind: 'blockquote',
@@ -367,6 +373,7 @@ const handleItems = (editor: any): DropdownMenuItem[][] => {
             { kind: 'heading', level: 4, label: 'Heading 4', icon: 'i-lucide-heading-4' },
             { kind: 'bulletList', label: 'Bullet List', icon: 'i-lucide-list' },
             { kind: 'orderedList', label: 'Ordered List', icon: 'i-lucide-list-ordered' },
+            { kind: 'taskList', label: 'Task List', icon: 'i-lucide-check-square' },
             { kind: 'blockquote', label: 'Blockquote', icon: 'i-lucide-text-quote' },
             { kind: 'codeBlock', label: 'Code Block', icon: 'i-lucide-square-code' },
           ],
@@ -477,6 +484,11 @@ const suggestionItems = [
       icon: 'i-lucide-list-ordered',
     },
     {
+      kind: 'taskList',
+      label: 'Task List',
+      icon: 'i-lucide-check-square',
+    },
+    {
       kind: 'blockquote',
       label: 'Blockquote',
       icon: 'i-lucide-text-quote',
@@ -560,7 +572,11 @@ async function handlePaste(e: ClipboardEvent, slice: Slice): Promise<void> {
     :onPaste="handlePaste"
     :extensions="[
       Emoji,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }), 
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
       ImageUpload,
       FileImageExtension,
       CodeBlockShiki.configure({
@@ -650,10 +666,43 @@ async function handlePaste(e: ClipboardEvent, slice: Slice): Promise<void> {
   </UEditor>
 </template>
 
-<style>
+<style lang="scss">
 html.dark .tiptap .shiki,
 html.dark .tiptap .shiki span {
   color: var(--shiki-dark) !important;
   background-color: var(--ui-bg-muted) !important;
+}
+
+.tiptap {
+  ul[data-type='taskList'] {
+    list-style: none;
+    margin-left: 0;
+    padding: 0;
+
+    li {
+      align-items: flex-start;
+      display: flex;
+      margin: 0;
+      padding: 0;
+
+      > label {
+        flex: 0 0 auto;
+        margin-right: 0.5rem;
+        user-select: none;
+      }
+
+      > div {
+        flex: 1 1 auto;
+      }
+    }
+
+    input[type='checkbox'] {
+      cursor: pointer;
+    }
+
+    ul[data-type='taskList'] {
+      margin: 0;
+    }
+  }
 }
 </style>
