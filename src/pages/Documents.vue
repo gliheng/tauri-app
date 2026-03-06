@@ -5,6 +5,7 @@ import { useDocumentsStore } from "@/stores/documents";
 import { useTabsStore } from "@/stores/tabs";
 import { nanoid } from "nanoid";
 import DocumentConfig from "@/components/Document/DocumentConfig.vue";
+import { confirm } from '@tauri-apps/plugin-dialog';
 import type { TabsItem } from "@nuxt/ui";
 
 const documentsStore = useDocumentsStore();
@@ -83,6 +84,21 @@ function formatDate(date: Date) {
     year: 'numeric',
   });
 }
+
+async function deleteDocument(id: string, event: Event) {
+  event.stopPropagation();
+
+  const confirmed = await confirm(
+    'This action cannot be reverted. Are you sure you want to delete this document?',
+    { title: 'Delete Document', kind: 'warning' }
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  await documentsStore.deleteDocument(id);
+}
 </script>
 
 <template>
@@ -122,7 +138,7 @@ function formatDate(date: Date) {
           <UCard
             v-for="document in filteredDocuments"
             :key="document.id"
-            class="bg-white/5 border-white/10 cursor-pointer hover:border-white/30 transition-all hover:scale-[1.02]"
+            class="cursor-pointer transition-all hover:scale-[1.02] group relative"
             @click="openDocument(document)"
           >
             <div class="flex items-start gap-3">
@@ -144,11 +160,26 @@ function formatDate(date: Date) {
                     {{ document.type }}
                   </UBadge>
                 </div>
-                <p class="text-sm text-white/50 mt-2">
-                  Updated {{ formatDate(document.updatedAt) }}
-                </p>
+                <div class="flex flex-col gap-1 mt-2 text-sm">
+                  <span class="flex items-center gap-1 text-muted">
+                    <UIcon name="i-lucide-calendar-plus" class="text-xs" />
+                    Created {{ formatDate(document.createdAt) }}
+                  </span>
+                  <span class="flex items-center gap-1 text-muted">
+                    <UIcon name="i-lucide-calendar-clock" class="text-xs" />
+                    Updated {{ formatDate(document.updatedAt) }}
+                  </span>
+                </div>
               </div>
             </div>
+            <UButton
+              icon="i-lucide-trash-2"
+              color="error"
+              variant="ghost"
+              size="sm"
+              class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              @click="deleteDocument(document.id, $event)"
+            />
           </UCard>
         </div>
       </div>

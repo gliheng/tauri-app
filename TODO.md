@@ -39,6 +39,7 @@
 - [ ] Outline editor in documents pages.
 
 # Issues
+- [x] Cannot remove document.
 - [ ] Fix qwen acp edit tool error.
 - [ ] Provide method to auth acp agents.
 - [ ] Window controls on windows is not perfect.
