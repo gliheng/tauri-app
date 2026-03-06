@@ -3,7 +3,6 @@ import { ref, watch, onActivated } from "vue";
 import { useRoute } from "vue-router";
 import { throttle } from "lodash-es";
 import { getDocument, writeDocument, updateDocument } from "@/db";
-
 import { useTabsStore } from "@/stores/tabs";
 import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";

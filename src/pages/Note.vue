@@ -7,7 +7,6 @@ import { NoteEditor } from "@/components/NoteEditor";
 import NameEdit from "@/components/NameEdit.vue";
 import IconEdit from "@/components/IconEdit.vue";
 import DocumentsSlideover from "@/components/Document/DocumentsSlideover.vue";
-
 import { useTabsStore } from "@/stores/tabs";
 import { downloadFile } from "@/utils/file";
 
