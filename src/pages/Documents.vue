@@ -161,7 +161,7 @@ async function deleteDocument(id: string, event: Event) {
                   </UBadge>
                 </div>
                 <div class="flex flex-col gap-1 mt-2 text-sm">
-                  <span class="flex items-center gap-1 text-muted">
+                  <span class="flex items-center gap-1 text-muted hidden">
                     <UIcon name="i-lucide-calendar-plus" class="text-xs" />
                     Created {{ formatDate(document.createdAt) }}
                   </span>

@@ -113,6 +113,7 @@ const isMac = platform.startsWith("Mac");</script>
     :min-size="10"
     :max-size="30"
     :ui="{
+      root: 'bg-muted',
       body: 'gap-2',
       footer: 'flex-col items-stretch',
     }"

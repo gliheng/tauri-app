@@ -201,7 +201,7 @@ function bisect(nums: number[], n: number) {
           v-for="(tab, i) in tabs"
           :key="tab.path"
           class="max-w-40"
-          variant="soft"
+          variant="subtle"
           color="neutral"
           active-color="primary"
           active-variant="solid"

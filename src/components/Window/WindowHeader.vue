@@ -47,7 +47,7 @@ function toggleArtifactView() {
 </script>
 
 <template>
-  <header class="flex flex-row items-center bg-elevated shadow select-none">
+  <header class="flex flex-row items-center bg-muted shadow select-none">
     <Tabs>
       <template #extra>
         <slot name="extra">

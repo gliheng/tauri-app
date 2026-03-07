@@ -31,12 +31,17 @@ const tabItems = [
 </script>
 
 <template>
-  <UTabs :items="tabItems" orientation="vertical" variant="link" :ui="{
-    root: 'size-full flex-1 items-stretch gap-0',
-    list: 'self-stretch bg-elevated min-w-40 p-0',
-    indicator: 'hidden',
-    content: 'pl-4 flex flex-col',
-  }">
+  <UTabs
+    orientation="vertical"
+    variant="link"
+    :items="tabItems"
+    :ui="{
+      root: 'size-full flex-1 items-stretch gap-0',
+      list: 'self-stretch min-w-40 p-0 border-0',
+      indicator: 'hidden',
+      content: 'pl-4 flex flex-col',
+    }"
+  >
     <template #list-leading>
       <h1 class="text-xl font-semibold pl-3 py-4">Settings</h1>
     </template>
