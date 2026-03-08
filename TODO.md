@@ -20,7 +20,7 @@
 - [ ] Add input queue to agent chat.
 - [ ] Agent change UI improvement, show TODO as a fixed UI.
 - [ ] My Acp agent with codeact and skills.
-- [ ] Create image using image model.
+- [x] Create image using image model.
 - [ ] Quick agent chat on the agent task list page.
 - [ ] Optimize display of agent chat in the agent task list page, using a series of dots to show the progress.
 - [ ] Able to control "Ask before edit" & "Edit automaticly"
