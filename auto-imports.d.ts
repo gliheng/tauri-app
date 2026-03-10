@@ -51,9 +51,6 @@ declare global {
   export type { UseComponentIconsProps } from './node_modules/@nuxt/ui/dist/runtime/composables/useComponentIcons.d'
   import('./node_modules/@nuxt/ui/dist/runtime/composables/useComponentIcons.d')
   // @ts-ignore
-  export type { ThemeUI, ThemeRootContext } from './node_modules/@nuxt/ui/dist/runtime/composables/useComponentUI.d'
-  import('./node_modules/@nuxt/ui/dist/runtime/composables/useComponentUI.d')
-  // @ts-ignore
   export type { EditorMenuOptions } from './node_modules/@nuxt/ui/dist/runtime/composables/useEditorMenu.d'
   import('./node_modules/@nuxt/ui/dist/runtime/composables/useEditorMenu.d')
   // @ts-ignore

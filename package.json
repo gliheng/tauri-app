@@ -37,7 +37,7 @@
     "@iconify-json/lucide": "^1.2.86",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/vscode-icons": "^1.2.37",
-    "@nuxt/ui": "^4.5.1",
+    "@nuxt/ui": "~4.4.0",
     "@openrouter/ai-sdk-provider": "^2.2.3",
     "@supabase/supabase-js": "^2.97.0",
     "@tauri-apps/api": "^2.9.1",
