@@ -6,16 +6,19 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex};
 use tauri::{Emitter, Manager};
+use tauri_plugin_shell::process::CommandEvent;
+use tauri_plugin_shell::ShellExt;
+use tauri_plugin_updater::{Update, UpdaterExt};
 use tokio::io::{AsyncReadExt, BufReader as AsyncBufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::sync::Mutex;
-use tauri_plugin_shell::ShellExt;
-use tauri_plugin_shell::process::CommandEvent;
 
 // MCP module imports
-use crate::mcp::{McpManager, McpServerConfig, McpToolCallRequest, McpResourceReadRequest, McpPromptGetRequest};
+use crate::mcp::{
+    McpManager, McpPromptGetRequest, McpResourceReadRequest, McpServerConfig, McpToolCallRequest,
+};
 
 // Struct to hold the shell process with its event receiver
 struct ShellProcess {
@@ -30,6 +33,168 @@ static AGENT_PROCESSES: std::sync::LazyLock<Arc<Mutex<HashMap<String, ShellProce
 static LISTENING_TASKS: std::sync::LazyLock<
     Arc<Mutex<HashMap<String, tokio::task::JoinHandle<()>>>>,
 > = std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
+
+const APP_UPDATE_PROGRESS_EVENT: &str = "app_update_progress";
+
+#[derive(Default)]
+pub struct PendingAppUpdate(pub StdMutex<Option<Update>>);
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppUpdateMetadata {
+    version: String,
+    current_version: String,
+    notes: Option<String>,
+    pub_date: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppUpdateProgressPayload {
+    event: String,
+    content_length: Option<u64>,
+    chunk_length: Option<usize>,
+    downloaded: Option<u64>,
+}
+
+fn to_update_metadata(update: &Update) -> AppUpdateMetadata {
+    AppUpdateMetadata {
+        version: update.version.clone(),
+        current_version: update.current_version.clone(),
+        notes: update.body.clone(),
+        pub_date: update.date.map(|date| date.to_string()),
+    }
+}
+
+fn emit_app_update_progress(
+    window: &tauri::Window,
+    event: &str,
+    content_length: Option<u64>,
+    chunk_length: Option<usize>,
+    downloaded: Option<u64>,
+) {
+    let _ = window.emit(
+        APP_UPDATE_PROGRESS_EVENT,
+        AppUpdateProgressPayload {
+            event: event.to_string(),
+            content_length,
+            chunk_length,
+            downloaded,
+        },
+    );
+}
+
+#[tauri::command]
+pub async fn check_app_update(
+    app: tauri::AppHandle,
+    pending_update: tauri::State<'_, PendingAppUpdate>,
+) -> Result<Option<AppUpdateMetadata>, String> {
+    let update = app
+        .updater()
+        .map_err(|e| format!("Failed to create updater: {}", e))?
+        .check()
+        .await
+        .map_err(|e| format!("Failed to check for updates: {}", e))?;
+    let metadata = update.as_ref().map(to_update_metadata);
+
+    {
+        let mut pending = pending_update
+            .0
+            .lock()
+            .map_err(|_| "Failed to access pending update state".to_string())?;
+        *pending = update;
+    }
+
+    Ok(metadata)
+}
+
+#[tauri::command]
+pub async fn install_app_update(
+    app: tauri::AppHandle,
+    window: tauri::Window,
+    pending_update: tauri::State<'_, PendingAppUpdate>,
+) -> Result<(), String> {
+    let update = {
+        let mut pending = pending_update
+            .0
+            .lock()
+            .map_err(|_| "Failed to access pending update state".to_string())?;
+        pending
+            .take()
+            .ok_or_else(|| "There is no pending app update to install".to_string())?
+    };
+
+    let mut started = false;
+    let downloaded = Arc::new(StdMutex::new(0u64));
+    let progress_downloaded = downloaded.clone();
+    let finished_downloaded = downloaded.clone();
+    let result = update
+        .download_and_install(
+            |chunk_length, content_length| {
+                let mut downloaded = progress_downloaded
+                    .lock()
+                    .expect("download progress mutex poisoned");
+                *downloaded += chunk_length as u64;
+
+                if !started {
+                    emit_app_update_progress(
+                        &window,
+                        "started",
+                        content_length,
+                        None,
+                        Some(*downloaded),
+                    );
+                    started = true;
+                }
+
+                emit_app_update_progress(
+                    &window,
+                    "progress",
+                    content_length,
+                    Some(chunk_length),
+                    Some(*downloaded),
+                );
+            },
+            || {
+                let downloaded = finished_downloaded
+                    .lock()
+                    .expect("download progress mutex poisoned");
+                emit_app_update_progress(&window, "finished", None, None, Some(*downloaded));
+            },
+        )
+        .await;
+
+    match result {
+        Ok(()) => {
+            {
+                let mut pending = pending_update
+                    .0
+                    .lock()
+                    .map_err(|_| "Failed to access pending update state".to_string())?;
+                *pending = None;
+            }
+
+            let downloaded = downloaded
+                .lock()
+                .map_err(|_| "Failed to access download progress state".to_string())?;
+            emit_app_update_progress(&window, "installed", None, None, Some(*downloaded));
+
+            if !cfg!(target_os = "windows") {
+                app.restart();
+            }
+
+            Ok(())
+        }
+        Err(error) => {
+            let mut pending = pending_update
+                .0
+                .lock()
+                .map_err(|_| "Failed to access pending update state".to_string())?;
+            *pending = Some(update);
+            Err(format!("Failed to install update: {}", error))
+        }
+    }
+}
 
 #[derive(Deserialize, Debug)]
 pub struct ModelSettings {
@@ -157,20 +322,23 @@ pub async fn acp_initialize(
     let app_config_dir = app.path().app_data_dir().unwrap();
 
     // Check if package is already installed
-    let is_installed = check_package_installed(package_name, &app_config_dir, &app).await.unwrap_or(false);
+    let is_installed = check_package_installed(package_name, &app_config_dir, &app)
+        .await
+        .unwrap_or(false);
 
     if is_installed {
         println!("Package {} is already installed", package_name);
 
         // Get the installed version
-        let installed_version = match get_installed_version(package_name, &app_config_dir, &app).await {
-            Ok(Some(v)) => v,
-            Ok(None) => "unknown".to_string(),
-            Err(e) => {
-                println!("Failed to get installed version: {:?}", e);
-                "unknown".to_string()
-            }
-        };
+        let installed_version =
+            match get_installed_version(package_name, &app_config_dir, &app).await {
+                Ok(Some(v)) => v,
+                Ok(None) => "unknown".to_string(),
+                Err(e) => {
+                    println!("Failed to get installed version: {:?}", e);
+                    "unknown".to_string()
+                }
+            };
 
         // Emit already_installed status without checking for updates
         // The frontend will call check_for_updates separately when mounted
@@ -273,7 +441,10 @@ pub async fn acp_initialize(
         println!("Installation command completed for {}", package_name);
 
         // Get the installed version
-        let installed_version = get_installed_version(package_name, &app_config_dir, &app).await.ok().flatten();
+        let installed_version = get_installed_version(package_name, &app_config_dir, &app)
+            .await
+            .ok()
+            .flatten();
 
         let message = if let Some(ref v) = installed_version {
             format!("Successfully installed {} v{}", package_name, v)
@@ -307,15 +478,12 @@ pub async fn acp_initialize(
         command = command.env(key, value);
     }
 
-    let (receiver, child) = command
-        .args(&args)
-        .spawn()
-        .map_err(|e| {
-            serde_json::json!({
-                "code": 1,
-                "message": format!("Failed to start {} process: {}", agent_name, e)
-            })
-        })?;
+    let (receiver, child) = command.args(&args).spawn().map_err(|e| {
+        serde_json::json!({
+            "code": 1,
+            "message": format!("Failed to start {} process: {}", agent_name, e)
+        })
+    })?;
 
     // Store the process for later communication
     {
@@ -352,15 +520,12 @@ pub async fn acp_send_message(
     let mut data = json_str.as_bytes().to_vec();
     data.push(b'\n');
 
-    shell_process
-        .child
-        .write(&data)
-        .map_err(|e| {
-            serde_json::json!({
-                "code": 3,
-                "message": format!("Failed to write to stdin: {}", e)
-            })
-        })?;
+    shell_process.child.write(&data).map_err(|e| {
+        serde_json::json!({
+            "code": 3,
+            "message": format!("Failed to write to stdin: {}", e)
+        })
+    })?;
 
     println!("Message sent to agent {} {}", agent, json_str);
 
@@ -382,7 +547,10 @@ pub async fn acp_start_listening(
     let receiver_opt = {
         let mut processes = AGENT_PROCESSES.lock().await;
         if let Some(shell_process) = processes.get_mut(&agent_name_clone) {
-            Some(std::mem::replace(&mut shell_process._receiver, tauri::async_runtime::channel(1).1))
+            Some(std::mem::replace(
+                &mut shell_process._receiver,
+                tauri::async_runtime::channel(1).1,
+            ))
         } else {
             None
         }
@@ -515,7 +683,12 @@ pub async fn acp_dispose(agent: &str) -> Result<serde_json::Value, serde_json::V
 /// Returns true if the file/directory name should be ignored (well-known types)
 fn should_ignore_file(name: &str) -> bool {
     // macOS system files
-    if name == ".DS_Store" || name == ".Spotlight-V100" || name == ".Trashes" || name == ".fseventsd" || name == ".localized" {
+    if name == ".DS_Store"
+        || name == ".Spotlight-V100"
+        || name == ".Trashes"
+        || name == ".fseventsd"
+        || name == ".localized"
+    {
         return true;
     }
 
@@ -906,7 +1079,11 @@ static ACP_TERMINALS: std::sync::LazyLock<Arc<Mutex<HashMap<String, ACPTerminal>
     std::sync::LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 // Helper function to check if a package is already installed
-async fn check_package_installed(package_name: &str, app_config_dir: &PathBuf, app: &tauri::AppHandle) -> Result<bool, serde_json::Value> {
+async fn check_package_installed(
+    package_name: &str,
+    app_config_dir: &PathBuf,
+    app: &tauri::AppHandle,
+) -> Result<bool, serde_json::Value> {
     let sidecar_command = app.shell().sidecar("bun").map_err(|e| {
         serde_json::json!({
             "code": 12,
@@ -940,7 +1117,11 @@ async fn check_package_installed(package_name: &str, app_config_dir: &PathBuf, a
 }
 
 // Helper function to get the installed package version
-async fn get_installed_version(package_name: &str, app_config_dir: &PathBuf, app: &tauri::AppHandle) -> Result<Option<String>, serde_json::Value> {
+async fn get_installed_version(
+    package_name: &str,
+    app_config_dir: &PathBuf,
+    app: &tauri::AppHandle,
+) -> Result<Option<String>, serde_json::Value> {
     let sidecar_command = app.shell().sidecar("bun").map_err(|e| {
         serde_json::json!({
             "code": 13,
@@ -1037,7 +1218,8 @@ pub async fn check_for_updates(
     let event_name = format!("package_install_status::{}", agent_name);
 
     // Get the installed version
-    let installed_version = match get_installed_version(&package_name, &app_config_dir, &app).await {
+    let installed_version = match get_installed_version(&package_name, &app_config_dir, &app).await
+    {
         Ok(Some(v)) => v,
         Ok(None) => "unknown".to_string(),
         Err(e) => {
@@ -1069,9 +1251,15 @@ pub async fn check_for_updates(
     };
 
     let message = if let Some(ref latest) = update_available {
-        format!("{} v{} is installed (v{} available)", package_name, installed_version, latest)
+        format!(
+            "{} v{} is installed (v{} available)",
+            package_name, installed_version, latest
+        )
     } else {
-        format!("{} v{} is installed (up to date)", package_name, installed_version)
+        format!(
+            "{} v{} is installed (up to date)",
+            package_name, installed_version
+        )
     };
 
     let _ = window.emit(
@@ -1494,7 +1682,10 @@ pub struct FileSuggestion {
 }
 
 #[tauri::command]
-pub async fn glob_files(directory: &str, pattern: Option<&str>) -> Result<Vec<FileSuggestion>, String> {
+pub async fn glob_files(
+    directory: &str,
+    pattern: Option<&str>,
+) -> Result<Vec<FileSuggestion>, String> {
     use ignore::WalkBuilder;
     use std::path::Path;
 
@@ -1521,7 +1712,7 @@ pub async fn glob_files(directory: &str, pattern: Option<&str>) -> Result<Vec<Fi
         };
 
         let path = entry.path();
-        
+
         // Skip the root directory itself
         if path == dir_path {
             continue;
@@ -1651,7 +1842,10 @@ pub async fn upgrade_package(
     println!("Update command completed for {}", package_name);
 
     // Get the new version
-    let new_version = get_installed_version(&package_name, &app_config_dir, &app).await.ok().flatten();
+    let new_version = get_installed_version(&package_name, &app_config_dir, &app)
+        .await
+        .ok()
+        .flatten();
 
     let message = if let Some(ref v) = new_version {
         format!("Successfully upgraded {} to v{}", package_name, v)
@@ -1688,24 +1882,26 @@ pub async fn get_git_diff_all(base_path: &str) -> Result<String, String> {
     let repo = git2::Repository::open(base_path)
         .map_err(|e| format!("Failed to open repository: {}", e))?;
 
-    let head = repo.head()
+    let head = repo
+        .head()
         .map_err(|e| format!("Failed to get HEAD: {}", e))?;
 
-    let head_commit = head.peel_to_commit()
+    let head_commit = head
+        .peel_to_commit()
         .map_err(|e| format!("Failed to peel to commit: {}", e))?;
 
-    let head_tree = head_commit.tree()
+    let head_tree = head_commit
+        .tree()
         .map_err(|e| format!("Failed to get tree: {}", e))?;
 
-    let index = repo.index()
+    let index = repo
+        .index()
         .map_err(|e| format!("Failed to get index: {}", e))?;
 
     let mut opts = git2::DiffOptions::new();
-    let diff = repo.diff_tree_to_index(
-        Some(&head_tree),
-        Some(&index),
-        Some(&mut opts)
-    ).map_err(|e| format!("Failed to create diff: {}", e))?;
+    let diff = repo
+        .diff_tree_to_index(Some(&head_tree), Some(&index), Some(&mut opts))
+        .map_err(|e| format!("Failed to create diff: {}", e))?;
 
     let mut diff_text = String::new();
     diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
@@ -1723,7 +1919,8 @@ pub async fn get_git_diff_all(base_path: &str) -> Result<String, String> {
             _ => {}
         }
         true
-    }).map_err(|e| format!("Failed to print diff: {}", e))?;
+    })
+    .map_err(|e| format!("Failed to print diff: {}", e))?;
 
     Ok(diff_text)
 }
@@ -1799,7 +1996,9 @@ pub async fn mcp_list_tools() -> Result<serde_json::Value, serde_json::Value> {
 }
 
 #[tauri::command]
-pub async fn mcp_call_tool(request: McpToolCallRequest) -> Result<serde_json::Value, serde_json::Value> {
+pub async fn mcp_call_tool(
+    request: McpToolCallRequest,
+) -> Result<serde_json::Value, serde_json::Value> {
     println!(
         "Calling MCP tool: {} on server {}",
         request.tool_name, request.server_id
@@ -1844,15 +2043,12 @@ pub async fn mcp_stop_server(server_id: String) -> Result<(), serde_json::Value>
         })
     })?;
 
-    manager_ref
-        .stop_server(&server_id)
-        .await
-        .map_err(|e| {
-            serde_json::json!({
-                "code": -32000,
-                "message": format!("Failed to stop server: {}", e)
-            })
+    manager_ref.stop_server(&server_id).await.map_err(|e| {
+        serde_json::json!({
+            "code": -32000,
+            "message": format!("Failed to stop server: {}", e)
         })
+    })
 }
 
 #[tauri::command]
@@ -1875,7 +2071,9 @@ pub async fn mcp_list_servers() -> Result<serde_json::Value, serde_json::Value> 
 }
 
 #[tauri::command]
-pub async fn mcp_get_server_logs(server_id: String) -> Result<serde_json::Value, serde_json::Value> {
+pub async fn mcp_get_server_logs(
+    server_id: String,
+) -> Result<serde_json::Value, serde_json::Value> {
     let manager = MCP_MANAGER.lock().await;
     let manager_ref = manager.as_ref().ok_or_else(|| {
         serde_json::json!({
@@ -1912,12 +2110,14 @@ pub async fn mcp_list_resources() -> Result<serde_json::Value, serde_json::Value
     manager_ref
         .list_resources()
         .await
-        .map(|resources| serde_json::to_value(resources).map_err(|e| {
-            serde_json::json!({
-                "code": -32000,
-                "message": format!("Failed to serialize resources: {}", e)
+        .map(|resources| {
+            serde_json::to_value(resources).map_err(|e| {
+                serde_json::json!({
+                    "code": -32000,
+                    "message": format!("Failed to serialize resources: {}", e)
+                })
             })
-        }))
+        })
         .map_err(|e| {
             serde_json::json!({
                 "code": -32000,
@@ -1939,12 +2139,14 @@ pub async fn mcp_list_prompts() -> Result<serde_json::Value, serde_json::Value> 
     manager_ref
         .list_prompts()
         .await
-        .map(|prompts| serde_json::to_value(prompts).map_err(|e| {
-            serde_json::json!({
-                "code": -32000,
-                "message": format!("Failed to serialize prompts: {}", e)
+        .map(|prompts| {
+            serde_json::to_value(prompts).map_err(|e| {
+                serde_json::json!({
+                    "code": -32000,
+                    "message": format!("Failed to serialize prompts: {}", e)
+                })
             })
-        }))
+        })
         .map_err(|e| {
             serde_json::json!({
                 "code": -32000,
@@ -1954,8 +2156,13 @@ pub async fn mcp_list_prompts() -> Result<serde_json::Value, serde_json::Value> 
 }
 
 #[tauri::command]
-pub async fn mcp_read_resource(request: McpResourceReadRequest) -> Result<serde_json::Value, serde_json::Value> {
-    println!("Reading MCP resource: {} from server {}", request.uri, request.server_id);
+pub async fn mcp_read_resource(
+    request: McpResourceReadRequest,
+) -> Result<serde_json::Value, serde_json::Value> {
+    println!(
+        "Reading MCP resource: {} from server {}",
+        request.uri, request.server_id
+    );
 
     let manager = MCP_MANAGER.lock().await;
     let manager_ref = manager.as_ref().ok_or_else(|| {
@@ -1968,12 +2175,14 @@ pub async fn mcp_read_resource(request: McpResourceReadRequest) -> Result<serde_
     manager_ref
         .read_resource(request)
         .await
-        .map(|response| serde_json::to_value(response).map_err(|e| {
-            serde_json::json!({
-                "code": -32000,
-                "message": format!("Failed to serialize response: {}", e)
+        .map(|response| {
+            serde_json::to_value(response).map_err(|e| {
+                serde_json::json!({
+                    "code": -32000,
+                    "message": format!("Failed to serialize response: {}", e)
+                })
             })
-        }))
+        })
         .map_err(|e| {
             serde_json::json!({
                 "code": -32000,
@@ -1983,8 +2192,13 @@ pub async fn mcp_read_resource(request: McpResourceReadRequest) -> Result<serde_
 }
 
 #[tauri::command]
-pub async fn mcp_get_prompt(request: McpPromptGetRequest) -> Result<serde_json::Value, serde_json::Value> {
-    println!("Getting MCP prompt: {} from server {}", request.name, request.server_id);
+pub async fn mcp_get_prompt(
+    request: McpPromptGetRequest,
+) -> Result<serde_json::Value, serde_json::Value> {
+    println!(
+        "Getting MCP prompt: {} from server {}",
+        request.name, request.server_id
+    );
 
     let manager = MCP_MANAGER.lock().await;
     let manager_ref = manager.as_ref().ok_or_else(|| {
@@ -1997,12 +2211,14 @@ pub async fn mcp_get_prompt(request: McpPromptGetRequest) -> Result<serde_json::
     manager_ref
         .get_prompt(request)
         .await
-        .map(|response| serde_json::to_value(response).map_err(|e| {
-            serde_json::json!({
-                "code": -32000,
-                "message": format!("Failed to serialize response: {}", e)
+        .map(|response| {
+            serde_json::to_value(response).map_err(|e| {
+                serde_json::json!({
+                    "code": -32000,
+                    "message": format!("Failed to serialize response: {}", e)
+                })
             })
-        }))
+        })
         .map_err(|e| {
             serde_json::json!({
                 "code": -32000,
@@ -2016,23 +2232,27 @@ pub async fn delete_agent_directory(
     agent_id: &str,
     app: tauri::AppHandle,
 ) -> Result<String, String> {
-    let app_data_dir = app.path().app_data_dir()
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
         .map_err(|e| format!("Failed to get app data directory: {}", e))?;
-    
+
     let agent_dir = app_data_dir.join("agents").join(agent_id);
-    
+
     // Canonicalize paths for proper comparison
-    let canonical_agent = agent_dir.canonicalize()
+    let canonical_agent = agent_dir
+        .canonicalize()
         .map_err(|e| format!("Failed to canonicalize agent directory: {}", e))?;
-    
-    let canonical_app_data = app_data_dir.canonicalize()
+
+    let canonical_app_data = app_data_dir
+        .canonicalize()
         .map_err(|e| format!("Failed to canonicalize app data directory: {}", e))?;
-    
+
     // Only delete if it's inside app data directory
     if canonical_agent.starts_with(&canonical_app_data) {
         fs::remove_dir_all(&canonical_agent)
             .map_err(|e| format!("Failed to delete agent directory: {}", e))?;
-        
+
         Ok("Agent directory deleted".to_string())
     } else {
         Ok("Agent directory is outside app data, skipping deletion".to_string())
@@ -2044,13 +2264,15 @@ pub async fn create_agent_directory(
     agent_id: &str,
     app: tauri::AppHandle,
 ) -> Result<String, String> {
-    let app_data_dir = app.path().app_data_dir()
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
         .map_err(|e| format!("Failed to get app data directory: {}", e))?;
-    
+
     let agent_dir = app_data_dir.join("agents").join(agent_id);
-    
+
     fs::create_dir_all(&agent_dir)
         .map_err(|e| format!("Failed to create agent directory: {}", e))?;
-    
+
     Ok(agent_dir.to_string_lossy().to_string())
 }

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { RouterView } from "vue-router";
 import VueEasyLightbox from "vue-easy-lightbox";
 import { eventBus } from "@/utils/eventBus";
+import { useAppUpdateStore } from "@/stores/appUpdate";
 
 const toast = useToast();
+const appUpdateStore = useAppUpdateStore();
 
 const visibleRef = ref(false);
 const indexRef = ref(0);
@@ -19,6 +21,14 @@ eventBus.on("toast", (data) => {
 });
 
 const onHide = () => (visibleRef.value = false);
+
+onMounted(async () => {
+  await appUpdateStore.initialize();
+});
+
+onUnmounted(async () => {
+  await appUpdateStore.dispose();
+});
 </script>
 
 <template>

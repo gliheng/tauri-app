@@ -104,6 +104,7 @@ declare module 'vue' {
     UIcon: typeof import('./node_modules/@nuxt/ui/dist/runtime/vue/components/Icon.vue')['default']
     UInput: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Input.vue')['default']
     UModal: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Modal.vue')['default']
+    UpdatesTab: typeof import('./src/components/Settings/UpdatesTab.vue')['default']
     UploadButton: typeof import('./src/components/UploadButton.vue')['default']
     UPopover: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Popover.vue')['default']
     UScrollArea: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/ScrollArea.vue')['default']

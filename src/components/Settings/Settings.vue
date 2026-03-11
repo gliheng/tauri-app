@@ -4,6 +4,7 @@ import ModelsTab from "./ModelsTab.vue";
 import TavilyTab from "./TavilyTab.vue";
 import McpTab from "./McpTab.vue";
 import ProfileTab from "./ProfileTab.vue";
+import UpdatesTab from "./UpdatesTab.vue";
 
 const tabItems = [
   {
@@ -26,6 +27,11 @@ const tabItems = [
     label: "Web Search",
     icon: "i-lucide-search",
     slot: "tavily" as const,
+  },
+  {
+    label: "Updates",
+    icon: "i-lucide-download",
+    slot: "updates" as const,
   },
 ] satisfies TabsItem[];
 </script>
@@ -66,6 +72,14 @@ const tabItems = [
       <div class="flex-1 min-h-0 overflow-y-auto">
         <div class="pr-4 py-4">
           <TavilyTab />
+        </div>
+      </div>
+    </template>
+    <template #updates>
+      <h1 class="text-xl font-semibold py-4">App Updates</h1>
+      <div class="flex-1 min-h-0 overflow-y-auto">
+        <div class="pr-4 py-4">
+          <UpdatesTab />
         </div>
       </div>
     </template>

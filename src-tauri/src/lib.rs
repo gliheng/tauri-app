@@ -1,5 +1,5 @@
-use tauri_plugin_sql::{Migration, MigrationKind};
 use tauri::{Emitter, Manager, RunEvent};
+use tauri_plugin_sql::{Migration, MigrationKind};
 mod handlers;
 mod mcp;
 
@@ -45,7 +45,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
+            app.manage(handlers::PendingAppUpdate::default());
             #[cfg(debug_assertions)] // only include this code on debug builds
             {
                 use tauri::Manager;
@@ -99,6 +101,8 @@ pub fn run() {
             // Package management
             handlers::upgrade_package,
             handlers::check_for_updates,
+            handlers::check_app_update,
+            handlers::install_app_update,
             // MCP commands
             handlers::mcp_start_servers,
             handlers::mcp_stop_server,
@@ -127,7 +131,10 @@ pub fn run() {
                 // 2. Listen for the "Reopen" event (Clicking Dock Icon)
                 // This event specifically fires when the app is running but focused via Dock
                 #[cfg(target_os = "macos")]
-                RunEvent::Reopen { has_visible_windows, .. } => {
+                RunEvent::Reopen {
+                    has_visible_windows,
+                    ..
+                } => {
                     if !has_visible_windows {
                         if let Some(window) = app.get_webview_window("main") {
                             window.show().unwrap();
