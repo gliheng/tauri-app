@@ -1,5 +1,4 @@
 import Database from '@tauri-apps/plugin-sql';
-import { invoke } from '@tauri-apps/api/core';
 import { UIMessage } from 'ai';
 import { ROOT_NODE_ID } from '@/constants';
 
@@ -317,9 +316,6 @@ export async function updateAgent(
 export async function deleteAgent(id: string): Promise<void> {
   if (!db) throw new Error('Database not initialized');
 
-  // Get agent info to retrieve directory path
-  const agent = await getAgent(id);
-  
   // First delete all chats for this agent
   const chats = await getChatsByAgentId(id);
   for (const chat of chats) {
@@ -328,15 +324,6 @@ export async function deleteAgent(id: string): Promise<void> {
 
   // Then delete the agent
   await db.execute('DELETE FROM agent WHERE id = $1', [id]);
-  
-  // Delete the agent's directory if it's inside app data directory
-  if (agent?.directory) {
-    try {
-      await invoke('delete_agent_directory', { agentId: id });
-    } catch (error) {
-      console.error('Failed to delete agent directory:', error);
-    }
-  }
 }
 
 export async function getAgents(): Promise<Agent[]> {
