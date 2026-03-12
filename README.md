@@ -92,7 +92,7 @@ Raven is a powerful desktop application for interacting with AI agents through a
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd tauri-app
+cd raven-app
 
 # Install dependencies
 yarn install
@@ -128,7 +128,7 @@ yarn tauri build --debug
 
 Raven uses the Tauri updater plugin with signed update artifacts and a GitHub Releases feed.
 
-- The app checks `https://github.com/gliheng/tauri-app/releases/latest/download/latest.json`
+- The app checks `https://github.com/gliheng/raven-app/releases/latest/download/latest.json`
 - Release builds must set `TAURI_SIGNING_PRIVATE_KEY`
 - Release builds may also set `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
 - The included GitHub Actions workflow publishes signed bundles and `latest.json` on `v*` tags
@@ -145,7 +145,7 @@ yarn vue-tsc --noEmit
 ## 📁 Project Structure
 
 ```
-tauri-app/
+raven-app/
 ├── src/                          # Vue frontend
 │   ├── components/               # Reusable Vue components
 │   │   ├── AgentChat/           # Agent chat components

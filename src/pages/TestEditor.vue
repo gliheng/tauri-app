@@ -11,7 +11,7 @@ onActivated(() => {
 <template>
   <div class="h-full">
     <Suspense>
-      <WorkspaceEditor cwd="/Users/juju/Develop/tauri-app" />
+      <WorkspaceEditor cwd="/Users/juju/Develop/raven-app" />
       <template #fallback>
         <div class="h-30 flex items-center justify-center">
           <Spinner />
