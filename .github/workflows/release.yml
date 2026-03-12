@@ -70,4 +70,4 @@ jobs:
           releaseBody: Signed Raven desktop release.
           releaseDraft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
-          args: ${{ matrix.args }}
+          args: --config src-tauri/tauri.release.conf.json ${{ matrix.args }}
