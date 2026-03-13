@@ -108,6 +108,7 @@ export class SplashLoader extends LitElement {
       gap: 6px;
       animation: fadeInUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
       animation-delay: 0.2s;
+      pointer-events: none;
     }
 
     .splash-title {
@@ -145,6 +146,7 @@ export class SplashLoader extends LitElement {
       gap: 8px;
       animation: fadeInUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
       animation-delay: 0.5s;
+      pointer-events: none;
     }
 
     .splash-progress-bar {
