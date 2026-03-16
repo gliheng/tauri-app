@@ -33,6 +33,12 @@ export function getModel(model?: string) {
       apiKey,
       baseURL: getProviderBaseUrl('minimax'),
     })(name);
+  } else if (provider == "moonshot") {
+    return createOpenAICompatible({
+      name: 'moonshot',
+      apiKey,
+      baseURL: getProviderBaseUrl('moonshot'),
+    })(name);
   }
 
   throw new Error("Invalid model");
@@ -64,5 +70,6 @@ export function getProviderBaseUrl(provider: string) {
   if (provider === 'siliconflow') return 'https://api.siliconflow.cn/v1';
   if (provider === 'minimax') return 'https://api.minimaxi.com/v1';
   if (provider === 'zai') return 'https://open.bigmodel.cn/api/paas/v4';
+  if (provider === 'moonshot') return 'https://api.moonshot.cn/v1';
   return '';
 }

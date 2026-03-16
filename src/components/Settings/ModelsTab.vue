@@ -26,6 +26,10 @@ const providerItems = [
     label: "Siliconflow",
     value: "siliconflow",
   },
+  {
+    label: "Moonshot",
+    value: "moonshot",
+  },
 ] satisfies TabsItem[];
 
 const agentItems = [

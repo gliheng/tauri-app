@@ -35,6 +35,10 @@ const defaultModelSettings: Record<string, ChatModelConfig> = {
     apiKey: "",
     models: [],
   },
+  moonshot: {
+    apiKey: "",
+    models: [],
+  },
 };
 
 const defaultImageModelSettings: Record<string, { apiKey: string }> = {

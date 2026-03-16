@@ -154,6 +154,12 @@ export const MODELS_BY_PROVIDER = {
       value: "Pro/moonshotai/Kimi-K2.5",
     },
   ],
+  moonshot: [
+    {
+      label: "Kimi K2.5",
+      value: "kimi-k2.5",
+    },
+  ],
 };
 
 export const IMAGE_MODELS_BY_PROVIDER: Record<
