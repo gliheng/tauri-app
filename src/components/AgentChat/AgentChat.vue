@@ -92,17 +92,17 @@ async function handleModeChange(modeId: string) {
 
 function handleMentionInsert() {
   if (!chatBoxRef.value) return;
-  
+
   const editor = (chatBoxRef.value as any).editor;
   if (!editor) return;
-  
+
   const { state } = editor;
   const { from } = state.selection;
-  
+
   // Check if cursor is at the start or if previous character is a space
   const textBefore = state.doc.textBetween(Math.max(0, from - 1), from);
   const needsSpace = from > 0 && textBefore !== ' ' && textBefore !== '\n';
-  
+
   // Insert space before @ if needed
   const textToInsert = needsSpace ? ' @' : '@';
   chatBoxRef.value.insertText(textToInsert);
@@ -110,17 +110,17 @@ function handleMentionInsert() {
 
 function handleSlashInsert() {
   if (!chatBoxRef.value) return;
-  
+
   const editor = (chatBoxRef.value as any).editor;
   if (!editor) return;
-  
+
   const { state } = editor;
   const { from } = state.selection;
-  
+
   // Check if cursor is at the start or if previous character is a space
   const textBefore = state.doc.textBetween(Math.max(0, from - 1), from);
   const needsSpace = from > 0 && textBefore !== ' ' && textBefore !== '\n';
-  
+
   // Insert space before / if needed
   const textToInsert = needsSpace ? ' /' : '/';
   chatBoxRef.value.insertText(textToInsert);
@@ -157,11 +157,11 @@ const stop = async () => {
   try {
     error.value = null;
     console.log("Stopping agent...");
-    
+
     if (client && isInitialized.value) {
       await client.dispose();
     }
-    
+
     status.value = "ready";
     isInitialized.value = false;
     console.log("Agent stopped successfully");
@@ -690,7 +690,7 @@ const slashExtension = Mention.extend({ name: 'slash' }).configure({
     items: async ({ query }) => {
       slashQuery.value = query;
       const filteredCommands = availableCommands.value
-        .filter(cmd => cmd.name.toLowerCase().includes(query.toLowerCase()) || 
+        .filter(cmd => cmd.name.toLowerCase().includes(query.toLowerCase()) ||
                      cmd.description.toLowerCase().includes(query.toLowerCase()));
       slashCommandItems.value = filteredCommands.map(cmd => ({
         name: cmd.name,
@@ -806,7 +806,18 @@ const slashExtension = Mention.extend({ name: 'slash' }).configure({
 
 <template>
   <div class="flex-1 flex flex-col min-h-0 justify-center relative">
-    <section v-if="!isInitialized" class="flex-1 flex flex-col justify-center items-center gap-4">
+    <UAlert
+      v-if="error"
+      title="Error!"
+      :description="error"
+      color="error"
+      icon="i-lucide-alert-octagon"
+      :ui="{
+        icon: 'size-10'
+      }"
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 max-w-2xl w-full"
+    />
+    <section v-else-if="!isInitialized" class="flex-1 flex flex-col justify-center items-center gap-4">
       <Spinner />
       <p class="text-gray-500 text-sm">Initializing agent...</p>
     </section>
@@ -819,16 +830,6 @@ const slashExtension = Mention.extend({ name: 'slash' }).configure({
           @click="expanded = !expanded"
         />
       </header>
-      <UAlert
-        v-if="error"
-        title="Error!"
-        :description="error"
-        color="error"
-        icon="i-lucide-alert-octagon"
-        :ui="{
-          icon: 'size-10'
-        }"
-      />
       <AnimatePresence>
         <div v-if="showMessageList" class="flex-1 overflow-y-auto min-h-0 flex justify-center">
           <MessageList
