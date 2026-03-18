@@ -84,6 +84,10 @@ watch(
             v-for="message in messages"
             :key="message.id"
             :message="message"
+            :loading="
+              message.id === messages[messages.length - 1]?.id &&
+              (status == 'submitted' || status == 'streaming')
+            "
           />
           <LoadingText v-if="status == 'submitted' || status == 'streaming'" />
         </div>

@@ -16,21 +16,33 @@ const iframeRef = ref<HTMLIFrameElement | null>(null);
 
 function renderContent() {
   if (!iframeRef.value) return;
-  
+
   const iframe = iframeRef.value;
-  
+
   if (props.contentType === 'html') {
     const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!iframeDoc) return;
-    
+
     iframeDoc.open();
     iframeDoc.write(props.content);
     iframeDoc.close();
   } else {
     const mimeType = getMimeType(props.contentType);
-    const dataUrl = `data:${mimeType};base64,${btoa(props.content)}`;
+    const dataUrl = `data:${mimeType};charset=utf-8;base64,${safeBtoa(props.content)}`;
     iframe.src = dataUrl;
   }
+}
+
+function safeBtoa(str) {
+  // 1. 将字符串编码为 UTF-8 的 Uint8Array
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+
+  // 2. 将字节数组转换为二进制字符串
+  const binString = Array.from(data, (byte) => String.fromCharCode(byte)).join("");
+
+  // 3. 最后进行 btoa 编码
+  return btoa(binString);
 }
 
 function getMimeType(type: string): string {

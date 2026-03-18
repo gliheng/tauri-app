@@ -42,6 +42,9 @@ const fileParts = computed(() =>
     } => part.type === "file"
   )
 );
+const isStreamingMessage = computed(
+  () => props.message.role === "assistant" && props.loading
+);
 
 // Extract tool name from part type (e.g., 'tool-web_search' -> 'web_search')
 function getToolNameFromPart(part: any): string {
@@ -93,7 +96,11 @@ function getPresentToolData(part: any): { type: string; content: string } | null
           class="mb-2"
         >
           <div v-if="part.type == 'text'">
-            <MarkdownText v-if="part.text" :markdown="part.text" />
+            <MarkdownText
+              v-if="part.text"
+              :markdown="part.text"
+              :streaming="isStreamingMessage"
+            />
           </div>
           <UCollapsible
             v-else-if="part.type == 'reasoning'"
@@ -116,7 +123,12 @@ function getPresentToolData(part: any): { type: string; content: string } | null
             >
             </UButton>
             <template #content>
-              <MarkdownText class="opacity-60" v-if="part.text" :markdown="part.text" />
+              <MarkdownText
+                class="opacity-60"
+                v-if="part.text"
+                :markdown="part.text"
+                :streaming="isStreamingMessage"
+              />
             </template>
           </UCollapsible>
           <div

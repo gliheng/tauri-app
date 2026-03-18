@@ -29,6 +29,9 @@ const bubbleStyle = tv({
 });
 
 const displayParts = computed(() => props.message.parts ?? []);
+const isStreamingMessage = computed(
+  () => props.message.role === "assistant" && props.loading
+);
 
 function copyText() {
   console.log(props.message.parts);
@@ -53,7 +56,11 @@ function copyText() {
           :key="i"
         >
           <div v-if="part.type == 'text'" :data-part-type="part.type">
-            <MarkdownText v-if="part.text" :markdown="part.text" />
+            <MarkdownText
+              v-if="part.text"
+              :markdown="part.text"
+              :streaming="isStreamingMessage"
+            />
           </div>
           <UCollapsible
             v-else-if="part.type == 'thought'"
@@ -77,7 +84,11 @@ function copyText() {
             />
             <template #content>
               <div v-if="part.thought" class="text-zinc-600 dark:text-zinc-400" :data-part-type="part.type">
-                <MarkdownText class="opacity-60" :markdown="part.thought" />
+                <MarkdownText
+                  class="opacity-60"
+                  :markdown="part.thought"
+                  :streaming="isStreamingMessage"
+                />
               </div>
             </template>
           </UCollapsible>
@@ -310,7 +321,11 @@ function copyText() {
           v-if="props.message.content && displayParts.length == 0"
           class="mb-2"
         >
-          <MarkdownText v-if="props.message.content" :markdown="props.message.content" />
+          <MarkdownText
+            v-if="props.message.content"
+            :markdown="props.message.content"
+            :streaming="isStreamingMessage"
+          />
         </div>
       </div>
     </template>
