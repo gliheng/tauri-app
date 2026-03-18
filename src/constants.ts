@@ -37,6 +37,7 @@ export const AGENT_PROGRAMS: AgentProgramOption[] = [
   { value: 'claude', label: 'Claude Code' },
   { value: 'qwen', label: 'Qwen Code' },
   { value: 'opencode', label: 'OpenCode' },
+  { value: 'deepagents', label: 'DeepAgents' },
 ];
 
 export const MODELS_BY_PROVIDER = {

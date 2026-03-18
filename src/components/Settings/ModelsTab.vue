@@ -2,8 +2,9 @@
 import type { TabsItem } from "@nuxt/ui";
 import { storeToRefs } from "pinia";
 import { computed } from "vue";
+import type { AgentProgram } from "@/db";
 import { useSettingsStore } from "@/stores/settings";
-import { MODELS_BY_PROVIDER } from "@/constants";
+import { AGENT_PROGRAMS, MODELS_BY_PROVIDER } from "@/constants";
 
 const providerItems = [
   {
@@ -32,28 +33,15 @@ const providerItems = [
   },
 ] satisfies TabsItem[];
 
-const agentItems = [
-  {
-    label: "Codex",
-    value: "codex",
-  },
-  {
-    label: "Gemini",
-    value: "gemini",
-  },
-  {
-    label: "Claude",
-    value: "claude",
-  },
-  {
-    label: "Qwen",
-    value: "qwen",
-  },
-  {
-    label: "OpenCode",
-    value: "opencode",
-  },
-] satisfies TabsItem[];
+type AgentTabItem = TabsItem & {
+  label: string;
+  value: AgentProgram;
+};
+
+const agentItems = AGENT_PROGRAMS.map(({ label, value }) => ({
+  label,
+  value: value as AgentProgram,
+})) satisfies AgentTabItem[];
 
 const imageProviderItems = [
   {
@@ -71,7 +59,7 @@ const imageProviderItems = [
 ] satisfies TabsItem[];
 
 const defaultProvider = "deepseek";
-const defaultAgent = "codex";
+const defaultAgent: AgentProgram = "codex";
 const defaultImageProvider = "openai";
 
 const { modelSettings, agentSettings, chatSettings, imageSettings } = storeToRefs(useSettingsStore());

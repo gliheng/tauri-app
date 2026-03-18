@@ -40,7 +40,7 @@ export interface ChatMessage {
   siblingIndex?: number;
 }
 
-export type AgentProgram = 'codex' | 'gemini' | 'claude' | 'qwen' | 'opencode';
+export type AgentProgram = 'codex' | 'gemini' | 'claude' | 'qwen' | 'opencode' | 'deepagents';
 
 export interface Agent {
   id: string;

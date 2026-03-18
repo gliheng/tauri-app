@@ -308,6 +308,15 @@ pub async fn acp_initialize(
             }
             "opencode-ai"
         }
+        "deepagents" => {
+            args.push("deepagents-acp".into());
+            if let Some(ms) = settings {
+                env_vars.insert("OPENAI_API_KEY".into(), ms.api_key);
+                env_vars.insert("OPENAI_BASE_URL".into(), ms.base_url);
+                env_vars.insert("OPENAI_MODEL".into(), ms.model);
+            }
+            "deepagents-acp"
+        }
         _ => {
             return Err(serde_json::json!({
                 "code": 9,
