@@ -77,6 +77,7 @@ declare module 'vue' {
     TextNode: typeof import('./src/components/ChartEditor/TextNode.vue')['default']
     ThemeSwitcher: typeof import('./src/components/Window/ThemeSwitcher.vue')['default']
     ToggleButtonGroup: typeof import('./src/components/ToggleButtonGroup.vue')['default']
+    UAccordion: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Accordion.vue')['default']
     UAlert: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Alert.vue')['default']
     UApp: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/App.vue')['default']
     UAvatar: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Avatar.vue')['default']

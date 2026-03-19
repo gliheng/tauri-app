@@ -29,6 +29,12 @@ fn get_migrations() -> Vec<Migration> {
             sql: include_str!("../migrations/004_image.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "create_research_tables",
+            sql: include_str!("../migrations/005_research.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
