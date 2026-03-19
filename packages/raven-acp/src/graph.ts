@@ -1,6 +1,6 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import { MessagesAnnotation, StateGraph, START, END } from "@langchain/langgraph";
-import { ChatAnthropic } from "@langchain/anthropic";
+import { initChatModel } from "langchain";
 import type { ConversationGraph, RuntimeConfig } from "./types.ts";
 
 const CALL_MODEL_NODE_ID = "callModel";
@@ -10,7 +10,11 @@ interface GraphState {
   messages: BaseMessage[];
 }
 
-function createCallModelNode(model: ChatAnthropic): (state: GraphState) => Promise<GraphState> {
+interface ChatModel {
+  invoke(input: BaseMessage[]): Promise<BaseMessage>;
+}
+
+function createCallModelNode(model: ChatModel): (state: GraphState) => Promise<GraphState> {
   return async (state: GraphState): Promise<GraphState> => {
     const response = await model.invoke(state.messages);
 
@@ -23,10 +27,10 @@ function createCallModelNode(model: ChatAnthropic): (state: GraphState) => Promi
 }
 
 export async function createGraph(config: RuntimeConfig): Promise<ConversationGraph> {
-  const model = new ChatAnthropic({
-    model: config.model,
+  const model = await initChatModel(config.model, {
+    modelProvider: config.modelProvider,
     apiKey: config.apiKey,
-    anthropicApiUrl: config.baseUrl,
+    baseURL: config.baseUrl,
     temperature: 0,
   });
 
