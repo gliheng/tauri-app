@@ -12,7 +12,7 @@ const tabsStore = useTabsStore();
 const researchStore = useResearchStore();
 
 onActivated(() => {
-  tabsStore.openTab("/research", "Research");
+  tabsStore.openTab("/research-list", "Research");
   researchStore.loadTopics();
 });
 

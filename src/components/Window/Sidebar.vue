@@ -50,7 +50,7 @@ async function addAgent() {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  
+
   await writeAgent(fullAgent);
   sidebarStore.loadAgents();
   router.push({
@@ -68,7 +68,7 @@ function addImage() {
 }
 
 function goToResearch() {
-  router.push({ name: "research" });
+  router.push({ name: "research-list" });
 }
 
 function agentUrl(agent: Agent) {
